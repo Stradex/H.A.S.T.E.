@@ -203,13 +203,14 @@ void idServerScan::AddServer( int id, const char *srv ) {
 
 	// using IPs, not hosts
 	if ( !Sys_StringToNetAdr( srv, &s.adr, false ) ) {
-		common->DPrintf( "idServerScan::AddServer: failed to parse server %s\n", srv );
+		//common->DPrintf( "idServerScan::AddServer: failed to parse server %s\n", srv );
+		common->Printf( "idServerScan::AddServer: failed to parse server %s\n", srv ); //edit by stradex, from DPrintf to Printf
 		return;
 	}
 	if ( !s.adr.port ) {
 		s.adr.port = PORT_SERVER;
 	}
-
+	common->Printf( "idServerScan::AddServer: server added %s\n", srv ); //edit by stradex, from DPrintf to Printf
 	net_servers.Append( s );
 }
 
@@ -269,7 +270,6 @@ void idServerScan::NetScan( ) {
 		endWaitTime = Sys_Milliseconds() + 1000;
 		return;
 	}
-
 	// make sure the client port is open
 	idAsyncNetwork::client.InitPort();
 
@@ -283,7 +283,7 @@ void idServerScan::NetScan( ) {
 	listGUI->Clear();
 	GUIUpdateSelected();
 	common->DPrintf( "NetScan with challenge %d\n", challenge );
-
+	
 	while ( cur_info < Min( net_servers.Num(), MAX_PINGREQUESTS ) ) {
 		netadr_t serv = net_servers[ cur_info ].adr;
 		EmitGetInfo( serv );
@@ -291,6 +291,7 @@ void idServerScan::NetScan( ) {
 		net_info.SetInt( Sys_NetAdrToString( serv ), cur_info );
 		cur_info++;
 	}
+	
 }
 
 /*
@@ -302,7 +303,6 @@ void idServerScan::RunFrame( ) {
 	if ( scan_state == IDLE ) {
 		return;
 	}
-
 	if ( scan_state == WAIT_ON_INIT ) {
 		if ( Sys_Milliseconds() >= endWaitTime ) {
 				scan_state = IDLE;

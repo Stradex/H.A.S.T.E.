@@ -120,6 +120,8 @@ public:
 
 	void				PacifierUpdate( void );
 
+	void				StopGetServersThread( void ); //added by Stradex for htmlmasterserver method
+
 	idServerScan		serverList;
 
 private:
@@ -148,6 +150,7 @@ private:
 	int					lastEmptyTime;				// last time an empty message was sent
 	int					lastPacketTime;				// last time a packet was received from the server
 	int					lastSnapshotTime;			// last time a snapshot was received
+	int					nextGetServersCall;			 //added by Stradex to avoid crash, please FIXME
 
 	int					snapshotSequence;			// sequence number of the last received snapshot
 	int					snapshotGameFrame;			// game frame number of the last received snapshot
@@ -185,6 +188,8 @@ private:
 	int					currentDlSize;
 	int					totalDlSize;	// for partial progress stuff
 
+	xthreadInfo			getServersThread; //added by Stradex to get servers using a thread to avoid freeze
+
 	void				Clear( void );
 	void				ClearPendingPackets( void );
 	void				DuplicateUsercmds( int frame, int time );
@@ -219,6 +224,10 @@ private:
 	bool				CheckTimeout( void );
 	void				ProcessDownloadInfoMessage( const netadr_t from, const idBitMsg &msg );
 	int					GetDownloadRequest( const int checksums[ MAX_PURE_PAKS ], int count );
+
+	void				StartGetServersThread( void ); //added by Stradex for htmlmasterserver method
+
+	friend int			GetServersThread( void *pexit ); //added by Stradex for htmlmasterserver method
 };
 
 #endif /* !__ASYNCCLIENT_H__ */

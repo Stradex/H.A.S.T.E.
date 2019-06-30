@@ -179,7 +179,7 @@ public:
 	virtual void				ClientProcessReliableMessage( int clientNum, const idBitMsg &msg ) = 0;
 
 	// Runs prediction on entities at the client.
-	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame ) = 0;
+	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame, bool firstCallThisFrame ) = 0;
 
 	// Used to manage divergent time-lines
 	virtual void				SelectTimeGroup( int timeGroup ) = 0;
@@ -196,6 +196,9 @@ public:
 	virtual bool				DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] ) = 0;
 
 	virtual void				GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) = 0;
+
+	// Added by Stradex
+	virtual void			CheckSingleLightChange( void ) = 0;
 };
 
 extern idGame *					game;

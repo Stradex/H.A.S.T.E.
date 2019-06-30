@@ -1,0 +1,328 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|Win32">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|Win32">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2456FF5B-5C7B-3D2F-AAD1-918D38F45497}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>Win32</Platform>
+    <ProjectName>idlib</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">idlib.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">idlib</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">idlib.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">idlib</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">idlib.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">idlib</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">idlib.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">idlib</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4100;4127;4244;4245;4267;4714;4996;4068</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_ALLOW_KEYWORD_MACROS;WINVER=0x0501;_WIN32_WINNT=0x0501;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_ALLOW_KEYWORD_MACROS;WINVER=0x0501;_WIN32_WINNT=0x0501;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4100;4127;4244;4245;4267;4714;4996;4068</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Full</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_ALLOW_KEYWORD_MACROS;WINVER=0x0501;_WIN32_WINNT=0x0501;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_ALLOW_KEYWORD_MACROS;WINVER=0x0501;_WIN32_WINNT=0x0501;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4100;4127;4244;4245;4267;4714;4996;4068</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Full</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_ALLOW_KEYWORD_MACROS;WINVER=0x0501;_WIN32_WINNT=0x0501;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_ALLOW_KEYWORD_MACROS;WINVER=0x0501;_WIN32_WINNT=0x0501;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4100;4127;4244;4245;4267;4714;4996;4068</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Full</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_ALLOW_KEYWORD_MACROS;WINVER=0x0501;_WIN32_WINNT=0x0501;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_ALLOW_KEYWORD_MACROS;WINVER=0x0501;_WIN32_WINNT=0x0501;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2;D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Custom Rule D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -HD:/Maxi/Hobbies/HASTE/SourceCode/repository/neo -BD:/Maxi/Hobbies/HASTE/SourceCode/repository/neo --check-stamp-file D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckSymbolExists.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindCURL.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindJPEG.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindOpenAL.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\SelectLibraryConfigurations.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeCCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeCXXCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeRCCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeSystem.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeLists.txt;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\config.h.in;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindOGG.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindSDL2.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindVorbis.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindVorbisFile.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\generate.stamp</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Custom Rule D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -HD:/Maxi/Hobbies/HASTE/SourceCode/repository/neo -BD:/Maxi/Hobbies/HASTE/SourceCode/repository/neo --check-stamp-file D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckSymbolExists.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindCURL.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindJPEG.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindOpenAL.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\SelectLibraryConfigurations.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeCCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeCXXCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeRCCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeSystem.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeLists.txt;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\config.h.in;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindOGG.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindSDL2.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindVorbis.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindVorbisFile.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\generate.stamp</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">Building Custom Rule D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -HD:/Maxi/Hobbies/HASTE/SourceCode/repository/neo -BD:/Maxi/Hobbies/HASTE/SourceCode/repository/neo --check-stamp-file D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckSymbolExists.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindCURL.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindJPEG.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindOpenAL.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\SelectLibraryConfigurations.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeCCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeCXXCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeRCCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeSystem.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeLists.txt;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\config.h.in;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindOGG.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindSDL2.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindVorbis.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindVorbisFile.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\generate.stamp</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -HD:/Maxi/Hobbies/HASTE/SourceCode/repository/neo -BD:/Maxi/Hobbies/HASTE/SourceCode/repository/neo --check-stamp-file D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\CheckSymbolExists.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindCURL.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindJPEG.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindOpenAL.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-3.12\Modules\SelectLibraryConfigurations.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeCCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeCXXCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeRCCompiler.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\3.12.2\CMakeSystem.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeLists.txt;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\config.h.in;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindOGG.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindSDL2.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindVorbis.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\sys\cmake\FindVorbisFile.cmake;D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\generate.stamp</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="idlib\bv\Bounds.cpp" />
+    <ClCompile Include="idlib\bv\Frustum.cpp" />
+    <ClCompile Include="idlib\bv\Sphere.cpp" />
+    <ClCompile Include="idlib\bv\Box.cpp" />
+    <ClCompile Include="idlib\geometry\DrawVert.cpp" />
+    <ClCompile Include="idlib\geometry\RenderMatrix.cpp" />
+    <ClCompile Include="idlib\geometry\Winding2D.cpp" />
+    <ClCompile Include="idlib\geometry\Surface_SweptSpline.cpp" />
+    <ClCompile Include="idlib\geometry\Winding.cpp" />
+    <ClCompile Include="idlib\geometry\Surface.cpp" />
+    <ClCompile Include="idlib\geometry\Surface_Patch.cpp" />
+    <ClCompile Include="idlib\geometry\TraceModel.cpp" />
+    <ClCompile Include="idlib\geometry\JointTransform.cpp" />
+    <ClCompile Include="idlib\hashing\CRC32.cpp" />
+    <ClCompile Include="idlib\hashing\MD4.cpp" />
+    <ClCompile Include="idlib\hashing\MD5.cpp" />
+    <ClCompile Include="idlib\math\Angles.cpp" />
+    <ClCompile Include="idlib\math\Lcp.cpp" />
+    <ClCompile Include="idlib\math\Math.cpp" />
+    <ClCompile Include="idlib\math\Matrix.cpp" />
+    <ClCompile Include="idlib\math\Ode.cpp" />
+    <ClCompile Include="idlib\math\Plane.cpp" />
+    <ClCompile Include="idlib\math\Pluecker.cpp" />
+    <ClCompile Include="idlib\math\Polynomial.cpp" />
+    <ClCompile Include="idlib\math\Quat.cpp" />
+    <ClCompile Include="idlib\math\Rotation.cpp" />
+    <ClCompile Include="idlib\math\Simd.cpp" />
+    <ClCompile Include="idlib\math\Simd_Generic.cpp" />
+    <ClCompile Include="idlib\math\Simd_AltiVec.cpp" />
+    <ClCompile Include="idlib\math\Simd_MMX.cpp" />
+    <ClCompile Include="idlib\math\Simd_3DNow.cpp" />
+    <ClCompile Include="idlib\math\Simd_SSE.cpp" />
+    <ClCompile Include="idlib\math\Simd_SSE2.cpp" />
+    <ClCompile Include="idlib\math\Simd_SSE3.cpp" />
+    <ClCompile Include="idlib\math\Vector.cpp" />
+    <ClCompile Include="idlib\BitMsg.cpp" />
+    <ClCompile Include="idlib\LangDict.cpp" />
+    <ClCompile Include="idlib\Lexer.cpp" />
+    <ClCompile Include="idlib\Lib.cpp" />
+    <ClCompile Include="idlib\containers\HashIndex.cpp" />
+    <ClCompile Include="idlib\Dict.cpp" />
+    <ClCompile Include="idlib\Str.cpp" />
+    <ClCompile Include="idlib\Parser.cpp" />
+    <ClCompile Include="idlib\MapFile.cpp" />
+    <ClCompile Include="idlib\CmdArgs.cpp" />
+    <ClCompile Include="idlib\Token.cpp" />
+    <ClCompile Include="idlib\Base64.cpp" />
+    <ClCompile Include="idlib\Timer.cpp" />
+    <ClCompile Include="idlib\Heap.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\ZERO_CHECK.vcxproj">
+      <Project>{29CC0302-05D1-329E-88AB-9B2A2DE0532E}</Project>
+      <Name>ZERO_CHECK</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -100,6 +100,51 @@ idCVar com_updateLoadSize( "com_updateLoadSize", "0", CVAR_BOOL | CVAR_SYSTEM | 
 
 idCVar com_product_lang_ext( "com_product_lang_ext", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Extension to use when creating language files." );
 
+idCVar com_gameHz( "com_gameHz", "60", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_SYSTEM , "Frames per second the game runs at", 10, 1024 );
+idCVar com_clientGameHz( "com_gameClientHz", "60", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_SYSTEM  , "Frames per second (while being client)", 10, 1024 );
+
+int com_gameMSRate = 1000 / 60; //Refreshedlater
+int com_realGameHz=60;
+bool tReloadingEngine = false;
+
+//Just to test async fps
+#define	ASYNC_FRAMES	6
+int SCR_AsyncGetFPS( void) {
+	char		*s;
+	int			w;
+	static int	asyncPreviousTimes[ASYNC_FRAMES];
+	static int	asyncIndex;
+	int		i, total;
+	int		fps;
+	static	int	asyncPrevious;
+	int		t, frameTime;
+
+	// don't use serverTime, because that will be drifting to
+	// correct for internet lag changes, timescales, timedemos, etc
+	t = Sys_Milliseconds();
+	frameTime = t - asyncPrevious;
+	asyncPrevious = t;
+
+	asyncPreviousTimes[asyncIndex % ASYNC_FRAMES] = frameTime;
+	asyncIndex++;
+	if ( asyncIndex >ASYNC_FRAMES ) {
+		// average multiple frames together to smooth changes out a bit
+		total = 0;
+		for ( i = 0 ; i < ASYNC_FRAMES ; i++ ) {
+			total += asyncPreviousTimes[i];
+		}
+		if ( !total ) {
+			total = 1;
+		}
+		fps = 10000 * ASYNC_FRAMES / total;
+		fps = (fps + 5)/10;
+
+		return fps;
+	}
+
+	return 0;
+}
+
 // com_speeds times
 int				time_gameFrame;
 int				time_gameDraw;
@@ -236,6 +281,7 @@ idCommonLocal::idCommonLocal( void ) {
 	rd_flush = NULL;
 
 	gameDLL = 0;
+
 
 #ifdef ID_WRITE_VERSION
 	config_compressor = NULL;
@@ -1049,7 +1095,7 @@ void idCommonLocal::WriteConfiguration( void ) {
 	com_developer.SetBool( false );
 
 	WriteConfigToFile( CONFIG_FILE );
-	session->WriteCDKey( );
+	//session->WriteCDKey( );
 
 	// restore the developer cvar
 	com_developer.SetBool( developer );
@@ -1495,14 +1541,28 @@ void Com_ReloadEngine_f( const idCmdArgs &args ) {
 	}
 
 	common->Printf( "============= ReloadEngine start =============\n" );
+	tReloadingEngine = true;
 	if ( !menu ) {
 		Sys_ShowConsole( 1, false );
 	}
+
+	com_realGameHz = com_gameHz.GetInteger();
+	common->Printf("\nupdating FPS to %d\n", com_realGameHz);
+	/*
+	com_realGameHz = com_gameHz.GetInteger(); //For MP
+	com_gameMSRate = idMath::FtoiFast(1000.0f / static_cast<float>(com_gameHz.GetInteger())); //For MP
+	common->Printf("\nupdating FPS to %d\n", com_realGameHz);
+	common->Printf( "\nUpdating com_gameMSRate...\n" );
+	*/
+
 	commonLocal.ShutdownGame( true );
 	commonLocal.InitGame();
+
 	if ( !menu && !idAsyncNetwork::serverDedicated.GetBool() ) {
 		Sys_ShowConsole( 0, false );
 	}
+
+	tReloadingEngine = false;
 	common->Printf( "============= ReloadEngine end ===============\n" );
 
 	if ( !cmdSystem->PostReloadEngine() ) {
@@ -2368,6 +2428,8 @@ idCommonLocal::Frame
 =================
 */
 void idCommonLocal::Frame( void ) {
+	static int gameMsecPassed = 0;
+	int clientSideMsec = idMath::FtoiFast(1000.0f / static_cast<float>(com_clientGameHz.GetInteger() + 3)); // + 3 is just a dirty hack
 	try {
 
 		// pump all the events
@@ -2383,14 +2445,38 @@ void idCommonLocal::Frame( void ) {
 
 		eventLoop->RunEventLoop();
 
-		com_frameTime = com_ticNumber * USERCMD_MSEC;
+		//com_frameTime = com_ticNumber * USERCMD_MSEC;
+		com_frameTime = com_ticNumber * com_gameMSRate;
 
+#ifndef ID_DEDICATED
+		/*
+		if (gameMsecPassed + com_gameMSRate >= clientSideMsec)
+		{
+			idAsyncNetwork::RunFrame();
+		} else {
+			//Printf("Desync\n");
+		}
+		*/
 		idAsyncNetwork::RunFrame();
-
+#else
+		idAsyncNetwork::RunFrame();
+#endif
 		if ( idAsyncNetwork::IsActive() ) {
-			if ( idAsyncNetwork::serverDedicated.GetInteger() != 1 ) {
+			if ( idAsyncNetwork::serverDedicated.GetInteger() != 1 ) { //MP Game
 				session->GuiFrameEvents();
-				session->UpdateScreen( false );
+//this silly def pre-compiler check solves the dedicated server problem :) (but 
+#ifdef ID_DEDICATED
+					session->UpdateScreen( false );
+#else
+				 //client uncap fps
+				clientSideMsec = idMath::FtoiFast(1000.0f / static_cast<float>(com_clientGameHz.GetInteger()));
+				gameMsecPassed += com_gameMSRate;
+				if (gameMsecPassed >= clientSideMsec) {
+					session->UpdateScreen( false );
+					gameMsecPassed = 0;
+				}
+#endif
+				
 			}
 		} else {
 			session->Frame();
@@ -2398,7 +2484,6 @@ void idCommonLocal::Frame( void ) {
 			// normal, in-sequence screen update
 			session->UpdateScreen( false );
 		}
-
 		// report timing information
 		if ( com_speeds.GetBool() ) {
 			static int	lastTime;
@@ -2429,7 +2514,8 @@ idCommonLocal::GUIFrame
 void idCommonLocal::GUIFrame( bool execCmd, bool network ) {
 	Sys_GenerateEvents();
 	eventLoop->RunEventLoop( execCmd );	// and execute any commands
-	com_frameTime = com_ticNumber * USERCMD_MSEC;
+	//com_frameTime = com_ticNumber * USERCMD_MSEC;
+	com_frameTime = com_ticNumber * com_gameMSRate;
 	if ( network ) {
 		idAsyncNetwork::RunFrame();
 	}
@@ -2495,7 +2581,6 @@ void idCommonLocal::SingleAsyncTic( void ) {
 	// we update com_ticNumber after all the background tasks
 	// have completed their work for this tic
 	com_ticNumber++;
-
 	stat->timeConsumed = Sys_Milliseconds() - stat->milliseconds;
 
 	Sys_LeaveCriticalSection();
@@ -2509,7 +2594,8 @@ idCommonLocal::Async
 void idCommonLocal::Async( void ) {
 	int	msec = Sys_Milliseconds();
 	if ( !lastTicMsec ) {
-		lastTicMsec = msec - USERCMD_MSEC;
+		//lastTicMsec = msec - USERCMD_MSEC;
+		lastTicMsec = msec - com_gameMSRate;
 	}
 
 	if ( !com_preciseTic.GetBool() ) {
@@ -2518,7 +2604,8 @@ void idCommonLocal::Async( void ) {
 		return;
 	}
 
-	int ticMsec = USERCMD_MSEC;
+	//int ticMsec = USERCMD_MSEC;
+	int ticMsec = com_gameMSRate;
 
 	// the number of msec per tic can be varies with the timescale cvar
 	float timescale = com_timescale.GetFloat();
@@ -2531,8 +2618,8 @@ void idCommonLocal::Async( void ) {
 
 	// don't skip too many
 	if ( timescale == 1.0f ) {
-		if ( lastTicMsec + 10 * USERCMD_MSEC < msec ) {
-			lastTicMsec = msec - 10*USERCMD_MSEC;
+		if ( lastTicMsec + 10 * com_gameMSRate < msec ) {
+			lastTicMsec = msec - 10*com_gameMSRate;
 		}
 	}
 
@@ -2730,7 +2817,9 @@ static unsigned int AsyncTimer(unsigned int interval, void *) {
 
 	// calculate the next interval to get as close to 60fps as possible
 	unsigned int now = SDL_GetTicks();
-	unsigned int tick = com_ticNumber * USERCMD_MSEC;
+	//unsigned int tick = com_ticNumber * USERCMD_MSEC;
+	unsigned int tick = com_ticNumber * com_gameMSRate;
+
 
 	if (now >= tick)
 		return 1;
@@ -2821,6 +2910,8 @@ void idCommonLocal::Init( int argc, char **argv ) {
 		// initialize processor specific SIMD implementation
 		InitSIMD();
 
+		//Update Game HZ (stradex test)
+
 		// init commands
 		InitCommands();
 
@@ -2830,7 +2921,8 @@ void idCommonLocal::Init( int argc, char **argv ) {
 
 		// game specific initialization
 		InitGame();
-
+		com_realGameHz = com_gameHz.GetInteger();
+		com_gameMSRate = idMath::FtoiFast(1000.0f / static_cast<float>(com_gameHz.GetInteger()));
 		// don't add startup commands if no CD key is present
 #if ID_ENFORCE_KEY
 		if ( !session->CDKeysAreValid( false ) || !AddStartupCommands() ) {
@@ -2863,7 +2955,8 @@ void idCommonLocal::Init( int argc, char **argv ) {
 		Sys_Error( "Error during initialization" );
 	}
 
-	async_timer = SDL_AddTimer(USERCMD_MSEC, AsyncTimer, NULL);
+	//async_timer = SDL_AddTimer(USERCMD_MSEC, AsyncTimer, NULL);
+	async_timer = SDL_AddTimer(com_gameMSRate, AsyncTimer, NULL);
 
 	if (!async_timer)
 		Sys_Error("Error while starting the async timer: %s", SDL_GetError());
@@ -2975,6 +3068,7 @@ void idCommonLocal::InitGame( void ) {
 
 	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04345" ) );
 
+	
 	// exec the startup scripts
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec editor.cfg\n" );
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec default.cfg\n" );
@@ -2996,6 +3090,17 @@ void idCommonLocal::InitGame( void ) {
 
 	// if any archived cvars are modified after this, we will trigger a writing of the config file
 	cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
+
+	//I love these dirty hacks :) (Stradex)
+	#ifndef ID_DEDICATED
+		if (tReloadingEngine) { //Reloading engine
+			com_gameHz.SetInteger(com_realGameHz);
+			com_gameMSRate = idMath::FtoiFast(1000.0f / static_cast<float>(com_gameHz.GetInteger()));
+			//reset time and tics
+			com_frameNumber = 0;
+			com_ticNumber = 0;
+		}
+	#endif
 
 	// init the user command input code
 	usercmdGen->Init();

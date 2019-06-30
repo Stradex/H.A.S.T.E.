@@ -56,6 +56,7 @@ const idEventDef EV_Weapon_UseAmmo( "useAmmo", "d" );
 const idEventDef EV_Weapon_AddToClip( "addToClip", "d" );
 const idEventDef EV_Weapon_AmmoInClip( "ammoInClip", NULL, 'f' );
 const idEventDef EV_Weapon_AmmoAvailable( "ammoAvailable", NULL, 'f' );
+const idEventDef EV_Weapon_AltAmmoAvailable( "altAmmoAvailable", NULL, 'f' ); //added by Stradex
 const idEventDef EV_Weapon_TotalAmmoCount( "totalAmmoCount", NULL, 'f' );
 const idEventDef EV_Weapon_ClipSize( "clipSize", NULL, 'f' );
 const idEventDef EV_Weapon_WeaponOutOfAmmo( "weaponOutOfAmmo" );
@@ -67,6 +68,8 @@ const idEventDef EV_Weapon_WeaponLowering( "weaponLowering" );
 const idEventDef EV_Weapon_Flashlight( "flashlight", "d" );
 const idEventDef EV_Weapon_LaunchProjectiles( "launchProjectiles", "dffff" );
 const idEventDef EV_Weapon_CreateProjectile( "createProjectile", NULL, 'e' );
+const idEventDef EV_Weapon_LaunchAltProjectiles( "launchAltProjectiles", "dffff" );
+const idEventDef EV_Weapon_CreateAltProjectile( "createAltProjectile", NULL, 'e' );
 const idEventDef EV_Weapon_EjectBrass( "ejectBrass" );
 const idEventDef EV_Weapon_Melee( "melee", NULL, 'd' );
 const idEventDef EV_Weapon_GetWorldModel( "getWorldModel", NULL, 'e' );
@@ -93,6 +96,7 @@ CLASS_DECLARATION( idAnimatedEntity, idWeapon )
 	EVENT( EV_Weapon_AddToClip,					idWeapon::Event_AddToClip )
 	EVENT( EV_Weapon_AmmoInClip,				idWeapon::Event_AmmoInClip )
 	EVENT( EV_Weapon_AmmoAvailable,				idWeapon::Event_AmmoAvailable )
+	EVENT( EV_Weapon_AltAmmoAvailable,			idWeapon::Event_AltAmmoAvailable ) //added by Stradex
 	EVENT( EV_Weapon_TotalAmmoCount,			idWeapon::Event_TotalAmmoCount )
 	EVENT( EV_Weapon_ClipSize,					idWeapon::Event_ClipSize )
 	EVENT( AI_PlayAnim,							idWeapon::Event_PlayAnim )
@@ -108,6 +112,8 @@ CLASS_DECLARATION( idAnimatedEntity, idWeapon )
 	EVENT( EV_Light_SetLightParms,				idWeapon::Event_SetLightParms )
 	EVENT( EV_Weapon_LaunchProjectiles,			idWeapon::Event_LaunchProjectiles )
 	EVENT( EV_Weapon_CreateProjectile,			idWeapon::Event_CreateProjectile )
+	EVENT( EV_Weapon_LaunchAltProjectiles,		idWeapon::Event_LaunchAltProjectiles ) //added by Stradex
+	EVENT( EV_Weapon_CreateAltProjectile,		idWeapon::Event_CreateAltProjectile ) //added by Stradex
 	EVENT( EV_Weapon_EjectBrass,				idWeapon::Event_EjectBrass )
 	EVENT( EV_Weapon_Melee,						idWeapon::Event_Melee )
 	EVENT( EV_Weapon_GetWorldModel,				idWeapon::Event_GetWorldModel )
@@ -322,6 +328,7 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( ammoType );
 	savefile->WriteInt( ammoRequired );
+	savefile->WriteInt( altAmmoRequired ); //added by Stradex
 	savefile->WriteInt( clipSize );
 	savefile->WriteInt( ammoClip );
 	savefile->WriteInt( lowAmmo );
@@ -375,6 +382,7 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( allowDrop );
 	savefile->WriteObject( projectileEnt );
+	savefile->WriteObject( altProjectileEnt ); //added by Stradex
 
 }
 
@@ -395,10 +403,12 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	// Re-link script fields
 	WEAPON_ATTACK.LinkTo(		scriptObject, "WEAPON_ATTACK" );
+	WEAPON_SECATTACK.LinkTo(	scriptObject, "WEAPON_SECATTACK" ); //added by Stradex
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
 	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
+	WEAPON_NETALTFIRING.LinkTo(	scriptObject, "WEAPON_NETALTFIRING" );
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
 
@@ -439,6 +449,16 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 		projectileDict.Clear();
 	}
 
+	//Added by Stradex
+	const idDeclEntityDef *altProjectileDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_altprojectile" ), false );
+	if ( altProjectileDef ) {
+		altProjectileDict = altProjectileDef->dict;
+	} else {
+		altProjectileDict.Clear();
+	}
+	
+
+
 	const idDeclEntityDef *brassDef = gameLocal.FindEntityDef( weaponDef->dict.GetString( "def_ejectBrass" ), false );
 	if ( brassDef ) {
 		brassDict = brassDef->dict;
@@ -475,6 +495,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( (int &)ammoType );
 	savefile->ReadInt( ammoRequired );
+	savefile->ReadInt( altAmmoRequired ); //added by Stradex
 	savefile->ReadInt( clipSize );
 	savefile->ReadInt( ammoClip );
 	savefile->ReadInt( lowAmmo );
@@ -529,6 +550,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( allowDrop );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( projectileEnt ) );
+	savefile->ReadObject( reinterpret_cast<idClass *&>( altProjectileEnt ) ); //add by Stradex
 }
 
 /***********************************************************************
@@ -549,10 +571,12 @@ void idWeapon::Clear( void ) {
 	scriptObject.Free();
 
 	WEAPON_ATTACK.Unlink();
+	WEAPON_SECATTACK.Unlink(); //Added by Stradex
 	WEAPON_RELOAD.Unlink();
 	WEAPON_NETRELOAD.Unlink();
 	WEAPON_NETENDRELOAD.Unlink();
 	WEAPON_NETFIRING.Unlink();
+	WEAPON_NETALTFIRING.Unlink(); //Added by Stradex
 	WEAPON_RAISEWEAPON.Unlink();
 	WEAPON_LOWERWEAPON.Unlink();
 
@@ -649,6 +673,7 @@ void idWeapon::Clear( void ) {
 	animDoneTime	= 0;
 
 	projectileDict.Clear();
+	altProjectileDict.Clear(); //added by Stradex
 	meleeDef		= NULL;
 	meleeDefName	= "";
 	meleeDistance	= 0.0f;
@@ -660,6 +685,7 @@ void idWeapon::Clear( void ) {
 
 	ammoType		= 0;
 	ammoRequired	= 0;
+	altAmmoRequired	= 0; //added by Stradex
 	ammoClip		= 0;
 	clipSize		= 0;
 	lowAmmo			= 0;
@@ -707,8 +733,10 @@ void idWeapon::Clear( void ) {
 
 	isLinked			= false;
 	projectileEnt		= NULL;
+	altProjectileEnt	= NULL; //added by Stradex
 
 	isFiring			= false;
+	isAltFiring			= false;  //added by Stradex
 }
 
 /*
@@ -768,6 +796,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	const char *vmodel;
 	const char *guiName;
 	const char *projectileName;
+	const char *altProjectileName; //added by Stradex
 	const char *brassDefName;
 	const char *smokeName;
 	int			ammoAvail;
@@ -784,6 +813,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	ammoType			= GetAmmoNumForName( weaponDef->dict.GetString( "ammoType" ) );
 	ammoRequired		= weaponDef->dict.GetInt( "ammoRequired" );
+	altAmmoRequired		= weaponDef->dict.GetInt( "altAmmoRequired" ); //added by Stradex
 	clipSize			= weaponDef->dict.GetInt( "clipSize" );
 	lowAmmo				= weaponDef->dict.GetInt( "lowAmmo" );
 
@@ -852,6 +882,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	// get the projectile
 	projectileDict.Clear();
+	altProjectileDict.Clear(); //added by Stradex
 
 	projectileName = weaponDef->dict.GetString( "def_projectile" );
 	if ( projectileName[0] != '\0' ) {
@@ -865,6 +896,23 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 				gameLocal.Warning( "Invalid spawnclass '%s' on projectile '%s' (used by weapon '%s')", spawnclass, projectileName, objectname );
 			} else {
 				projectileDict = projectileDef->dict;
+			}
+		}
+	}
+
+	//added by Stradex
+	altProjectileName = weaponDef->dict.GetString( "def_altprojectile" );
+	if ( altProjectileName[0] != '\0' ) {
+		const idDeclEntityDef *altProjectileDef = gameLocal.FindEntityDef( altProjectileName, false );
+		if ( !altProjectileDef ) {
+			gameLocal.Warning( "Unknown alternative projectile '%s' in weapon '%s'", altProjectileName, objectname );
+		} else {
+			const char *spawnclass = altProjectileDef->dict.GetString( "spawnclass" );
+			idTypeInfo *cls = idClass::GetClass( spawnclass );
+			if ( !cls || !cls->IsType( idProjectile::Type ) ) {
+				gameLocal.Warning( "Invalid spawnclass '%s' on alternative projectile '%s' (used by weapon '%s')", spawnclass, altProjectileName, objectname );
+			} else {
+				altProjectileDict = altProjectileDef->dict;
 			}
 		}
 	}
@@ -992,10 +1040,12 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	}
 
 	WEAPON_ATTACK.LinkTo(		scriptObject, "WEAPON_ATTACK" );
+	WEAPON_SECATTACK.LinkTo(	scriptObject, "WEAPON_SECATTACK" );
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
 	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
+	WEAPON_NETALTFIRING.LinkTo(	scriptObject, "WEAPON_NETALTFIRING" );
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
 
@@ -1078,6 +1128,9 @@ void idWeapon::UpdateGUI( void ) {
 	renderEntity.gui[ 0 ]->SetStateBool( "player_ammo_empty", ( ammoamount == 0 ) );
 	renderEntity.gui[ 0 ]->SetStateBool( "player_clip_empty", ( inclip == 0 ) );
 	renderEntity.gui[ 0 ]->SetStateBool( "player_clip_low", ( inclip <= lowAmmo ) );
+	//added by Stradex
+	renderEntity.gui[ 0 ]->SetStateInt( "player_health", owner->health );
+	renderEntity.gui[ 0 ]->SetStateInt( "player_armor", owner->inventory.armor );
 }
 
 /***********************************************************************
@@ -1113,6 +1166,10 @@ idWeapon::MuzzleFlashLight
 ================
 */
 void idWeapon::MuzzleFlashLight( void ) {
+	//added by Stradex to ignore muzzleFlashLight in r_simplelight mode
+	if (r_simpleLight.GetBool()) {
+		return;
+	}
 
 	if ( !lightOn && ( !g_muzzleFlash.GetBool() || !muzzleFlash.lightRadius[0] ) ) {
 		return;
@@ -1397,7 +1454,7 @@ void idWeapon::OwnerDied( void ) {
 idWeapon::BeginAttack
 ================
 */
-void idWeapon::BeginAttack( void ) {
+void idWeapon::BeginAttack( bool isSecAttack ) {
 	if ( status != WP_OUTOFAMMO ) {
 		lastAttack = gameLocal.time;
 	}
@@ -1406,12 +1463,19 @@ void idWeapon::BeginAttack( void ) {
 		return;
 	}
 
-	if ( !WEAPON_ATTACK ) {
+	if ( (!WEAPON_ATTACK && !isSecAttack) || (!WEAPON_SECATTACK && isSecAttack) ) { //edited by Stradex
 		if ( sndHum ) {
 			StopSound( SND_CHANNEL_BODY, false );
 		}
 	}
-	WEAPON_ATTACK = true;
+	if (isSecAttack) {
+		WEAPON_SECATTACK = true;
+		WEAPON_ATTACK = false; //disable primary attack
+	} else {
+		WEAPON_ATTACK = true;
+		WEAPON_SECATTACK = false; //disable sec attack
+	}
+
 }
 
 /*
@@ -1423,9 +1487,25 @@ void idWeapon::EndAttack( void ) {
 	if ( !WEAPON_ATTACK.IsLinked() ) {
 		return;
 	}
+	bool sndShaderStarted = false;
+
 	if ( WEAPON_ATTACK ) {
 		WEAPON_ATTACK = false;
 		if ( sndHum ) {
+			sndShaderStarted = true;
+			StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
+		}
+	}
+
+	//added to end SECATTACK by Stradex
+	if ( !WEAPON_SECATTACK.IsLinked() ) {
+		return;
+	}
+
+	if ( WEAPON_SECATTACK ) {
+		WEAPON_SECATTACK = false;
+		if ( sndHum && !sndShaderStarted) {
+			sndShaderStarted = true;
 			StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
 		}
 	}
@@ -1490,12 +1570,13 @@ idWeapon::WeaponStolen
 */
 void idWeapon::WeaponStolen( void ) {
 	assert( !gameLocal.isClient );
-	if ( projectileEnt ) {
+	if ( projectileEnt || altProjectileEnt ) { //edited by Stradex
 		if ( isLinked ) {
 			SetState( "WeaponStolen", 0 );
 			thread->Execute();
 		}
 		projectileEnt = NULL;
+		altProjectileEnt = NULL; //added by Stradex
 	}
 
 	// set to holstered so we can switch weapons right away
@@ -1574,7 +1655,7 @@ idWeapon::UpdateNozzelFx
 ================
 */
 void idWeapon::UpdateNozzleFx( void ) {
-	if ( !nozzleFx ) {
+	if ( !nozzleFx) {
 		return;
 	}
 
@@ -1591,7 +1672,7 @@ void idWeapon::UpdateNozzleFx( void ) {
 	renderEntity.shaderParms[5] = s;
 	renderEntity.shaderParms[6] = l;
 
-	if ( ventLightJointView == INVALID_JOINT ) {
+	if ( (ventLightJointView == INVALID_JOINT) || r_simpleLight.GetBool() ) {
 		return;
 	}
 
@@ -2016,10 +2097,12 @@ void idWeapon::EnterCinematic( void ) {
 		thread->Execute();
 
 		WEAPON_ATTACK		= false;
+		WEAPON_SECATTACK	= false; //added by Stradex
 		WEAPON_RELOAD		= false;
 		WEAPON_NETRELOAD	= false;
 		WEAPON_NETENDRELOAD	= false;
 		WEAPON_NETFIRING	= false;
+		WEAPON_NETALTFIRING	= false;
 		WEAPON_RAISEWEAPON	= false;
 		WEAPON_LOWERWEAPON	= false;
 	}
@@ -2201,6 +2284,15 @@ int idWeapon::AmmoAvailable( void ) const {
 
 /*
 ================
+idWeapon::SetAmmoInClip( int newClip);
+================
+*/
+void idWeapon::SetAmmoInClip( int newClip ) {
+	ammoClip = newClip;
+	return;
+}
+/*
+================
 idWeapon::AmmoInClip
 ================
 */
@@ -2255,6 +2347,16 @@ int	idWeapon::AmmoRequired( void ) const {
 
 /*
 ================
+idWeapon::AltAmmoRequired
+================
+*/
+int	idWeapon::AltAmmoRequired( void ) const {
+	return altAmmoRequired;
+}
+
+
+/*
+================
 idWeapon::WriteToSnapshot
 ================
 */
@@ -2263,6 +2365,7 @@ void idWeapon::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( worldModel.GetSpawnId(), 32 );
 	msg.WriteBits( lightOn, 1 );
 	msg.WriteBits( isFiring ? 1 : 0, 1 );
+	msg.WriteBits( isAltFiring ? 1 : 0, 1 ); //added by Stradex
 }
 
 /*
@@ -2275,21 +2378,46 @@ void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	worldModel.SetSpawnId( msg.ReadBits( 32 ) );
 	bool snapLight = msg.ReadBits( 1 ) != 0;
 	isFiring = msg.ReadBits( 1 ) != 0;
+	isAltFiring = msg.ReadBits( 1 ) != 0; //added by Stradex
 
 	// WEAPON_NETFIRING is only turned on for other clients we're predicting. not for local client
 	if ( owner && gameLocal.localClientNum != owner->entityNumber && WEAPON_NETFIRING.IsLinked() ) {
 
 		// immediately go to the firing state so we don't skip fire animations
 		if ( !WEAPON_NETFIRING && isFiring ) {
-			idealState = "Fire";
-		}
 
+			#if BUILD_HASTE > 0
+
+			idealState = "Attack";
+			#else
+
+			idealState = "Fire";
+
+			#endif
+
+		} else if  ( !WEAPON_NETALTFIRING && isAltFiring ) {
+
+			#if BUILD_HASTE > 0
+
+			idealState = "AltAttack";
+			#else
+
+			idealState = "Fire";
+
+			#endif
+
+		}
+		
 		// immediately switch back to idle
 		if ( WEAPON_NETFIRING && !isFiring ) {
 			idealState = "Idle";
 		}
+		if ( WEAPON_NETALTFIRING && !isAltFiring ) {
+			idealState = "Idle";
+		}
 
 		WEAPON_NETFIRING = isFiring;
+		WEAPON_NETALTFIRING = isAltFiring;
 	}
 
 	if ( snapLight != lightOn ) {
@@ -2376,11 +2504,33 @@ void idWeapon::Event_WeaponState( const char *statename, int blendFrames ) {
 
 	idealState = statename;
 
+	//Edit by Stradex
+	//if ( !idealState.Icmp( "Fire" ) ) {
+	#if BUILD_HASTE > 0
+
+	if ( !idealState.Icmp( "Attack" ) ) {
+		isFiring = true;
+		isAltFiring = false;
+	} else if ( !idealState.Icmp( "AltAttack" ) ) {
+		isFiring = false;
+		isAltFiring = true;
+	} else {
+		isFiring = false;
+		isAltFiring = false;
+	}
+
+	#else
+
 	if ( !idealState.Icmp( "Fire" ) ) {
 		isFiring = true;
 	} else {
 		isFiring = false;
 	}
+
+	isAltFiring = false;
+
+	#endif
+
 
 	animBlendFrames = blendFrames;
 	thread->DoneProcessing();
@@ -2520,6 +2670,16 @@ idWeapon::Event_AmmoAvailable
 */
 void idWeapon::Event_AmmoAvailable( void ) {
 	int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+	idThread::ReturnFloat( ammoAvail );
+}
+
+/*
+===============
+idWeapon::Event_AltAmmoAvailable
+===============
+*/
+void idWeapon::Event_AltAmmoAvailable( void ) {
+	int ammoAvail = owner->inventory.HasAmmo( ammoType, altAmmoRequired );
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -2794,6 +2954,26 @@ void idWeapon::Event_CreateProjectile( void ) {
 
 /*
 ================
+idWeapon::Event_CreateAltProjectile
+================
+*/
+void idWeapon::Event_CreateAltProjectile( void ) {
+	if ( !gameLocal.isClient ) {
+		altProjectileEnt = NULL;
+		gameLocal.SpawnEntityDef( altProjectileDict, &altProjectileEnt, false );
+		if ( altProjectileEnt ) {
+			altProjectileEnt->SetOrigin( GetPhysics()->GetOrigin() );
+			altProjectileEnt->Bind( owner, false );
+			altProjectileEnt->Hide();
+		}
+		idThread::ReturnEntity( altProjectileEnt );
+	} else {
+		idThread::ReturnEntity( NULL );
+	}
+}
+
+/*
+================
 idWeapon::Event_LaunchProjectiles
 ================
 */
@@ -2974,6 +3154,189 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	weaponSmokeStartTime = gameLocal.realClientTime;
 }
 
+
+/*
+================
+idWeapon::Event_LaunchAltProjectiles
+================
+*/
+void idWeapon::Event_LaunchAltProjectiles( int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower) {
+	idProjectile	*proj;
+	idEntity		*ent;
+	int				i;
+	idVec3			dir;
+	float			ang;
+	float			spin;
+	float			distance;
+	trace_t			tr;
+	idVec3			start;
+	idVec3			muzzle_pos;
+	idBounds		ownerBounds, projBounds;
+
+	if ( IsHidden() ) {
+		return;
+	}
+
+	if ( !altProjectileDict.GetNumKeyVals() ) {
+		const char *classname = weaponDef->dict.GetString( "classname" );
+		gameLocal.Warning( "No alternative projectile defined on '%s'", classname );
+		return;
+	}
+
+	// avoid all ammo considerations on an MP client
+	if ( !gameLocal.isClient ) {
+
+		// check if we're out of ammo or the clip is empty
+		int ammoAvail = owner->inventory.HasAmmo( ammoType, altAmmoRequired );
+		if ( !ammoAvail || ( ( clipSize != 0 ) && ( ammoClip <= 0 ) ) ) {
+			return;
+		}
+
+		// if this is a power ammo weapon ( currently only the bfg ) then make sure
+		// we only fire as much power as available in each clip
+		if ( powerAmmo ) {
+			// power comes in as a float from zero to max
+			// if we use this on more than the bfg will need to define the max
+			// in the .def as opposed to just in the script so proper calcs
+			// can be done here.
+			dmgPower = ( int )dmgPower + 1;
+			if ( dmgPower > ammoClip ) {
+				dmgPower = ammoClip;
+			}
+		}
+
+		owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? dmgPower : altAmmoRequired );
+		if ( clipSize && altAmmoRequired ) {
+			ammoClip -= powerAmmo ? dmgPower : altAmmoRequired;
+		}
+
+	}
+
+	if ( !silent_fire ) {
+		// wake up nearby monsters
+		gameLocal.AlertAI( owner );
+	}
+
+	// set the shader parm to the time of last projectile firing,
+	// which the gun material shaders can reference for single shot barrel glows, etc
+	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ]	= gameLocal.random.CRandomFloat();
+	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ]	= -MS2SEC( gameLocal.realClientTime );
+
+	if ( worldModel.GetEntity() ) {
+		worldModel.GetEntity()->SetShaderParm( SHADERPARM_DIVERSITY, renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] );
+		worldModel.GetEntity()->SetShaderParm( SHADERPARM_TIMEOFFSET, renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] );
+	}
+
+	// calculate the muzzle position
+	if ( barrelJointView != INVALID_JOINT && altProjectileDict.GetBool( "launchFromBarrel" ) ) {
+		// there is an explicit joint for the muzzle
+		GetGlobalJointTransform( true, barrelJointView, muzzleOrigin, muzzleAxis );
+	} else {
+		// go straight out of the view
+		muzzleOrigin = playerViewOrigin;
+		muzzleAxis = playerViewAxis;
+	}
+
+	// add some to the kick time, incrementally moving repeat firing weapons back
+	if ( kick_endtime < gameLocal.realClientTime ) {
+		kick_endtime = gameLocal.realClientTime;
+	}
+	kick_endtime += muzzle_kick_time;
+	if ( kick_endtime > gameLocal.realClientTime + muzzle_kick_maxtime ) {
+		kick_endtime = gameLocal.realClientTime + muzzle_kick_maxtime;
+	}
+
+	if ( gameLocal.isClient ) {
+
+		// predict instant hit projectiles
+		if ( altProjectileDict.GetBool( "net_instanthit" ) ) {
+			float spreadRad = DEG2RAD( spread );
+			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
+			for( i = 0; i < num_projectiles; i++ ) {
+				ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
+				spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
+				dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+				dir.Normalize();
+				gameLocal.clip.Translation( tr, muzzle_pos, muzzle_pos + dir * 4096.0f, NULL, mat3_identity, MASK_SHOT_RENDERMODEL, owner );
+				if ( tr.fraction < 1.0f ) {
+					idProjectile::ClientPredictionCollide( this, altProjectileDict, tr, vec3_origin, true );
+				}
+			}
+		}
+
+	} else {
+
+		ownerBounds = owner->GetPhysics()->GetAbsBounds();
+
+		owner->AddProjectilesFired( num_projectiles );
+
+		float spreadRad = DEG2RAD( spread );
+		for( i = 0; i < num_projectiles; i++ ) {
+			ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
+			spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
+			dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+			dir.Normalize();
+
+			if ( altProjectileEnt ) {
+				ent = altProjectileEnt;
+				ent->Show();
+				ent->Unbind();
+				altProjectileEnt = NULL;
+			} else {
+				gameLocal.SpawnEntityDef( altProjectileDict, &ent, false );
+			}
+
+			if ( !ent || !ent->IsType( idProjectile::Type ) ) {
+				const char *projectileName = weaponDef->dict.GetString( "def_altprojectile" );
+				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
+			}
+
+			if ( altProjectileDict.GetBool( "net_instanthit" ) ) {
+				// don't synchronize this on top of the already predicted effect
+				ent->fl.networkSync = false;
+			}
+
+			proj = static_cast<idProjectile *>(ent);
+			proj->Create( owner, muzzleOrigin, dir );
+
+			projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
+
+			// make sure the projectile starts inside the bounding box of the owner
+			if ( i == 0 ) {
+				muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
+				// DG: sometimes the assertion in idBounds::operator-(const idBounds&) triggers
+				//     (would get bounding box with negative volume)
+				//     => check that before doing ownerBounds - projBounds (equivalent to the check in the assertion)
+				idVec3 obDiff = ownerBounds[1] - ownerBounds[0];
+				idVec3 pbDiff = projBounds[1] - projBounds[0];
+				bool boundsSubLegal =  obDiff.x > pbDiff.x && obDiff.y > pbDiff.y && obDiff.z > pbDiff.z;
+				if ( boundsSubLegal && ( ownerBounds - projBounds ).RayIntersection( muzzle_pos, playerViewAxis[0], distance ) ) {
+					start = muzzle_pos + distance * playerViewAxis[0];
+				} else {
+					start = ownerBounds.GetCenter();
+				}
+				gameLocal.clip.Translation( tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, owner );
+				muzzle_pos = tr.endpos;
+			}
+
+			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower );
+		}
+
+		// toss the brass
+		PostEventMS( &EV_Weapon_EjectBrass, brassDelay );
+	}
+
+	// add the light for the muzzleflash
+	if ( !lightOn ) {
+		MuzzleFlashLight();
+	}
+
+	owner->WeaponFireFeedback( &weaponDef->dict );
+
+	// reset muzzle smoke
+	weaponSmokeStartTime = gameLocal.realClientTime;
+}
+
 /*
 =====================
 idWeapon::Event_Melee
@@ -3026,7 +3389,12 @@ void idWeapon::Event_Melee( void ) {
 				&& !owner->PowerUpActive( BERSERK )
 				&& ( gameLocal.gameType != GAME_TDM || gameLocal.serverInfo.GetBool( "si_teamDamage" ) || ( owner->team != static_cast< idPlayer * >( ent )->team ) )
 				) {
-				owner->StealWeapon( static_cast< idPlayer * >( ent ) );
+
+				if ( gameLocal.mpGame.IsGametypeFlagBased() ) { //added by Stradex for D3XP CTF
+					/* Do nothing ... */
+				} else {
+					owner->StealWeapon( static_cast< idPlayer * >( ent ) );
+				}
 			}
 
 			if ( ent->fl.takedamage ) {
@@ -3176,6 +3544,6 @@ void idWeapon::Event_IsInvisible( void ) {
 idWeapon::ClientPredictionThink
 ===============
 */
-void idWeapon::ClientPredictionThink( void ) {
+void idWeapon::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	UpdateAnimation();
 }

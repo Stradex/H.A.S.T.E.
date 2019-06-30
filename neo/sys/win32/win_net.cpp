@@ -26,6 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+//upnp added by Stradex
+#include "upnpnat/upnpnat.h"
 #include "sys/platform.h"
 #include "framework/Common.h"
 
@@ -39,8 +41,9 @@ static bool	winsockInitialized = false;
 
 idCVar net_ip( "net_ip", "localhost", CVAR_SYSTEM, "local IP address" );
 idCVar net_port( "net_port", "0", CVAR_SYSTEM | CVAR_INTEGER, "local IP port number" );
-idCVar net_forceLatency( "net_forceLatency", "0", CVAR_SYSTEM | CVAR_INTEGER, "milliseconds latency" );
+idCVar net_forceLatency( "net_forceLatency", "0", CVAR_SYSTEM | CVAR_INTEGER | CVAR_NOCHEAT, "milliseconds latency" ); //to test fast
 idCVar net_forceDrop( "net_forceDrop", "0", CVAR_SYSTEM | CVAR_INTEGER, "percentage packet loss" );
+idCVar net_upnp( "net_upnp", "0", CVAR_SYSTEM | CVAR_BOOL | CVAR_ARCHIVE , "0: UPnP Disabled, 1: UPnP Enabled" );
 
 static SOCKET	ip_socket;
 
@@ -661,6 +664,7 @@ idPort::idPort
 */
 idPort::idPort() {
 	netSocket = 0;
+	upnpFailed = false;
 	memset( &bound_to, 0, sizeof( bound_to ) );
 }
 
@@ -687,6 +691,46 @@ bool idPort::InitForPort( int portNumber ) {
 	}
 
 	udpPorts[ bound_to.port ] = new idUDPLag;
+
+	return true;
+}
+
+/*
+==================
+TryUPnP
+==================
+*/
+bool idPort::TryUPnP( int portNumber ) {
+
+	UPNPNAT nat;
+	nat.init(5,10);
+
+	char szHostName[255];
+	gethostname(szHostName, 255);
+	struct hostent *host_entry;
+	host_entry=gethostbyname(szHostName);
+	char * szLocalIP;
+	szLocalIP = inet_ntoa (*(struct in_addr *)*host_entry->h_addr_list);
+
+	upnpFailed = true;
+
+	if (!szLocalIP) {
+		common->Printf("[UPnP] failed: unabled to get local ip!\n");
+	}
+
+
+	if(!nat.discovery()){
+		common->Printf("[UPnP] failed: discovery error is %s\n",nat.get_last_error());
+		return false;
+	}
+
+	if(!nat.add_port_mapping("H.A.S.T.E.",szLocalIP, portNumber, portNumber,"UDP")){
+		common->Printf("[UPnP] failed: add_port_mapping for %s:%d error is %s\n", szLocalIP, portNumber, nat.get_last_error());
+		return false;
+	}
+
+	common->Printf("[UPnP]: add port mapping  %s:%d successful.\n", szLocalIP, portNumber);
+	upnpFailed = false;
 
 	return true;
 }

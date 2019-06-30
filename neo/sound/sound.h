@@ -60,6 +60,7 @@ static const int	SSF_PLAY_ONCE =			BIT(6);	// never restart if already playing o
 static const int	SSF_UNCLAMPED =			BIT(7);	// don't clamp calculated volumes at 1.0
 static const int	SSF_NO_FLICKER =		BIT(8);	// always return 1.0 for volume queries
 static const int	SSF_NO_DUPS =			BIT(9);	// try not to play the same sound twice in a row
+static const int	SSF_IS_MUSIC =			BIT(10); // This is a music sound shader and his volume should be decided by s_musicvolume (added by Stradex)
 
 // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
 typedef struct {
@@ -227,7 +228,7 @@ public:
 	virtual void			FadeSoundClasses( const int soundClass, const float to, const float over ) = 0;
 
 	// background music
-	virtual	void			PlayShaderDirectly( const char *name, int channel = -1 ) = 0;
+	virtual	void			PlayShaderDirectly( const char *name, int channel = -1, bool isMusic = false ) = 0; //isMusic added by Stradex
 
 	// dumps the current state and begins archiving commands
 	virtual void			StartWritingDemo( idDemoFile *demo ) = 0;

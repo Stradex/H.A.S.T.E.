@@ -1434,7 +1434,7 @@ void idRestoreGame::ReadUsercmd( usercmd_t &usercmd ) {
 	ReadInt( usercmd.gameFrame );
 	ReadInt( usercmd.gameTime );
 	ReadInt( usercmd.duplicateCount );
-	ReadByte( usercmd.buttons );
+	ReadInt( usercmd.buttons );
 	ReadSignedChar( usercmd.forwardmove );
 	ReadSignedChar( usercmd.rightmove );
 	ReadSignedChar( usercmd.upmove );

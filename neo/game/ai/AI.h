@@ -664,6 +664,16 @@ protected:
 	void					Event_CanReachEntity( idEntity *ent );
 	void					Event_CanReachEnemy( void );
 	void					Event_GetReachableEntityPosition( idEntity *ent );
+
+	//Added by Stradex for 3759
+	void					Event_FindAlly( int useFOV );
+	void					Event_FindAllyAI( int useFOV );
+	void					Event_FindAllyInCombat( int useFOV );
+	void					Event_FindAllyInCombatAI( int useFOV );
+	void					Event_SumHealthEnemiesVisible( int useFOV );
+	void					Event_SumHealthAlliesInRange( float range );
+	void					Event_CountEnemiesVisible( int useFOV );
+	
 };
 
 class idCombatNode : public idEntity {

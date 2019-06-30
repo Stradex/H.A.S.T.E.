@@ -638,6 +638,26 @@ void idAFEntity_Base::Think( void ) {
 
 /*
 ================
+idAFEntity_Base::Think
+================
+*/
+void idAFEntity_Base::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
+	if (net_clientUnlagged.GetBool()) {
+		Think();
+		/*
+		RunPhysics();
+		UpdateAnimation();
+		Present();
+		LinkCombat();
+		*/
+	} else {
+		idEntity::ClientPredictionThink(lastFrameCall, firstFrameCall, callsPerFrame );
+	}
+}
+
+
+/*
+================
 idAFEntity_Base::BodyForClipModelId
 ================
 */

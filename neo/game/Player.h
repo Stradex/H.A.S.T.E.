@@ -308,6 +308,8 @@ public:
 	int						tourneyLine;		// client side - our spot in the wait line. 0 means no info.
 	int						spawnedTime;		// when client first enters the game
 
+	bool					carryingFlag;		// is the player carrying the flag?
+
 	idEntityPtr<idEntity>	teleportEntity;		// while being teleported, this is set to the entity we'll use for exit
 	int						teleportKiller;		// entity number of an entity killing us at teleporter exit
 	bool					lastManOver;		// can't respawn in last man anymore (srv only)
@@ -484,7 +486,7 @@ public:
 	void					ShowObjective( const char *obj );
 	void					HideObjective( void );
 
-	virtual void			ClientPredictionThink( void );
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	void					WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const;
@@ -520,6 +522,12 @@ public:
 	virtual	void			DrawPlayerIcons( void );
 	virtual	void			HidePlayerIcons( void );
 	bool					NeedsIcon( void );
+
+	//added CTF by Stradex
+	void					DropFlag( void );	// drop CTF item
+	void					ReturnFlag();
+	virtual void			FreeModelDef( void );
+	//end CTF by Stradex
 
 	bool					SelfSmooth( void );
 	void					SetSelfSmooth( bool b );
@@ -640,7 +648,7 @@ private:
 	void					LookAtKiller( idEntity *inflictor, idEntity *attacker );
 
 	void					StopFiring( void );
-	void					FireWeapon( void );
+	void					FireWeapon( bool isSecAttack = false ); //isSecAttack added by Stradex
 	void					Weapon_Combat( void );
 	void					Weapon_NPC( void );
 	void					Weapon_GUI( void );
@@ -656,11 +664,11 @@ private:
 	void					BobCycle( const idVec3 &pushVelocity );
 	void					UpdateViewAngles( void );
 	void					EvaluateControls( void );
-	void					AdjustSpeed( void );
+	void					AdjustSpeed( float speedMultiplier = 1.0f );
 	void					AdjustBodyAngles( void );
 	void					InitAASLocation( void );
 	void					SetAASLocation( void );
-	void					Move( void );
+	void					Move( float speedMultiplier = 1.0f );
 	void					UpdatePowerUps( void );
 	void					UpdateDeathSkin( bool state_hitch );
 	void					ClearPowerup( int i );

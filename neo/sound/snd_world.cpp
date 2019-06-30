@@ -1496,7 +1496,7 @@ start a music track
   this is called from the main thread
 ===============
 */
-void idSoundWorldLocal::PlayShaderDirectly( const char *shaderName, int channel ) {
+void idSoundWorldLocal::PlayShaderDirectly( const char *shaderName, int channel, bool isMusic) {
 
 	if ( localSound && channel == -1 ) {
 		localSound->StopSound( SCHANNEL_ANY );
@@ -1520,7 +1520,13 @@ void idSoundWorldLocal::PlayShaderDirectly( const char *shaderName, int channel 
 	static idRandom	rnd;
 	float	diversity = rnd.RandomFloat();
 
-	localSound->StartSound( shader, ( channel == -1 ) ? SCHANNEL_ONE : channel , diversity, SSF_GLOBAL );
+	if (isMusic) { //added by Stradex to detect music shader
+		localSound->StartSound( shader, ( channel == -1 ) ? SCHANNEL_ONE : channel , diversity, SSF_GLOBAL | SSF_IS_MUSIC );
+	} else {
+		localSound->StartSound( shader, ( channel == -1 ) ? SCHANNEL_ONE : channel , diversity, SSF_GLOBAL );
+	}
+
+
 
 	// in case we are at the console without a game doing updates, force an update
 	ForegroundUpdate( soundSystemLocal.GetCurrent44kHzTime() );
@@ -1604,6 +1610,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 				   int current44kHz, int numSpeakers, float *finalMixBuffer ) {
 	int j;
 	float volume;
+	float volumeMusic; //added by Stradex
 
 	//
 	// get the sound definition and parameters from the entity
@@ -1639,6 +1646,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	bool omni = ( parms->soundShaderFlags & SSF_OMNIDIRECTIONAL) != 0;
 	bool looping = ( parms->soundShaderFlags & SSF_LOOPING ) != 0;
 	bool global = ( parms->soundShaderFlags & SSF_GLOBAL ) != 0;
+	bool music =  ( parms->soundShaderFlags & SSF_IS_MUSIC ) != 0; //added by Stradex
 	bool noOcclusion = ( parms->soundShaderFlags & SSF_NO_OCCLUSION ) || !idSoundSystemLocal::s_useOcclusion.GetBool();
 
 	// speed goes from 1 to 0.2
@@ -1673,15 +1681,27 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	}
 
 	// global volume scale
-	volume *= soundSystemLocal.dB2Scale( idSoundSystemLocal::s_volume.GetFloat() );
+	volumeMusic = volume; //added by Stradex
+	volume		*= soundSystemLocal.dB2Scale( idSoundSystemLocal::s_volume.GetFloat() );
+	volumeMusic *= soundSystemLocal.dB2Scale( idSoundSystemLocal::s_musicvolume.GetFloat() ); //added by Stradex
 
+	// DG: scaling the volume of *everything* down a bit to prevent some sounds
+	//     (like shotgun shot) being "drowned" when lots of other loud sounds
+	//     (like shotgun impacts on metal) are played at the same time
+	//     I guess this happens because the loud sounds mixed together are too loud so
+	//     OpenAL just makes *everything* quiter or sth like that.
+	//     See also https://github.com/dhewm/dhewm3/issues/179
+	volume *= 0.333f; // (0.333 worked fine, 0.5 didn't)
+	volumeMusic *= 0.333f; //added by Stradex
 
 	// volume fading
 	float	fadeDb = chan->channelFade.FadeDbAt44kHz( current44kHz );
 	volume *= soundSystemLocal.dB2Scale( fadeDb );
+	volumeMusic *= soundSystemLocal.dB2Scale( fadeDb ); //added by Stradex
 
 	fadeDb = soundClassFade[parms->soundClass].FadeDbAt44kHz( current44kHz );
 	volume *= soundSystemLocal.dB2Scale( fadeDb );
+	volumeMusic *= soundSystemLocal.dB2Scale( fadeDb ); //added by Stradex
 
 
 	//
@@ -1739,8 +1759,12 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	if ( volume < SND_EPSILON && chan->lastVolume < SND_EPSILON ) {
 		return;
 	}
-	chan->lastVolume = volume;
 
+	if ( music ) { //added by Stradex to detect a music shader
+		volume = volumeMusic;
+	} 
+
+	chan->lastVolume = volume;
 	//
 	// fetch the sound from the cache as 44kHz, 16 bit samples
 	//

@@ -26,8 +26,31 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+/*
+===========================================================================
+Doom 3 BFG Edition GPL Source Code
+Copyright (C) 1993-2012 id Software LLC, a ZeniMax Media company. 
+This file is part of the Doom 3 BFG Edition GPL Source Code ("Doom 3 BFG Edition Source Code").  
+Doom 3 BFG Edition Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+Doom 3 BFG Edition Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with Doom 3 BFG Edition Source Code.  If not, see <http://www.gnu.org/licenses/>.
+In addition, the Doom 3 BFG Edition Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 BFG Edition Source Code.  If not, please request a copy in writing from id Software at the address below.
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+===========================================================================
+*/
+
 #ifndef __TR_LOCAL_H__
 #define __TR_LOCAL_H__
+
+//From Doom 3 BFG Edition
+#define STENCIL_SHADOW_TEST_VALUE		128
 
 class idScreenRect; // yay for include recursion
 
@@ -69,6 +92,9 @@ public:
 	void		Union( const idScreenRect &rect );
 	bool		Equals( const idScreenRect &rect ) const;
 	bool		IsEmpty() const;
+
+	//From BFG Edition
+	int			GetArea() const { return ( x2 - x1 + 1 ) * ( y2 - y1 + 1 ); }
 };
 
 idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds );
@@ -361,6 +387,9 @@ typedef struct viewEntity_s {
 
 	float				modelMatrix[16];		// local coords to global coords
 	float				modelViewMatrix[16];	// local coords to eye coords
+
+	//idRenderMatrix			mvp; //From doom 3 bfg edition
+
 } viewEntity_t;
 
 
@@ -372,7 +401,9 @@ typedef struct viewDef_s {
 	renderView_t		renderView;
 
 	float				projectionMatrix[16];
+	//idRenderMatrix		projectionRenderMatrix;	// From BFG Edition
 	viewEntity_t		worldSpace;
+
 
 	idRenderWorldLocal *renderWorld;
 
@@ -500,6 +531,8 @@ typedef struct {
 	int		x, y, imageWidth, imageHeight;
 	idImage	*image;
 	int		cubeFace;					// when copying to a cubeMap
+
+	bool	clearColorAfterCopy; // From DOOM 3 BFG Edition
 } copyRenderCommand_t;
 
 
@@ -724,7 +757,7 @@ public:
 	virtual void			EndFrame( int *frontEndMsec, int *backEndMsec );
 	virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref );
 	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false );
-	virtual void			CaptureRenderToImage( const char *imageName );
+	virtual void			CaptureRenderToImage( const char *imageName, bool clearColorAfterCopy = false );
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
 	virtual void			UnCrop();
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
@@ -896,6 +929,8 @@ extern idCVar r_skipDiffuse;			// use black for diffuse
 extern idCVar r_skipOverlays;			// skip overlay surfaces
 extern idCVar r_skipROQ;
 
+extern idCVar r_useStaticLighting;		//Added by Stradex, static lighting to improve performance	
+
 extern idCVar r_ignoreGLErrors;
 
 extern idCVar r_forceLoadImages;		// draw all images to screen after registration
@@ -971,6 +1006,8 @@ extern idCVar r_materialOverride;		// override all materials
 
 extern idCVar r_debugRenderToTexture;
 
+
+
 /*
 ====================================================================
 
@@ -985,6 +1022,9 @@ void	GL_ClearStateDelta( void );
 void	GL_State( int stateVector );
 void	GL_TexEnv( int env );
 void	GL_Cull( int cullType );
+//From Doom 3 BFG EDITION
+void	GL_Clear( bool color, bool depth, bool stencil, byte stencilValue, float r, float g, float b, float a );
+
 
 const int GLS_SRCBLEND_ZERO						= 0x00000001;
 const int GLS_SRCBLEND_ONE						= 0x0;

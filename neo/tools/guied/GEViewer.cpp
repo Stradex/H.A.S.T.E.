@@ -293,6 +293,31 @@ LRESULT CALLBACK rvGEViewer::WndProc ( HWND hwnd, UINT msg, WPARAM wParam, LPARA
 			}
 			break;
 
+		case WM_RBUTTONDOWN:
+			if ( viewer->mInterface )
+			{
+				sysEvent_t event;
+				bool       visuals;
+				ZeroMemory ( &event, sizeof(event) ) ;
+				event.evType = SE_KEY;
+				event.evValue = K_MOUSE2;
+				event.evValue2 = true;
+				viewer->mInterface->HandleEvent ( &event, viewer->mTime, &visuals );
+			}
+			break;
+		case WM_RBUTTONUP:
+			if ( viewer->mInterface )
+			{
+				sysEvent_t event;
+				bool       visuals;
+				ZeroMemory ( &event, sizeof(event) ) ;
+				event.evType = SE_KEY;
+				event.evValue = K_MOUSE2;
+				event.evValue2 = true;
+				viewer->mInterface->HandleEvent ( &event, viewer->mTime, &visuals );
+			}
+			break;
+
 		case WM_KEYDOWN:
 			if ( viewer->mInterface )
 			{

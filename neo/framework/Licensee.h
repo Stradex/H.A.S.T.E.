@@ -34,7 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-#define GAME_NAME						"dhewm 3"		// appears on window titles and errors
+#define GAME_NAME						"H.A.S.T.E."		// appears on window titles and errors
 
 #define ENGINE_VERSION					"dhewm 3 1.4.1"	// printed in console
 

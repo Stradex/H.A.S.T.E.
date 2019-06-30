@@ -1,0 +1,14 @@
+/build*
+*~
+.*.swp
+*.pyc
+.cproject
+.project
+.settings/
+/base.dir
+/d3xp.dir
+/Debug
+/Release
+/Win32
+/dhewm3ded.dir
+/dhewm3.dir

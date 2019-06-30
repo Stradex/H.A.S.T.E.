@@ -1,0 +1,38 @@
+Determining if the include file pthread.h exists failed with the following output:
+Change Dir: D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe" "cmTC_b3654.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=10.0"
+Microsoft (R) Build Engine, versi¢n 4.6.1087.0
+[Microsoft .NET Framework, versi¢n 4.0.30319.42000]
+Copyright (C) Microsoft Corporation 2007. Reservados todos los derechos.
+
+Compilaci¢n iniciada a las 16/04/2019 21:49:42.
+Proyecto "D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\CMakeTmp\cmTC_b3654.vcxproj" en nodo 1 (destinos predeterminados).
+PrepareForBuild:
+  Creando directorio "cmTC_b3654.dir\Debug\".
+  Creando directorio "D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\CMakeTmp\Debug\".
+InitializeBuildStatus:
+  Se crear  "cmTC_b3654.dir\Debug\cmTC_b3654.unsuccessfulbuild" porque se especific¢ "AlwaysCreate".
+ClCompile:
+  c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\x86_64-w64-mingw32\include" /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTC_b3654.dir\Debug\\" /Fd"cmTC_b3654.dir\Debug\vc100.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Compilador de optimizaci¢n de C/C++ de 32 bits de Microsoft (R) versi¢n 16.00.40219.01 para 80x86
+  (C) Microsoft Corporation. Reservados todos los derechos.
+  
+  cl /c /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\x86_64-w64-mingw32\include" /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTC_b3654.dir\Debug\\" /Fd"cmTC_b3654.dir\Debug\vc100.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: No se puede abrir el archivo incluir: 'pthread.h': No such file or directory [D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\CMakeTmp\cmTC_b3654.vcxproj]
+Compilaci¢n del proyecto terminada "D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\CMakeTmp\cmTC_b3654.vcxproj" (destinos predeterminados) -- ERROR.
+
+ERROR al compilar.
+
+"D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\CMakeTmp\cmTC_b3654.vcxproj" (destino predeterminado) (1) ->
+(ClCompile destino) -> 
+  CheckIncludeFile.c(1): fatal error C1083: No se puede abrir el archivo incluir: 'pthread.h': No such file or directory [D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\CMakeFiles\CMakeTmp\cmTC_b3654.vcxproj]
+
+    0 Advertencia(s)
+    1 Errores
+
+Tiempo transcurrido 00:00:00.33
+
+

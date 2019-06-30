@@ -965,7 +965,15 @@ idClip::TestHugeTranslation
 */
 ID_INLINE bool TestHugeTranslation( trace_t &results, const idClipModel *mdl, const idVec3 &start, const idVec3 &end, const idMat3 &trmAxis ) {
 	if ( mdl != NULL && ( end - start ).LengthSqr() > Square( CM_MAX_TRACE_DIST ) ) {
+
+		//Disable this for Doom 3 builds :)
+/*
+#if BUILD_HASTE > 0
 		assert( 0 );
+#endif
+*/
+		//Disabled to avoid crash in CTF
+		//assert( 0 );
 
 		results.fraction = 0.0f;
 		results.endpos = start;

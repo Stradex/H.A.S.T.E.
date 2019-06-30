@@ -327,12 +327,16 @@ void idEntityFx::ApplyFade( const idFXSingleAction& fxaction, idFXLocalAction& l
 
 			gameRenderWorld->UpdateEntityDef( laction.modelDefHandle, &laction.renderEntity );
 		}
+
 		if ( laction.lightDefHandle != -1 ) {
 			laction.renderLight.shaderParms[SHADERPARM_RED] = fxaction.lightColor.x * ( (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct );
 			laction.renderLight.shaderParms[SHADERPARM_GREEN] = fxaction.lightColor.y * ( (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct );
 			laction.renderLight.shaderParms[SHADERPARM_BLUE] = fxaction.lightColor.z * ( (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct );
-
-			gameRenderWorld->UpdateLightDef( laction.lightDefHandle, &laction.renderLight );
+		
+			//Improve simplelight
+			if (!r_simpleLight.GetBool()) {
+				gameRenderWorld->UpdateLightDef( laction.lightDefHandle, &laction.renderLight );
+			}
 		}
 	}
 }
@@ -453,7 +457,9 @@ void idEntityFx::Run( int time ) {
 						idFXLocalAction& laction2 = actions[j];
 						if ( laction2.lightDefHandle != -1 ) {
 							laction2.renderLight.referenceSound = refSound.referenceSound;
-							gameRenderWorld->UpdateLightDef( laction2.lightDefHandle, &laction2.renderLight );
+							if (!r_simpleLight.GetBool()) {
+								gameRenderWorld->UpdateLightDef( laction2.lightDefHandle, &laction2.renderLight );
+							}
 						}
 					}
 				}
@@ -763,7 +769,7 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 idEntityFx::ClientPredictionThink
 =================
 */
-void idEntityFx::ClientPredictionThink( void ) {
+void idEntityFx::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	if ( gameLocal.isNewFrame ) {
 		Run( gameLocal.time );
 	}

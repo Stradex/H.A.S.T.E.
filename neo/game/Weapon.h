@@ -107,7 +107,7 @@ public:
 	void					HideWorldModel( void );
 	void					ShowWorldModel( void );
 	void					OwnerDied( void );
-	void					BeginAttack( void );
+	void					BeginAttack( bool isSecAttack = false  ); //isSecAttack added by Stradex
 	void					EndAttack( void );
 	bool					IsReady( void ) const;
 	bool					IsReloading( void ) const;
@@ -140,10 +140,12 @@ public:
 	ammo_t					GetAmmoType( void ) const;
 	int						AmmoAvailable( void ) const;
 	int						AmmoInClip( void ) const;
+	void					SetAmmoInClip( int newClip); //added by Stradex
 	void					ResetAmmoClip( void );
 	int						ClipSize( void ) const;
 	int						LowAmmo( void ) const;
 	int						AmmoRequired( void ) const;
+	int						AltAmmoRequired( void ) const; //added by Stradex
 
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
@@ -156,15 +158,17 @@ public:
 	};
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
-	virtual void			ClientPredictionThink( void );
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 
 private:
 	// script control
 	idScriptBool			WEAPON_ATTACK;
+	idScriptBool			WEAPON_SECATTACK; //added by Stradex
 	idScriptBool			WEAPON_RELOAD;
 	idScriptBool			WEAPON_NETRELOAD;
 	idScriptBool			WEAPON_NETENDRELOAD;
 	idScriptBool			WEAPON_NETFIRING;
+	idScriptBool			WEAPON_NETALTFIRING; //added by Stradex
 	idScriptBool			WEAPON_RAISEWEAPON;
 	idScriptBool			WEAPON_LOWERWEAPON;
 	weaponStatus_t			status;
@@ -177,6 +181,7 @@ private:
 
 	// precreated projectile
 	idEntity				*projectileEnt;
+	idEntity				*altProjectileEnt; //added by Stradex
 
 	idPlayer *				owner;
 	idEntityPtr<idAnimatedEntity>	worldModel;
@@ -214,6 +219,7 @@ private:
 	const idDeclEntityDef *	weaponDef;
 	const idDeclEntityDef *	meleeDef;
 	idDict					projectileDict;
+	idDict					altProjectileDict; //added by Stradex
 	float					meleeDistance;
 	idStr					meleeDefName;
 	idDict					brassDict;
@@ -251,6 +257,7 @@ private:
 	// ammo management
 	ammo_t					ammoType;
 	int						ammoRequired;		// amount of ammo to use each shot.  0 means weapon doesn't need ammo.
+	int						altAmmoRequired;	// Added by Stradex, ammount of ammo the secondary fire requires
 	int						clipSize;			// 0 means no reload
 	int						ammoClip;
 	int						lowAmmo;			// if ammo in clip hits this threshold, snd_
@@ -258,6 +265,7 @@ private:
 												// a projectile is launched
 	// mp client
 	bool					isFiring;
+	bool					isAltFiring;
 
 	// zoom
 	int						zoomFov;			// variable zoom fov per weapon
@@ -330,6 +338,7 @@ private:
 	void					Event_AddToClip( int amount );
 	void					Event_AmmoInClip( void );
 	void					Event_AmmoAvailable( void );
+	void					Event_AltAmmoAvailable( void ); //added by Stradex
 	void					Event_TotalAmmoCount( void );
 	void					Event_ClipSize( void );
 	void					Event_PlayAnim( int channel, const char *animname );
@@ -345,6 +354,8 @@ private:
 	void					Event_SetLightParms( float parm0, float parm1, float parm2, float parm3 );
 	void					Event_LaunchProjectiles( int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower );
 	void					Event_CreateProjectile( void );
+	void					Event_LaunchAltProjectiles( int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower); //add by Stradex
+	void					Event_CreateAltProjectile( void ); //add by Stradex
 	void					Event_EjectBrass( void );
 	void					Event_Melee( void );
 	void					Event_GetWorldModel( void );

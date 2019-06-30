@@ -124,7 +124,7 @@ public:
 	void					BarrelThink( void );
 	virtual void			Think( void );
 	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis );
-	virtual void			ClientPredictionThink( void );
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 
 private:
 	float					radius;					// radius of barrel

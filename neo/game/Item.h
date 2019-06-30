@@ -61,10 +61,14 @@ public:
 		EVENT_PICKUP = idEntity::EVENT_MAXEVENTS,
 		EVENT_RESPAWN,
 		EVENT_RESPAWNFX,
+		EVENT_TAKEFLAG, //ADDED FOR CTF
+		EVENT_DROPFLAG,  //ADDED FOR CTF
+		EVENT_FLAGRETURN,  //ADDED FOR CTF
+		EVENT_FLAGCAPTURE,  //ADDED FOR CTF
 		EVENT_MAXEVENTS
 	};
 
-	virtual void			ClientPredictionThink( void );
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
 	// networking
@@ -169,17 +173,88 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
-private:
+//private: //commented for CTF
+protected: 
 	idPhysics_RigidBody		physicsObj;
 	idClipModel *			trigger;
 	const idDeclParticle *	smoke;
 	int						smokeTime;
+	
+	
+	int						nextSoundTime; //Added for CTF
+	bool					repeatSmoke;	// never stop updating the particles (Added for CTF)
 
 	void					Gib( const idVec3 &dir, const char *damageDefName );
 
 	void					Event_DropToFloor( void );
 	void					Event_Gib( const char *damageDefName );
 };
+
+//CLASS FOR CTF
+
+class idItemTeam : public idMoveableItem {
+public:
+	CLASS_PROTOTYPE( idItemTeam );
+
+							idItemTeam();
+	virtual					~idItemTeam();
+
+	void                    Spawn();
+	virtual bool			Pickup( idPlayer *player );
+	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+	virtual void			Think(void );
+
+	void					Drop( bool death = false );	// was the drop caused by death of carrier?
+	void					Return( idPlayer * player = NULL );
+	void					Capture( void );
+
+	virtual void			FreeLightDef( void );
+	virtual void			Present( void );
+
+	// networking
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+
+public:
+	int                     team;
+	// TODO : turn this into a state :
+	bool					carried;			// is it beeing carried by a player?
+	bool					dropped;			// was it dropped?
+
+private:
+	idVec3					returnOrigin;
+	idMat3					returnAxis;
+	int						lastDrop;
+
+	const idDeclSkin *		skinDefault;
+	const idDeclSkin *		skinCarried;
+
+	const function_t *		scriptTaken;
+	const function_t *		scriptDropped;
+	const function_t *		scriptReturned;
+	const function_t *		scriptCaptured;
+
+	renderLight_t           itemGlow;           // Used by flags when they are picked up
+	int                     itemGlowHandle;
+
+	int						lastNuggetDrop;
+	const char *			nuggetName;
+
+private:
+
+	void					Event_TakeFlag( idPlayer * player );
+	void					Event_DropFlag( bool death );
+	void					Event_FlagReturn( idPlayer * player = NULL );
+	void					Event_FlagCapture( void );
+
+	void					PrivateReturn( void );
+	function_t *			LoadScript( const char * script );
+
+	void					SpawnNugget( idVec3 pos );
+	void                    UpdateGuis( void );
+};
+
+//END CLASS FOR CTF
 
 class idMoveablePDAItem : public idMoveableItem {
 public:

@@ -37,6 +37,8 @@ extern idCVar	g_cinematic;
 extern idCVar	g_cinematicMaxSkipTime;
 
 extern idCVar	r_aspectRatio;
+extern idCVar	r_simpleLight; //added by Stradex
+extern idCVar	r_simpleLightIntensity; //added by Stradex
 
 extern idCVar	g_monsters;
 extern idCVar	g_decals;
@@ -62,7 +64,6 @@ extern idCVar	g_debugTriggers;
 extern idCVar	g_debugCinematic;
 extern idCVar	g_stopTime;
 extern idCVar	g_armorProtection;
-extern idCVar	g_armorProtectionMP;
 extern idCVar	g_damageScale;
 extern idCVar	g_useDynamicProtection;
 extern idCVar	g_healthTakeTime;
@@ -198,6 +199,7 @@ extern idCVar	pm_thirdPerson;
 extern idCVar	pm_thirdPersonDeath;
 extern idCVar	pm_modelView;
 extern idCVar	pm_airTics;
+extern idCVar	pm_useBobDamage; //Added by Stradex (pm_useBobDamage)
 
 extern idCVar	g_showPlayerShadow;
 extern idCVar	g_showHud;
@@ -246,9 +248,27 @@ extern idCVar	si_fragLimit;
 extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
+extern idCVar	si_alwaysPickup;
+
+//added by Stradex for D3XP CTF
+extern idCVar si_flagDropTimeLimit;
+extern idCVar si_midnight;
+
+extern idCVar g_flagAttachJoint;
+extern idCVar g_flagAttachOffsetX;
+extern idCVar g_flagAttachOffsetY;
+extern idCVar g_flagAttachOffsetZ;
+extern idCVar g_flagAttachAngleX;
+extern idCVar g_flagAttachAngleY;
+extern idCVar g_flagAttachAngleZ;
+
+extern idCVar g_CTFArrows;
+
+//end by Stradex for D3XP CTF
 
 extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
+extern idCVar	net_clientUnlagged; //added by Stradex
 
 extern const char *si_gameTypeArgs[];
 

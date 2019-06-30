@@ -334,7 +334,6 @@ bool idUserInterfaceLocal::InitFromFile( const char *qpath, bool rebuild, bool c
 const char *idUserInterfaceLocal::HandleEvent( const sysEvent_t *event, int _time, bool *updateVisuals ) {
 
 	time = _time;
-
 	if ( bindHandler && event->evType == SE_KEY && event->evValue2 == 1 ) {
 		const char *ret = bindHandler->HandleEvent( event, updateVisuals );
 		bindHandler = NULL;

@@ -767,7 +767,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 						case 4:
 							// 512 and above..
 							cvarSystem->SetCVarInteger( "net_serverMaxClientRate", 14000 );
-							maxclients = 4;
+							maxclients = 8; //edited by Stradex to allow up to 8 players without warning via Listen Server in-game
 							break;
 					}
 					if ( n_clients > maxclients ) {
@@ -779,7 +779,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 				}
 			}
 
-			if ( !dedicated && !cvarSystem->GetCVarBool( "net_LANServer" ) && cvarSystem->GetCVarInteger("si_maxPlayers") > 4 ) {
+			if ( !dedicated && !cvarSystem->GetCVarBool( "net_LANServer" ) && cvarSystem->GetCVarInteger("si_maxPlayers") > 8 ) { //original was cvarSystem->GetCVarInteger("si_maxPlayers") > 4
 				// "Dedicated server mode is recommended for internet servers with more than 4 players. Continue in listen mode?"
 				if ( !MessageBox( MSG_YESNO, common->GetLanguageDict()->GetString ( "#str_00100625" ), common->GetLanguageDict()->GetString ( "#str_00100626" ), true, "yes" )[ 0 ] ) {
 					continue;
@@ -855,7 +855,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 		if ( !idStr::Icmp( cmd, "music" ) ) {
 			if ( args.Argc() - icmd >= 1 ) {
 				idStr snd = args.Argv( icmd++ );
-				menuSoundWorld->PlayShaderDirectly( snd, 2 );
+				menuSoundWorld->PlayShaderDirectly( snd, 2, true ); //added parm true so this is really a music shader now. Stradex
 			}
 			continue;
 		}

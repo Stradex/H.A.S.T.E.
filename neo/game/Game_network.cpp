@@ -27,11 +27,13 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 #include "sys/platform.h"
+#include "idlib/Timer.h" //added by stradex
 #include "framework/FileSystem.h"
 #include "framework/async/NetworkSystem.h"
 #include "renderer/RenderSystem.h"
 
 #include "gamesys/SysCmds.h"
+#include "SmokeParticles.h" //added by stradex
 #include "Entity.h"
 #include "Player.h"
 
@@ -59,6 +61,7 @@ idCVar net_clientSmoothing( "net_clientSmoothing", "0.8", CVAR_GAME | CVAR_FLOAT
 idCVar net_clientSelfSmoothing( "net_clientSelfSmoothing", "0.6", CVAR_GAME | CVAR_FLOAT, "smooth self position if network causes prediction error.", 0.0f, 0.95f );
 idCVar net_clientMaxPrediction( "net_clientMaxPrediction", "1000", CVAR_SYSTEM | CVAR_INTEGER | CVAR_NOCHEAT, "maximum number of milliseconds a client can predict ahead of server." );
 idCVar net_clientLagOMeter( "net_clientLagOMeter", "1", CVAR_GAME | CVAR_BOOL | CVAR_NOCHEAT | CVAR_ARCHIVE, "draw prediction graph" );
+idCVar net_clientUnlagged( "net_clientUnlagged", "1", CVAR_GAME | CVAR_BOOL | CVAR_NOCHEAT | CVAR_ARCHIVE, "Sorry <ARG>" );  //added by Stradex
 
 /*
 ================
@@ -489,6 +492,8 @@ bool idGameLocal::ApplySnapshot( int clientNum, int sequence ) {
 	snapshot_t *snapshot, *lastSnapshot, *nextSnapshot;
 	entityState_t *state;
 
+	//NETCODE to be edited by Stradex
+
 	FreeSnapshotsOlderThanSequence( clientNum, sequence );
 
 	for ( lastSnapshot = NULL, snapshot = clientSnapshots[clientNum]; snapshot; snapshot = nextSnapshot ) {
@@ -500,6 +505,7 @@ bool idGameLocal::ApplySnapshot( int clientNum, int sequence ) {
 				}
 				clientEntityStates[clientNum][state->entityNumber] = state;
 			}
+			//mmm
 			memcpy( clientPVS[clientNum], snapshot->pvs, sizeof( snapshot->pvs ) );
 			if ( lastSnapshot ) {
 				lastSnapshot->next = nextSnapshot;
@@ -880,7 +886,7 @@ void idGameLocal::ClientShowSnapshot( int clientNum ) const {
 	if ( !net_clientShowSnapshot.GetInteger() ) {
 		return;
 	}
-
+	
 	player = static_cast<idPlayer *>( entities[clientNum] );
 	if ( !player ) {
 		return;
@@ -961,6 +967,7 @@ idGameLocal::ClientReadSnapshot
 ================
 */
 void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg ) {
+	//Client MP frame
 	int				i, typeNum, entityDefNumber, numBitsRead;
 	idTypeInfo		*typeInfo;
 	idEntity		*ent;
@@ -1119,7 +1126,6 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 	// don't use PVSAreas for networking - PVSAreas depends on animations (and md5 bounds), which are not synchronized
 	numSourceAreas = gameRenderWorld->BoundsInAreas( spectated->GetPlayerPhysics()->GetAbsBounds(), sourceAreas, idEntity::MAX_PVS_AREAS );
 	pvsHandle = gameLocal.pvs.SetupCurrentPVS( sourceAreas, numSourceAreas, PVS_NORMAL );
-
 	// read the PVS from the snapshot
 #if ASYNC_WRITE_PVS
 	int serverPVS[idEntity::MAX_PVS_AREAS];
@@ -1166,7 +1172,13 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 					common->DWarning( "client thinks map entity 0x%x (%s) is stale, sequence 0x%x", ent->entityNumber, ent->name.c_str(), sequence );
 				} else {
 					ent->FreeModelDef();
-					ent->UpdateVisuals();
+
+					// possible fix for left over lights on CTF flag
+					ent->FreeLightDef(); //added by Stradex for CTF
+
+					if (!net_clientUnlagged.GetBool()){ //added by Stradex to test
+						ent->UpdateVisuals();
+					}
 					ent->GetPhysics()->UnlinkClip();
 				}
 			}
@@ -1468,12 +1480,19 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 idGameLocal::ClientPrediction
 ================
 */
-gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame ) {
+gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame, bool firstCallThisFrame ) {
 	idEntity *ent;
 	idPlayer *player;
 	gameReturn_t ret;
 
 	ret.sessionCommand[ 0 ] = '\0';
+	static int currentFrameCall = 0;
+
+	if (firstCallThisFrame) {
+		currentFrameCall = 0;
+	} 
+
+	currentFrameCall++; //starts from 1, not 0
 
 	player = static_cast<idPlayer *>( entities[clientNum] );
 	if ( !player ) {
@@ -1490,10 +1509,12 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 	InitLocalClient( clientNum );
 
 	// update the game time
-	framenum++;
-	previousTime = time;
-	time += msec;
-
+	//if (!net_clientUnlagged.GetBool() || firstCallThisFrame )
+	//{
+		framenum++;
+		previousTime = time;
+		time += msec;
+	//}
 	// update the real client time and the new frame flag
 	if ( time > realClientTime ) {
 		realClientTime = time;
@@ -1502,13 +1523,36 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 		isNewFrame = false;
 	}
 
+	if (net_clientUnlagged.GetBool())
+	{
+		player->isLagged = false;
+	}
 	// set the user commands for this frame
 	memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
 
 	// run prediction on all entities from the last snapshot
-	for( ent = snapshotEntities.Next(); ent != NULL; ent = ent->snapshotNode.Next() ) {
-		ent->thinkFlags |= TH_PHYSICS;
-		ent->ClientPredictionThink();
+	if (net_clientUnlagged.GetBool()) //UNLAGGED ON
+	{
+		if (lastPredictFrame)
+		{
+			for( ent = snapshotEntities.Next(); ent != NULL; ent = ent->snapshotNode.Next() ) {
+				//ent->thinkFlags |= TH_PHYSICS; 
+				if ( ent->thinkFlags != 0 ) { //testing
+					ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
+				}
+			}
+		} else {
+			//player always should do client prediction for all tics
+			player->thinkFlags |= TH_PHYSICS;
+			player->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
+		}
+	} else {  //UNLAGGED OFF
+		for( ent = snapshotEntities.Next(); ent != NULL; ent = ent->snapshotNode.Next() ) {
+			//ent->thinkFlags |= TH_PHYSICS;
+			if ( ent->thinkFlags != 0 ) { //testing
+				ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
+			}
+		}
 	}
 
 	// service any pending events
@@ -1523,6 +1567,8 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 	if ( sessionCommand.Length() ) {
 		strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
 	}
+
+	//return ret;
 	return ret;
 }
 

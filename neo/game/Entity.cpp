@@ -355,6 +355,10 @@ void idGameEdit::ParseSpawnArgsToRefSound( const idDict *args, refSound_t *refSo
 	if ( args->GetBool( "s_unclamped" ) ) {
 		refSound->parms.soundShaderFlags |= SSF_UNCLAMPED;
 	}
+
+	if ( args->GetBool( "s_music" ) ) { //Added by Stradex
+		refSound->parms.soundShaderFlags |= SSF_IS_MUSIC;
+	}
 	refSound->parms.soundClass = args->GetInt( "s_soundClass" );
 
 	temp = args->GetString( "s_shader" );
@@ -4582,7 +4586,7 @@ void idEntity::Event_SetNeverDormant( int enable ) {
 idEntity::ClientPredictionThink
 ================
 */
-void idEntity::ClientPredictionThink( void ) {
+void idEntity::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	RunPhysics();
 	Present();
 }
@@ -4951,7 +4955,7 @@ void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
 idAnimatedEntity::ClientPredictionThink
 ================
 */
-void idAnimatedEntity::ClientPredictionThink( void ) {
+void idAnimatedEntity::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	RunPhysics();
 	UpdateAnimation();
 	Present();

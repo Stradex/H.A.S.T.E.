@@ -288,12 +288,12 @@ public:
 	// what will be drawn for a rendered scene.  Most update work is defered
 	// until it is determined that it is actually needed for a given view.
 	virtual	qhandle_t		AddEntityDef( const renderEntity_t *re ) = 0;
-	virtual	void			UpdateEntityDef( qhandle_t entityHandle, const renderEntity_t *re ) = 0;
+	virtual	void			UpdateEntityDef( qhandle_t entityHandle, const renderEntity_t *re) = 0;
 	virtual	void			FreeEntityDef( qhandle_t entityHandle ) = 0;
 	virtual const renderEntity_t *GetRenderEntity( qhandle_t entityHandle ) const = 0;
 
 	virtual	qhandle_t		AddLightDef( const renderLight_t *rlight ) = 0;
-	virtual	void			UpdateLightDef( qhandle_t lightHandle, const renderLight_t *rlight ) = 0;
+	virtual	void			UpdateLightDef( qhandle_t lightHandle, const renderLight_t *rlight, bool forceUpdate = false) = 0;
 	virtual	void			FreeLightDef( qhandle_t lightHandle ) = 0;
 	virtual const renderLight_t *GetRenderLight( qhandle_t lightHandle ) const = 0;
 

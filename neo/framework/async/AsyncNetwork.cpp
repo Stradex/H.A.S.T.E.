@@ -65,12 +65,15 @@ idCVar				idAsyncNetwork::master1( "net_master1", "", CVAR_SYSTEM | CVAR_ARCHIVE
 idCVar				idAsyncNetwork::master2( "net_master2", "", CVAR_SYSTEM | CVAR_ARCHIVE, "2nd master server address" );
 idCVar				idAsyncNetwork::master3( "net_master3", "", CVAR_SYSTEM | CVAR_ARCHIVE, "3rd master server address" );
 idCVar				idAsyncNetwork::master4( "net_master4", "", CVAR_SYSTEM | CVAR_ARCHIVE, "4th master server address" );
+idCVar				idAsyncNetwork::webmaster( "net_webmaster", "http://www.stradexengine.com/masterserver/", CVAR_SYSTEM | CVAR_ARCHIVE, "Web based master server" ); //added by Stradex to set web based master server
 idCVar				idAsyncNetwork::LANServer( "net_LANServer", "0", CVAR_SYSTEM | CVAR_BOOL | CVAR_NOCHEAT, "config LAN games only - affects clients and servers" );
 idCVar				idAsyncNetwork::serverReloadEngine( "net_serverReloadEngine", "0", CVAR_SYSTEM | CVAR_INTEGER | CVAR_NOCHEAT, "perform a full reload on next map restart (including flushing referenced pak files) - decreased if > 0" );
 idCVar				idAsyncNetwork::idleServer( "si_idleServer", "0", CVAR_SYSTEM | CVAR_BOOL | CVAR_INIT | CVAR_SERVERINFO, "game clients are idle" );
 idCVar				idAsyncNetwork::clientDownload( "net_clientDownload", "1", CVAR_SYSTEM | CVAR_INTEGER | CVAR_ARCHIVE, "client pk4 downloads policy: 0 - never, 1 - ask, 2 - always (will still prompt for binary code)" );
+idCVar				idAsyncNetwork::serverNetHz( "net_serverNetHz", "60", CVAR_NETWORKSYNC | CVAR_INTEGER | CVAR_ARCHIVE, "Maximum framerate netcode commands are sent to the server" );
 
 int					idAsyncNetwork::realTime;
+int					idAsyncNetwork::netTimeResidual;
 master_t			idAsyncNetwork::masters[ MAX_MASTER_SERVERS ];
 
 /*
@@ -89,6 +92,7 @@ idAsyncNetwork::Init
 void idAsyncNetwork::Init( void ) {
 
 	realTime = 0;
+	netTimeResidual = 0; //added by Stradex
 
 	memset( masters, 0, sizeof( masters ) );
 	masters[0].var = &master0;
@@ -109,6 +113,10 @@ void idAsyncNetwork::Init( void ) {
 	cmdSystem->AddCommand( "kick", Kick_f, CMD_FL_SYSTEM, "kick a client by connection number" );
 	cmdSystem->AddCommand( "checkNewVersion", CheckNewVersion_f, CMD_FL_SYSTEM, "check if a new version of the game is available" );
 	cmdSystem->AddCommand( "updateUI", UpdateUI_f, CMD_FL_SYSTEM, "internal - cause a sync down of game-modified userinfo" );
+	//just for testing
+	cmdSystem->AddCommand( "getNewServersList", GetNewServersList_f, CMD_FL_SYSTEM, "lists scanned servers using stradex mastersservers" );
+
+	strcpy(htmlMasterServer.masterUrl, idAsyncNetwork::webmaster.GetString()); //using CVAR master server
 }
 
 /*
@@ -178,6 +186,7 @@ void idAsyncNetwork::RunFrame( void ) {
 		Sys_GrabMouseCursor( true );
 		usercmdGen->InhibitUsercmd( INHIBIT_ASYNC, false );
 	}
+
 	client.RunFrame();
 	server.RunFrame();
 }
@@ -190,7 +199,7 @@ idAsyncNetwork::WriteUserCmdDelta
 void idAsyncNetwork::WriteUserCmdDelta( idBitMsg &msg, const usercmd_t &cmd, const usercmd_t *base ) {
 	if ( base ) {
 		msg.WriteDeltaIntCounter( base->gameTime, cmd.gameTime );
-		msg.WriteDeltaByte( base->buttons, cmd.buttons );
+		msg.WriteDeltaInt( base->buttons, cmd.buttons );	//edited by Stradex, original was Byte
 		msg.WriteDeltaShort( base->mx, cmd.mx );
 		msg.WriteDeltaShort( base->my, cmd.my );
 		msg.WriteDeltaChar( base->forwardmove, cmd.forwardmove );
@@ -203,7 +212,7 @@ void idAsyncNetwork::WriteUserCmdDelta( idBitMsg &msg, const usercmd_t &cmd, con
 	}
 
 	msg.WriteInt( cmd.gameTime );
-	msg.WriteByte( cmd.buttons );
+	msg.WriteInt( cmd.buttons ); //edited by Stradex, original was Byte
 	msg.WriteShort( cmd.mx );
 	msg.WriteShort( cmd.my );
 	msg.WriteChar( cmd.forwardmove );
@@ -224,7 +233,7 @@ void idAsyncNetwork::ReadUserCmdDelta( const idBitMsg &msg, usercmd_t &cmd, cons
 
 	if ( base ) {
 		cmd.gameTime = msg.ReadDeltaIntCounter( base->gameTime );
-		cmd.buttons = msg.ReadDeltaByte( base->buttons );
+		cmd.buttons = msg.ReadDeltaInt( base->buttons ); // Edited by Stradex, original was Byte
 		cmd.mx = msg.ReadDeltaShort( base->mx );
 		cmd.my = msg.ReadDeltaShort( base->my );
 		cmd.forwardmove = msg.ReadDeltaChar( base->forwardmove );
@@ -237,7 +246,7 @@ void idAsyncNetwork::ReadUserCmdDelta( const idBitMsg &msg, usercmd_t &cmd, cons
 	}
 
 	cmd.gameTime = msg.ReadInt();
-	cmd.buttons = msg.ReadByte();
+	cmd.buttons = msg.ReadInt(); //Edited by Stradex, original was Byte
 	cmd.mx = msg.ReadShort();
 	cmd.my = msg.ReadShort();
 	cmd.forwardmove = msg.ReadChar();
@@ -510,4 +519,15 @@ void idAsyncNetwork::BuildInvalidKeyMsg( idStr &msg, bool valid[ 2 ] ) {
 	}
 	msg += "\n";
 	msg += common->GetLanguageDict()->GetString( "#str_04304" );
+}
+
+//Added by Stradex
+/*
+==================
+idAsyncNetwork::ListServersNew_f
+==================
+*/
+void idAsyncNetwork::GetNewServersList_f( const idCmdArgs &args ) {
+	client.ClearServers();
+	GetNETServers();
 }

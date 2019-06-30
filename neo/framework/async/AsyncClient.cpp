@@ -48,6 +48,7 @@ idAsyncClient::idAsyncClient
 idAsyncClient::idAsyncClient( void ) {
 	guiNetMenu = NULL;
 	updateState = UPDATE_NONE;
+
 	Clear();
 }
 
@@ -73,6 +74,7 @@ void idAsyncClient::Clear( void ) {
 	lastEmptyTime = -9999;
 	lastPacketTime = -9999;
 	lastSnapshotTime = -9999;
+	nextGetServersCall = 0;
 	snapshotGameFrame = 0;
 	snapshotGameTime = 0;
 	snapshotSequence = 0;
@@ -91,6 +93,9 @@ void idAsyncClient::Clear( void ) {
 	memset( dlChecksums, 0, sizeof( int ) * MAX_PURE_PAKS );
 	currentDlSize = 0;
 	totalDlSize = 0;
+
+	//added by Stradex
+	memset( &getServersThread, 0, sizeof( getServersThread ) );
 }
 
 /*
@@ -99,6 +104,12 @@ idAsyncClient::Shutdown
 ==================
 */
 void idAsyncClient::Shutdown( void ) {
+	//added by Stradex
+	if ( getServersThread.threadHandle ) {
+		Sys_TriggerEvent();
+		Sys_DestroyThread(getServersThread);
+	}
+
 	guiNetMenu = NULL;
 	updateMSG.Clear();
 	updateURL.Clear();
@@ -116,6 +127,7 @@ idAsyncClient::InitPort
 bool idAsyncClient::InitPort( void ) {
 	// if this is the first time we connect to a server, open the UDP port
 	if ( !clientPort.GetPort() ) {
+
 		if ( !clientPort.InitForPort( PORT_ANY ) ) {
 			common->Printf( "Couldn't open client network port.\n" );
 			return false;
@@ -304,7 +316,6 @@ void idAsyncClient::GetServerInfo( const netadr_t adr ) {
 	if ( !InitPort() ) {
 		return;
 	}
-
 	msg.Init( msgBuf, sizeof( msgBuf ) );
 	msg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
 	msg.WriteString( "getInfo" );
@@ -382,6 +393,14 @@ idAsyncClient::GetNETServers
 ==================
 */
 void idAsyncClient::GetNETServers( void ) {
+
+	#if HTMLMASTERSERVER_ENABLED > 0
+		//FIXME: Dirty trick to avoid crash by stradex
+		if (clientTime < nextGetServersCall) {
+			return;
+		}
+	#endif
+
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 
@@ -389,9 +408,31 @@ void idAsyncClient::GetNETServers( void ) {
 
 	// NetScan only clears GUI and results, not the stored list
 	serverList.Clear( );
+
+	#if HTMLMASTERSERVER_ENABLED > 0
+		/*
+		htmlMasterServer.refreshServerList();
+		int i=0;
+		for (i=0; i < htmlMasterServer.getServerCount(); i++) {
+			serverList.AddServer(serverList.Num(), static_cast<const char*>(htmlMasterServer.publicServers[i].address));
+		}*/
+
+		//FIXME: If called fast, can lead to a crash
+
+		nextGetServersCall = clientTime + MASTERSERVER_TIMEOUT*1000; //allow to call only every 30 seconds
+
+		if ( getServersThread.threadHandle ) {
+			StopGetServersThread();
+		}
+		StartGetServersThread();
+
+
+	#endif
+
 	serverList.NetScan( );
 	serverList.StartServers( true );
 
+	#if HTMLMASTERSERVER_ENABLED < 1
 	msg.Init( msgBuf, sizeof( msgBuf ) );
 	msg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
 	msg.WriteString( "getServers" );
@@ -401,10 +442,14 @@ void idAsyncClient::GetNETServers( void ) {
 	msg.WriteBits( cvarSystem->GetCVarInteger( "gui_filter_players" ), 2 );
 	msg.WriteBits( cvarSystem->GetCVarInteger( "gui_filter_gameType" ), 2 );
 
+
+
 	netadr_t adr;
 	if ( idAsyncNetwork::GetMasterAddress( 0, adr ) ) {
 		clientPort.SendPacket( adr, msg.GetData(), msg.GetSize() );
 	}
+	#endif
+
 }
 
 /*
@@ -805,9 +850,11 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 			aheadOfServer = msg.ReadShort();
 
 			// read the game snapshot
+			// This runs client render and game logic
 			game->ClientReadSnapshot( clientNum, snapshotSequence, snapshotGameFrame, snapshotGameTime, numDuplicatedUsercmds, aheadOfServer, msg );
 
 			// read user commands of other clients from the snapshot
+			//USERCMD Should be the only thing netsync
 			for ( last = NULL, i = msg.ReadByte(); i < MAX_ASYNC_CLIENTS; i = msg.ReadByte() ) {
 				numUsercmds = msg.ReadByte();
 				if ( numUsercmds > MAX_USERCMD_RELAY ) {
@@ -1015,6 +1062,7 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 			case SERVER_RELIABLE_MESSAGE_APPLYSNAPSHOT: {
 				int sequence;
 				sequence = msg.ReadInt();
+				//NETCODE Client reads server spanshot to update logic and render world. To be edited by Stradex
 				if ( !game->ClientApplySnapshot( clientNum, sequence ) ) {
 					session->Stop();
 					common->Error( "couldn't apply snapshot %d", sequence );
@@ -1055,6 +1103,7 @@ idAsyncClient::ProcessChallengeResponseMessage
 */
 void idAsyncClient::ProcessChallengeResponseMessage( const netadr_t from, const idBitMsg &msg ) {
 	char serverGame[ MAX_STRING_CHARS ], serverGameBase[ MAX_STRING_CHARS ];
+	short int serverGameHz;
 
 	if ( clientState != CS_CHALLENGING ) {
 		common->Printf( "Unwanted challenge response received.\n" );
@@ -1063,6 +1112,7 @@ void idAsyncClient::ProcessChallengeResponseMessage( const netadr_t from, const 
 
 	serverChallenge = msg.ReadInt();
 	serverId = msg.ReadShort();
+	serverGameHz = msg.ReadShort(); //added by Stradex to update client hz. This is total shit, I need a better workaround for fucks sake.
 	msg.ReadString( serverGameBase, MAX_STRING_CHARS );
 	msg.ReadString( serverGame, MAX_STRING_CHARS );
 
@@ -1080,7 +1130,18 @@ void idAsyncClient::ProcessChallengeResponseMessage( const netadr_t from, const 
 		}
 		common->Printf( "The server is running a different mod (%s-%s). Restarting..\n", serverGameBase, serverGame );
 		cvarSystem->SetCVarString( "fs_game_base", serverGameBase );
+		cvarSystem->SetCVarInteger("com_gameHz", serverGameHz); //Lets update com_Gamehz just to gain some time
 		cvarSystem->SetCVarString( "fs_game", serverGame );
+		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "reloadEngine" );
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "reconnect\n" );
+		return;
+	}
+
+	//added by Stradex to update client fps before joining the game
+
+	if (serverGameHz != com_realGameHz) { //we need to reload fps
+		common->Printf( "Server is running with different com_gameHz (%d). Restarting..\n", serverGameHz );
+		cvarSystem->SetCVarInteger("com_gameHz", serverGameHz);
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "reloadEngine" );
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "reconnect\n" );
 		return;
@@ -1515,27 +1576,33 @@ void idAsyncClient::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 	// info response from a server, are accepted from any source
 	if ( idStr::Icmp( string, "infoResponse" ) == 0 ) {
 		ProcessInfoResponseMessage( from, msg );
+		common->Printf( "Client: infoResponse\n");
 		return;
 	}
 
+	#if HTMLMASTERSERVER_ENABLED < 1
 	// from master server:
 	if ( Sys_CompareNetAdrBase( from, idAsyncNetwork::GetMasterAddress( ) ) ) {
 		// server list
 		if ( idStr::Icmp( string, "servers" ) == 0 ) {
 			ProcessServersListMessage( from, msg );
+			common->Printf( "Client: listServers\n");
 			return;
 		}
 
 		if ( idStr::Icmp( string, "authKey" ) == 0 ) {
 			ProcessAuthKeyMessage( from, msg );
+			common->Printf( "Client: authKey\n");
 			return;
 		}
 
 		if ( idStr::Icmp( string, "newVersion" ) == 0 ) {
 			ProcessVersionMessage( from, msg );
+			common->Printf( "Client: newVersion\n");
 			return;
 		}
 	}
+	#endif
 
 	// ignore if not from the current/last server
 	if ( !Sys_CompareNetAdrBase( from, serverAddress ) && ( lastRconTime + 10000 < realTime || !Sys_CompareNetAdrBase( from, lastRconAddress ) ) ) {
@@ -1546,12 +1613,14 @@ void idAsyncClient::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 	// challenge response from the server we are connecting to
 	if ( idStr::Icmp( string, "challengeResponse" ) == 0 ) {
 		ProcessChallengeResponseMessage( from, msg );
+		common->Printf( "Client: challengeResponse\n");
 		return;
 	}
 
 	// connect response from the server we are connecting to
 	if ( idStr::Icmp( string, "connectResponse" ) == 0 ) {
 		ProcessConnectResponseMessage( from, msg );
+		common->Printf( "Client: connectResponse\n");
 		return;
 	}
 
@@ -1571,6 +1640,7 @@ void idAsyncClient::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 	// server pure list
 	if ( idStr::Icmp( string, "pureServer" ) == 0 ) {
 		ProcessPureMessage( from, msg );
+		common->Printf( "Client: pureServer\n");
 		return;
 	}
 
@@ -1580,6 +1650,7 @@ void idAsyncClient::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 
 	if ( idStr::Icmp( string, "authrequired" ) == 0 ) {
 		// server telling us that he's expecting an auth mode connect, just in case we're trying to connect in LAN mode
+		common->Printf( "Client: authrequired\n");
 		if ( idAsyncNetwork::LANServer.GetBool() ) {
 			common->Warning( "server %s requests master authorization for this client. Turning off LAN mode\n", Sys_NetAdrToString( from ) );
 			idAsyncNetwork::LANServer.SetBool( false );
@@ -1664,34 +1735,10 @@ void idAsyncClient::SetupConnection( void ) {
 		// do not make the protocol depend on PB
 		msg.WriteShort( 0 );
 		clientPort.SendPacket( serverAddress, msg.GetData(), msg.GetSize() );
-#ifdef ID_ENFORCE_KEY_CLIENT
-		if ( idAsyncNetwork::LANServer.GetBool() ) {
-			common->Printf( "net_LANServer is set, connecting in LAN mode\n" );
-		} else {
-			// emit a cd key authorization request
-			// modified at protocol 1.37 for XP key addition
-			msg.BeginWriting();
-			msg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
-			msg.WriteString( "clAuth" );
-			msg.WriteInt( ASYNC_PROTOCOL_VERSION );
-			msg.WriteNetadr( serverAddress );
-			// if we don't have a com_guid, this will request a direct reply from auth with it
-			msg.WriteByte( cvarSystem->GetCVarString( "com_guid" )[0] ? 1 : 0 );
-			// send the main key, and flag an extra byte to add XP key
-			msg.WriteString( session->GetCDKey( false ) );
-			const char *xpkey = session->GetCDKey( true );
-			msg.WriteByte( xpkey ? 1 : 0 );
-			if ( xpkey ) {
-				msg.WriteString( xpkey );
-			}
-			clientPort.SendPacket( idAsyncNetwork::GetMasterAddress(), msg.GetData(), msg.GetSize() );
-		}
-#else
 		if (! Sys_IsLANAddress( serverAddress ) ) {
 			common->Printf( "Build Does not have CD Key Enforcement enabled. The Server ( %s ) is not within the lan addresses. Attemting to connect.\n", Sys_NetAdrToString( serverAddress ) );
 		}
 		common->Printf( "Not Testing key.\n" );
-#endif
 	} else {
 		return;
 	}
@@ -1776,7 +1823,9 @@ void idAsyncClient::RunFrame( void ) {
 		do {
 
 			// blocking read with game time residual timeout
-			newPacket = clientPort.GetPacketBlocking( from, msgBuf, size, sizeof( msgBuf ), USERCMD_MSEC - ( gameTimeResidual + clientPredictTime ) - 1 );
+			//This must work a server hz
+			//Read server info, usually snapshoots
+			newPacket = clientPort.GetPacketBlocking( from, msgBuf, size, sizeof( msgBuf ), com_gameMSRate - ( gameTimeResidual + clientPredictTime ) - 1 );
 			if ( newPacket ) {
 				msg.Init( msgBuf, sizeof( msgBuf ) );
 				msg.SetSize( size );
@@ -1789,14 +1838,14 @@ void idAsyncClient::RunFrame( void ) {
 
 		} while( newPacket );
 
-	} while( gameTimeResidual + clientPredictTime < USERCMD_MSEC );
+	} while( gameTimeResidual + clientPredictTime < com_gameMSRate );
 
 	// update server list
 	serverList.RunFrame();
 
 	if ( clientState == CS_DISCONNECTED ) {
 		usercmdGen->GetDirectUsercmd();
-		gameTimeResidual = USERCMD_MSEC - 1;
+		gameTimeResidual = com_gameMSRate - 1;
 		clientPredictTime = 0;
 		return;
 	}
@@ -1804,7 +1853,7 @@ void idAsyncClient::RunFrame( void ) {
 	if ( clientState == CS_PURERESTART ) {
 		clientState = CS_DISCONNECTED;
 		Reconnect();
-		gameTimeResidual = USERCMD_MSEC - 1;
+		gameTimeResidual = com_gameMSRate - 1;
 		clientPredictTime = 0;
 		return;
 	}
@@ -1814,7 +1863,7 @@ void idAsyncClient::RunFrame( void ) {
 		// also need to read mouse for the connecting guis
 		usercmdGen->GetDirectUsercmd();
 		SetupConnection();
-		gameTimeResidual = USERCMD_MSEC - 1;
+		gameTimeResidual = com_gameMSRate - 1;
 		clientPredictTime = 0;
 		return;
 	}
@@ -1838,22 +1887,25 @@ void idAsyncClient::RunFrame( void ) {
 		cvarSystem->ClearModifiedFlags( CVAR_USERINFO );
 	}
 
-	if ( gameTimeResidual + clientPredictTime >= USERCMD_MSEC ) {
+	if ( gameTimeResidual + clientPredictTime >= com_gameMSRate ) {
 		lastFrameDelta = 0;
 	}
 
 	// generate user commands for the predicted time
-	while ( gameTimeResidual + clientPredictTime >= USERCMD_MSEC ) {
-
+	bool fistClientPredictionCall = true; //added for unlagged
+	while ( gameTimeResidual + clientPredictTime >= com_gameMSRate ) {
+		//Here we should fo some netcode work to optimize 
+		//This must work a server hz
 		// send the user commands of this client to the server
 		SendUsercmdsToServer();
 
 		// update time
 		gameFrame++;
-		gameTime += USERCMD_MSEC;
-		gameTimeResidual -= USERCMD_MSEC;
+		gameTime += com_gameMSRate;
+		gameTimeResidual -= com_gameMSRate;
 
 		// run from the snapshot up to the local game frame
+		// We can work some kind of unlagged here (stradex)
 		while ( snapshotGameFrame < gameFrame ) {
 
 			lastFrameDelta++;
@@ -1862,15 +1914,15 @@ void idAsyncClient::RunFrame( void ) {
 			DuplicateUsercmds( snapshotGameFrame, snapshotGameTime );
 
 			// indicate the last prediction frame before a render
-			bool lastPredictFrame = ( snapshotGameFrame + 1 >= gameFrame && gameTimeResidual + clientPredictTime < USERCMD_MSEC );
+			bool lastPredictFrame = ( snapshotGameFrame + 1 >= gameFrame && gameTimeResidual + clientPredictTime < com_gameMSRate );
 
-			// run client prediction
-			gameReturn_t ret = game->ClientPrediction( clientNum, userCmds[ snapshotGameFrame & ( MAX_USERCMD_BACKUP - 1 ) ], lastPredictFrame );
-
+			// run client prediction (run many frames at once)
+			gameReturn_t ret = game->ClientPrediction( clientNum, userCmds[ snapshotGameFrame & ( MAX_USERCMD_BACKUP - 1 ) ], lastPredictFrame, fistClientPredictionCall);
+			fistClientPredictionCall = false; //added for unlagged
 			idAsyncNetwork::ExecuteSessionCommand( ret.sessionCommand );
 
 			snapshotGameFrame++;
-			snapshotGameTime += USERCMD_MSEC;
+			snapshotGameTime += com_gameMSRate;
 		}
 	}
 }
@@ -2314,4 +2366,43 @@ int idAsyncClient::GetDownloadRequest( const int checksums[ MAX_PURE_PAKS ], int
 	}
 	// this is the same dlRequest, we haven't heard from the server. keep the same id
 	return dlRequest;
+}
+
+/*
+===============
+idAsyncClient::StartGetServersThread
+===============
+*/
+void idAsyncClient::StartGetServersThread() {
+	if ( !getServersThread.threadHandle ) {
+		Sys_CreateThread( GetServersThread, (void *)NULL, getServersThread, "getServerst" );
+	} else {
+		StopGetServersThread();
+	}
+}
+/*
+===============
+idAsyncClient::StopGetServersThread
+===============
+*/
+void idAsyncClient::StopGetServersThread() {
+	Sys_TriggerEvent();
+	Sys_DestroyThread(getServersThread);
+}
+
+
+/*
+===============
+GetServersThread
+===============
+*/
+int GetServersThread( void *pexit ) {
+	
+	htmlMasterServer.refreshServerList();
+	int i=0;
+	for (i=0; i < htmlMasterServer.getServerCount(); i++) {
+		idAsyncNetwork::client.serverList.AddServer(idAsyncNetwork::client.serverList.Num(), static_cast<const char*>(htmlMasterServer.publicServers[i].address));
+	}
+
+	return 0;
 }

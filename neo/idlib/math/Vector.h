@@ -325,6 +325,7 @@ public:
 	float			z;
 
 					idVec3( void );
+					explicit idVec3( const float xyz ) { Set( xyz, xyz, xyz ); } //from Doom 3 BFG
 					explicit idVec3( const float x, const float y, const float z );
 
 	void			Set( const float x, const float y, const float z );
@@ -451,6 +452,10 @@ ID_INLINE idVec3 idVec3::operator/( const float a ) const {
 
 ID_INLINE idVec3 operator*( const float a, const idVec3 b ) {
 	return idVec3( b.x * a, b.y * a, b.z * a );
+}
+
+ID_INLINE idVec3 operator/( const float a, const idVec3 b ) {
+	return idVec3( a / b.x, a / b.y, a / b.z );
 }
 
 ID_INLINE idVec3 idVec3::operator+( const idVec3 &a ) const {

@@ -1,0 +1,237 @@
+﻿Compilación iniciada a las 20/05/2019 1:47:42.
+     1>Proyecto "D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\idlib.vcxproj" en el nodo 2 (rebuild destinos).
+     1>_PrepareForClean:
+         Se eliminará el archivo "idlib.dir\Release\idlib.lastbuildstate".
+       InitializeBuildStatus:
+         Se creará "idlib.dir\Release\idlib.unsuccessfulbuild" porque se especificó "AlwaysCreate".
+       CustomBuild:
+         Building Custom Rule D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeLists.txt
+         CMake does not need to re-run because D:/Maxi/Hobbies/HASTE/SourceCode/repository/neo/CMakeFiles/generate.stamp is up-to-date.
+       ClCompile:
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl" /ID:\Maxi\Hobbies\HASTE\SourceCode\repository\neo /W4 /WX- /Ox /Oy /D WIN32 /D _WINDOWS /D _ALLOW_KEYWORD_MACROS /D WINVER=0x0501 /D _WIN32_WINNT=0x0501 /D "CMAKE_INTDIR=\"Release\"" /D _MBCS /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"idlib.dir\Release\\" /Fd"idlib.dir\Release\vc100.pdb" /Gd /TP /wd4100 /wd4127 /wd4244 /wd4245 /wd4267 /wd4714 /wd4996 /wd4068 /analyze- /errorReport:prompt idlib\bv\Bounds.cpp idlib\bv\Frustum.cpp idlib\bv\Sphere.cpp idlib\bv\Box.cpp idlib\geometry\DrawVert.cpp idlib\geometry\RenderMatrix.cpp idlib\geometry\Winding2D.cpp idlib\geometry\Surface_SweptSpline.cpp idlib\geometry\Winding.cpp idlib\geometry\Surface.cpp idlib\geometry\Surface_Patch.cpp idlib\geometry\TraceModel.cpp idlib\geometry\JointTransform.cpp idlib\hashing\CRC32.cpp idlib\hashing\MD4.cpp idlib\hashing\MD5.cpp idlib\math\Angles.cpp idlib\math\Lcp.cpp idlib\math\Math.cpp idlib\math\Matrix.cpp idlib\math\Ode.cpp idlib\math\Plane.cpp idlib\math\Pluecker.cpp idlib\math\Polynomial.cpp idlib\math\Quat.cpp idlib\math\Rotation.cpp idlib\math\Simd.cpp idlib\math\Simd_Generic.cpp idlib\math\Simd_AltiVec.cpp idlib\math\Simd_MMX.cpp idlib\math\Simd_3DNow.cpp idlib\math\Simd_SSE.cpp idlib\math\Simd_SSE2.cpp idlib\math\Simd_SSE3.cpp idlib\math\Vector.cpp idlib\BitMsg.cpp idlib\LangDict.cpp idlib\Lexer.cpp idlib\Lib.cpp idlib\containers\HashIndex.cpp idlib\Dict.cpp idlib\Str.cpp idlib\Parser.cpp idlib\MapFile.cpp idlib\CmdArgs.cpp idlib\Token.cpp idlib\Base64.cpp idlib\Timer.cpp idlib\Heap.cpp
+         Compilador de optimización de C/C++ de 32 bits de Microsoft (R) versión 16.00.40219.01 para 80x86
+         (C) Microsoft Corporation. Reservados todos los derechos.
+         
+         cl /c /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl" /ID:\Maxi\Hobbies\HASTE\SourceCode\repository\neo /W4 /WX- /Ox /Oy /D WIN32 /D _WINDOWS /D _ALLOW_KEYWORD_MACROS /D WINVER=0x0501 /D _WIN32_WINNT=0x0501 /D "CMAKE_INTDIR=\"Release\"" /D _MBCS /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"idlib.dir\Release\\" /Fd"idlib.dir\Release\vc100.pdb" /Gd /TP /wd4100 /wd4127 /wd4244 /wd4245 /wd4267 /wd4714 /wd4996 /wd4068 /analyze- /errorReport:prompt idlib\bv\Bounds.cpp idlib\bv\Frustum.cpp idlib\bv\Sphere.cpp idlib\bv\Box.cpp idlib\geometry\DrawVert.cpp idlib\geometry\RenderMatrix.cpp idlib\geometry\Winding2D.cpp idlib\geometry\Surface_SweptSpline.cpp idlib\geometry\Winding.cpp idlib\geometry\Surface.cpp idlib\geometry\Surface_Patch.cpp idlib\geometry\TraceModel.cpp idlib\geometry\JointTransform.cpp idlib\hashing\CRC32.cpp idlib\hashing\MD4.cpp idlib\hashing\MD5.cpp idlib\math\Angles.cpp idlib\math\Lcp.cpp idlib\math\Math.cpp idlib\math\Matrix.cpp idlib\math\Ode.cpp idlib\math\Plane.cpp idlib\math\Pluecker.cpp idlib\math\Polynomial.cpp idlib\math\Quat.cpp idlib\math\Rotation.cpp idlib\math\Simd.cpp idlib\math\Simd_Generic.cpp idlib\math\Simd_AltiVec.cpp idlib\math\Simd_MMX.cpp idlib\math\Simd_3DNow.cpp idlib\math\Simd_SSE.cpp idlib\math\Simd_SSE2.cpp idlib\math\Simd_SSE3.cpp idlib\math\Vector.cpp idlib\BitMsg.cpp idlib\LangDict.cpp idlib\Lexer.cpp idlib\Lib.cpp idlib\containers\HashIndex.cpp idlib\Dict.cpp idlib\Str.cpp idlib\Parser.cpp idlib\MapFile.cpp idlib\CmdArgs.cpp idlib\Token.cpp idlib\Base64.cpp idlib\Timer.cpp idlib\Heap.cpp
+         
+         Bounds.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Frustum.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Sphere.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Box.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         DrawVert.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         RenderMatrix.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Winding2D.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Surface_SweptSpline.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Winding.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Surface.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Surface_Patch.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         TraceModel.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         JointTransform.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         CRC32.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         MD4.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         MD5.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Angles.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Lcp.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Math.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Matrix.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Generando código...
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\matrix.cpp(3669): warning C4750: 'class idMatX & __thiscall idMatX::SwapRows(int,int)': función con _alloca() insertada en un bucle
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\lcp.cpp(668): warning C4750: 'void __thiscall idLCP_Square::CalcForceDelta(int,float)': función con _alloca() insertada en un bucle
+         Compilando...
+         Ode.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Plane.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Pluecker.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Polynomial.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Quat.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Rotation.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_Generic.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_AltiVec.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_MMX.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_3DNow.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_SSE.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_SSE2.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_SSE3.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Vector.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         BitMsg.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         LangDict.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Lexer.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Lib.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         HashIndex.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Generando código...
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3467): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3478): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3489): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3500): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3511): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3522): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3533): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3544): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+         Compilando...
+         Dict.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Str.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Parser.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         MapFile.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         CmdArgs.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Token.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Base64.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Timer.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Heap.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Generando código...
+       Lib:
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\Release\idlib.lib" /NOLOGO idlib.dir\Release\Bounds.obj
+         idlib.dir\Release\Frustum.obj
+         idlib.dir\Release\Sphere.obj
+         idlib.dir\Release\Box.obj
+         idlib.dir\Release\DrawVert.obj
+         idlib.dir\Release\RenderMatrix.obj
+         idlib.dir\Release\Winding2D.obj
+         idlib.dir\Release\Surface_SweptSpline.obj
+         idlib.dir\Release\Winding.obj
+         idlib.dir\Release\Surface.obj
+         idlib.dir\Release\Surface_Patch.obj
+         idlib.dir\Release\TraceModel.obj
+         idlib.dir\Release\JointTransform.obj
+         idlib.dir\Release\CRC32.obj
+         idlib.dir\Release\MD4.obj
+         idlib.dir\Release\MD5.obj
+         idlib.dir\Release\Angles.obj
+         idlib.dir\Release\Lcp.obj
+         idlib.dir\Release\Math.obj
+         idlib.dir\Release\Matrix.obj
+         idlib.dir\Release\Ode.obj
+         idlib.dir\Release\Plane.obj
+         idlib.dir\Release\Pluecker.obj
+         idlib.dir\Release\Polynomial.obj
+         idlib.dir\Release\Quat.obj
+         idlib.dir\Release\Rotation.obj
+         idlib.dir\Release\Simd.obj
+         idlib.dir\Release\Simd_Generic.obj
+         idlib.dir\Release\Simd_AltiVec.obj
+         idlib.dir\Release\Simd_MMX.obj
+         idlib.dir\Release\Simd_3DNow.obj
+         idlib.dir\Release\Simd_SSE.obj
+         idlib.dir\Release\Simd_SSE2.obj
+         idlib.dir\Release\Simd_SSE3.obj
+         idlib.dir\Release\Vector.obj
+         idlib.dir\Release\BitMsg.obj
+         idlib.dir\Release\LangDict.obj
+         idlib.dir\Release\Lexer.obj
+         idlib.dir\Release\Lib.obj
+         idlib.dir\Release\HashIndex.obj
+         idlib.dir\Release\Dict.obj
+         idlib.dir\Release\Str.obj
+         idlib.dir\Release\Parser.obj
+         idlib.dir\Release\MapFile.obj
+         idlib.dir\Release\CmdArgs.obj
+         idlib.dir\Release\Token.obj
+         idlib.dir\Release\Base64.obj
+         idlib.dir\Release\Timer.obj
+         idlib.dir\Release\Heap.obj  /machine:X86
+         idlib.vcxproj -> D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\Release\idlib.lib
+       FinalizeBuildStatus:
+         Se eliminará el archivo "idlib.dir\Release\idlib.unsuccessfulbuild".
+         Aplicando tarea Touch a "idlib.dir\Release\idlib.lastbuildstate".
+     1>Compilación del proyecto terminada "D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\idlib.vcxproj" (rebuild destinos).
+
+Compilación correcta.
+
+Tiempo transcurrido 00:01:26.50

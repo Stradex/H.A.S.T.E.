@@ -42,6 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "anim/Anim_Testmodel.h"
 #include "Camera.h"
 #include "SmokeParticles.h"
+//#include "InventoryItems.h" //added by Stradex
 #include "Player.h"
 #include "WorldSpawn.h"
 #include "Misc.h"
@@ -252,6 +253,10 @@ void idGameLocal::Clear( void ) {
 	savedEventQueue.Init();
 
 	memset( lagometer, 0, sizeof( lagometer ) );
+
+	//added by Stradex
+	org_simpleLightVal = r_simpleLight.GetBool();
+    org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 }
 
 /*
@@ -264,6 +269,9 @@ idGameLocal::Init
 void idGameLocal::Init( void ) {
 	const idDict *dict;
 	idAAS *aas;
+
+	msec = 16; //60fps al comenzar
+	gameFps = 60; //60fps al comenzar
 
 #ifndef GAME_DLL
 
@@ -281,6 +289,11 @@ void idGameLocal::Init( void ) {
 	idSIMD::InitProcessor( "game", com_forceGenericSIMD.GetBool() );
 
 #endif
+
+	//Update MSEC and gameFps to make com_gameHz work fine
+	gameFps = cvarSystem->GetCVarInteger("com_gameHz");
+	msec = idMath::FtoiFast(1000.0f / static_cast<float>(cvarSystem->GetCVarInteger("com_gameHz")));
+	Printf( "Game FPS: %d\n", gameFps);
 
 	Printf( "----- Initializing Game -----\n" );
 	Printf( "gamename: %s\n", GAME_VERSION );
@@ -330,6 +343,10 @@ void idGameLocal::Init( void ) {
 	gamestate = GAMESTATE_NOMAP;
 
 	Printf( "...%d aas types\n", aasList.Num() );
+
+	//added by Stradex
+	org_simpleLightVal = r_simpleLight.GetBool();
+    org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 }
 
 /*
@@ -1043,6 +1060,16 @@ void idGameLocal::MapRestart( ) {
 			mpGame.MapRestart();
 		}
 	}
+
+	//added for ROE CTF by Stradex
+	if ( isMultiplayer ) {
+		gameLocal.mpGame.ReloadScoreboard();
+		//		gameLocal.mpGame.Reset();	// force reconstruct the GUIs when reloading maps, different gametypes have different GUIs
+		//		gameLocal.mpGame.UpdateMainGui();
+		//		gameLocal.mpGame.StartMenu();
+		//		gameLocal.mpGame.DisableMenu();
+		//		gameLocal.mpGame.Precache();
+	}
 }
 
 /*
@@ -1139,6 +1166,25 @@ void idGameLocal::MapPopulate( void ) {
 	// parse the key/value pairs and spawn entities
 	SpawnMapEntities();
 
+	//added by Stradex
+	idDict		simplelightDict;
+	simplelightDict.Set( "classname", "light" );
+	simplelightDict.Set( "angle", "0" );
+	simplelightDict.Set( "noshadows", "1" );
+	simplelightDict.Set( "nospecular", "1" );
+	simplelightDict.Set( "parallel", "1" );
+	simplelightDict.Set( "nodiffuse", "1" );
+	simplelightDict.Set( "light_center", "0 0 0" );
+	simplelightDict.Set( "texture", "lights/ambientlight2" );
+	simplelightDict.Set( "_color", "0.5 0.5 0.5" );
+	simplelightDict.Set( "color", "0.5 0.5 0.5" );
+	simplelightDict.Set( "light_radius", "62767 62767 62767" );
+	simplelightDict.Set( "stradex_simple_light", "1" );
+	simplelightDict.Set( "light_center", "0 0 0" );
+	simplelightDict.Set( "origin", "0 0 0" );
+
+	SpawnEntityDef( simplelightDict );
+
 	// mark location entities in all connected areas
 	SpreadLocations();
 
@@ -1154,6 +1200,8 @@ void idGameLocal::MapPopulate( void ) {
 	// before the physics are run so entities can bind correctly
 	Printf( "==== Processing events ====\n" );
 	idEvent::ServiceEvents();
+
+	SetScriptFPS( static_cast<const float>(this->gameFps) );
 }
 
 /*
@@ -1172,6 +1220,10 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	}
 
 	Printf( "----- Game Map Init -----\n" );
+
+	//added by Stradex
+	org_simpleLightVal = r_simpleLight.GetBool();
+    org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 
 	gamestate = GAMESTATE_STARTUP;
 
@@ -1216,6 +1268,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	gameRenderWorld = renderWorld;
 	gameSoundWorld = soundWorld;
 
+	SetScriptFPS( static_cast<const float>(this->gameFps) );
+
 	idRestoreGame savegame( saveGameFile );
 
 	savegame.ReadBuildNumber();
@@ -1241,8 +1295,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	g_skill.SetInteger( i );
 
 	// precache the player
-	FindEntityDef( "player_doommarine", false );
-
+	FindEntityDef( PLAYER_SPAWN_CLASS, false );
+	
 	// precache any media specified in the map
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
 		idMapEntity *mapEnt = mapFile->GetEntity( i );
@@ -1830,7 +1884,18 @@ void idGameLocal::SpawnPlayer( int clientNum ) {
 
 	args.SetInt( "spawn_entnum", clientNum );
 	args.Set( "name", va( "player%d", clientNum + 1 ) );
-	args.Set( "classname", isMultiplayer ? "player_doommarine_mp" : "player_doommarine" );
+	
+	//added by Stradex for ROE CTF
+	if ( isMultiplayer && gameType != GAME_CTF )
+		args.Set( "classname", PLAYER_SPAWN_CLASS_MP );
+	else if ( isMultiplayer && gameType == GAME_CTF )
+		args.Set( "classname", PLAYER_SPAWN_CLASS_CTF );
+	else
+		args.Set( "classname", PLAYER_SPAWN_CLASS );
+
+	//end by Stradex for ROE CTF
+
+	//args.Set( "classname", isMultiplayer ? PLAYER_SPAWN_CLASS_MP : PLAYER_SPAWN_CLASS );
 	if ( !SpawnEntityDef( args, &ent ) || !entities[ clientNum ] ) {
 		Error( "Failed to spawn player as '%s'", args.GetString( "classname" ) );
 	}
@@ -2171,6 +2236,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	player = GetLocalPlayer();
 
+	//spawnedEntities
 	if ( !isMultiplayer && g_stopTime.GetBool() ) {
 		// clear any debug lines from a previous frame
 		gameRenderWorld->DebugClearLines( time + 1 );
@@ -2222,6 +2288,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// process events on the server
 		ServerProcessEntityNetworkEventQueue();
 
+
 		// update our gravity vector if needed.
 		UpdateGravity();
 
@@ -2270,6 +2337,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 					num++;
 				}
 			}
+
 		}
 
 		// remove any entities that have stopped thinking
@@ -2298,6 +2366,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 		// free the player pvs
 		FreePlayerPVS();
+
 
 		// do multiplayer related stuff
 		if ( isMultiplayer ) {
@@ -2446,7 +2515,10 @@ idGameLocal::Draw
 makes rendering and sound system calls
 ================
 */
-bool idGameLocal::Draw( int clientNum ) {
+bool idGameLocal::Draw( int clientNum) {
+
+	CheckSingleLightChange();
+
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
 	}
@@ -4102,6 +4174,9 @@ prepare for a sequence of initial player spawns
 void idGameLocal::RandomizeInitialSpawns( void ) {
 	spawnSpot_t	spot;
 	int i, j;
+
+	int k;
+
 	idEntity *ent;
 
 	if ( !isMultiplayer || isClient ) {
@@ -4109,19 +4184,87 @@ void idGameLocal::RandomizeInitialSpawns( void ) {
 	}
 	spawnSpots.Clear();
 	initialSpots.Clear();
+
+	//added by Stradex for CTF
+	teamSpawnSpots[0].Clear();
+	teamSpawnSpots[1].Clear();
+	teamInitialSpots[0].Clear();
+	teamInitialSpots[1].Clear();
+	//end by Stradex for CTF
+
 	spot.dist = 0;
 	spot.ent = FindEntityUsingDef( NULL, "info_player_deathmatch" );
 	while( spot.ent ) {
+
+		//added by Stradex for CTF
+		spot.ent->spawnArgs.GetInt( "team", "-1", spot.team );
+
+		if ( mpGame.IsGametypeFlagBased() ) /* CTF */
+		{
+			if ( spot.team == 0 || spot.team == 1 )
+				teamSpawnSpots[spot.team].Append( spot );
+			else
+				common->Warning( "info_player_deathmatch : invalid or no team attached to spawn point\n");
+		}
+		//end by Stradex for CTF
+
 		spawnSpots.Append( spot );
 		if ( spot.ent->spawnArgs.GetBool( "initial" ) ) {
+
+			//added by Stradex for CTF
+			if ( mpGame.IsGametypeFlagBased() ) /* CTF */
+			{
+				assert( spot.team == 0 || spot.team == 1 );
+				teamInitialSpots[ spot.team ].Append( spot.ent );
+			}
+			//end by Stradex for CTF
+
 			initialSpots.Append( spot.ent );
 		}
 		spot.ent = FindEntityUsingDef( spot.ent, "info_player_deathmatch" );
 	}
+
+	//added by Stradex for CTF
+	if ( mpGame.IsGametypeFlagBased() ) /* CTF */
+	{
+		if ( !teamSpawnSpots[0].Num() )
+			common->Warning( "red team : no info_player_deathmatch in map" );
+		if ( !teamSpawnSpots[1].Num() )
+			common->Warning( "blue team : no info_player_deathmatch in map" );
+
+		if ( !teamSpawnSpots[0].Num() || !teamSpawnSpots[1].Num() )
+			return;
+	}
+	//end by Stradex for CTF
+
 	if ( !spawnSpots.Num() ) {
 		common->Warning( "no info_player_deathmatch in map" );
 		return;
 	}
+
+	//added by Stradex for CTF
+	if ( mpGame.IsGametypeFlagBased() ) /* CTF */
+	{
+		common->Printf( "red team : %d spawns (%d initials)\n", teamSpawnSpots[ 0 ].Num(), teamInitialSpots[ 0 ].Num() );
+		// if there are no initial spots in the map, consider they can all be used as initial
+		if ( !teamInitialSpots[ 0 ].Num() ) {
+			common->Warning( "red team : no info_player_deathmatch entities marked initial in map" );
+			for ( i = 0; i < teamSpawnSpots[ 0 ].Num(); i++ ) {
+				teamInitialSpots[ 0 ].Append( teamSpawnSpots[ 0 ][ i ].ent );
+			}
+		}
+
+		common->Printf( "blue team : %d spawns (%d initials)\n", teamSpawnSpots[ 1 ].Num(), teamInitialSpots[ 1 ].Num() );
+		// if there are no initial spots in the map, consider they can all be used as initial
+		if ( !teamInitialSpots[ 1 ].Num() ) {
+			common->Warning( "blue team : no info_player_deathmatch entities marked initial in map" );
+			for ( i = 0; i < teamSpawnSpots[ 1 ].Num(); i++ ) {
+				teamInitialSpots[ 1 ].Append( teamSpawnSpots[ 1 ][ i ].ent );
+			}
+		}
+	}
+	//end by Stradex for CTF
+
 	common->Printf( "%d spawns (%d initials)\n", spawnSpots.Num(), initialSpots.Num() );
 	// if there are no initial spots in the map, consider they can all be used as initial
 	if ( !initialSpots.Num() ) {
@@ -4130,6 +4273,17 @@ void idGameLocal::RandomizeInitialSpawns( void ) {
 			initialSpots.Append( spawnSpots[ i ].ent );
 		}
 	}
+
+	//added by Stradex for CTF
+	for ( k = 0; k < 2; k++ )
+	for ( i = 0; i < teamInitialSpots[ k ].Num(); i++ ) {
+		j = random.RandomInt( teamInitialSpots[ k ].Num() );
+		ent = teamInitialSpots[ k ][ i ];
+		teamInitialSpots[ k ][ i ] = teamInitialSpots[ k ][ j ];
+		teamInitialSpots[ k ][ j ] = ent;
+	}
+	//end by Stradex for CTF
+
 	for ( i = 0; i < initialSpots.Num(); i++ ) {
 		j = random.RandomInt( initialSpots.Num() );
 		ent = initialSpots[ i ];
@@ -4138,6 +4292,11 @@ void idGameLocal::RandomizeInitialSpawns( void ) {
 	}
 	// reset the counter
 	currentInitialSpot = 0;
+
+	//added by Stradex for CTF
+	teamCurrentInitialSpot[0] = 0;
+	teamCurrentInitialSpot[1] = 0;
+	//end by Stradex for CTF
 }
 
 /*
@@ -4156,18 +4315,39 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 	float			dist;
 	bool			alone;
 
-	if ( !isMultiplayer || !spawnSpots.Num() ) {
+	//if ( !isMultiplayer || !spawnSpots.Num() ) { //commented for CTF by Stradex
+	if ( !isMultiplayer || !spawnSpots.Num() || ( mpGame.IsGametypeFlagBased() && ( !teamSpawnSpots[0].Num() || !teamSpawnSpots[1].Num() ) ) ) { /* CTF */
 		spot.ent = FindEntityUsingDef( NULL, "info_player_start" );
 		if ( !spot.ent ) {
 			Error( "No info_player_start on map.\n" );
 		}
 		return spot.ent;
 	}
+
+	//added by Stradex for CTF
+	bool useInitialSpots = false;
+	if ( mpGame.IsGametypeFlagBased() ) { /* CTF */
+		assert( player->team == 0 || player->team == 1 );
+		useInitialSpots = player->useInitialSpawns && teamCurrentInitialSpot[ player->team ] < teamInitialSpots[ player->team ].Num();
+	} else {
+		useInitialSpots = player->useInitialSpawns && currentInitialSpot < initialSpots.Num();
+	}
+	//end by Stradex for CTF
+
 	if ( player->spectating ) {
 		// plain random spot, don't bother
 		return spawnSpots[ random.RandomInt( spawnSpots.Num() ) ].ent;
-	} else if ( player->useInitialSpawns && currentInitialSpot < initialSpots.Num() ) {
+	//added by Stradex for CTF
+	} else if ( useInitialSpots ) {
+		if ( mpGame.IsGametypeFlagBased() ) { /* CTF */
+			assert( player->team == 0 || player->team == 1 );
+			player->useInitialSpawns = false;							// only use the initial spawn once
+			return teamInitialSpots[ player->team ][ teamCurrentInitialSpot[ player->team ]++ ];
+		}
 		return initialSpots[ currentInitialSpot++ ];
+	//end by Stradex for CTF
+	//} else if ( player->useInitialSpawns && currentInitialSpot < initialSpots.Num() ) {
+	//	return initialSpots[ currentInitialSpot++ ];
 	} else {
 		// check if we are alone in map
 		alone = true;
@@ -4178,9 +4358,60 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 			}
 		}
 		if ( alone ) {
+			//added by Stradex for CTF
+			if ( mpGame.IsGametypeFlagBased() ) /* CTF */
+			{
+				assert( player->team == 0 || player->team == 1 );
+				return teamSpawnSpots[ player->team ][ random.RandomInt( teamSpawnSpots[ player->team ].Num() ) ].ent;
+			}
+			//end by Stradex for CTF
 			// don't do distance-based
 			return spawnSpots[ random.RandomInt( spawnSpots.Num() ) ].ent;
 		}
+		//added by Stradex for CTF
+		if ( mpGame.IsGametypeFlagBased() ) /* CTF */
+		{
+			// TODO : make as reusable method, same code as below
+			int team = player->team;
+			assert( team == 0 || team == 1 );
+
+			// find the distance to the closest active player for each spawn spot
+			for( i = 0; i < teamSpawnSpots[ team ].Num(); i++ ) {
+				pos = teamSpawnSpots[ team ][ i ].ent->GetPhysics()->GetOrigin();
+
+				// skip initial spawn points for CTF
+				if ( teamSpawnSpots[ team ][ i ].ent->spawnArgs.GetBool("initial") ) {
+					teamSpawnSpots[ team ][ i ].dist = 0x0;
+					continue;
+				}
+
+				teamSpawnSpots[ team ][ i ].dist = 0x7fffffff;
+
+				for( j = 0; j < MAX_CLIENTS; j++ ) {
+					if ( !entities[ j ] || !entities[ j ]->IsType( idPlayer::Type )
+						|| entities[ j ] == player
+						|| static_cast< idPlayer * >( entities[ j ] )->spectating ) {
+						continue;
+					}
+
+					dist = ( pos - entities[ j ]->GetPhysics()->GetOrigin() ).LengthSqr();
+					if ( dist < teamSpawnSpots[ team ][ i ].dist ) {
+						teamSpawnSpots[ team ][ i ].dist = dist;
+					}
+				}
+			}
+
+			// sort the list
+			qsort( ( void * )teamSpawnSpots[ team ].Ptr(), teamSpawnSpots[ team ].Num(), sizeof( spawnSpot_t ), ( int (*)(const void *, const void *) )sortSpawnPoints );
+
+			// choose a random one in the top half
+			which = random.RandomInt( teamSpawnSpots[ team ].Num() / 2 );
+			spot = teamSpawnSpots[ team ][ which ];
+//			assert( teamSpawnSpots[ team ][ which ].dist != 0 );
+
+			return spot.ent;
+		}
+		//end by Stradex for CTF
 
 		// find the distance to the closest active player for each spawn spot
 		for( i = 0; i < spawnSpots.Num(); i++ ) {
@@ -4225,6 +4456,8 @@ void idGameLocal::UpdateServerInfoFlags() {
 		gameType = GAME_TDM;
 	} else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "Last Man" ) == 0 ) ) {
 		gameType = GAME_LASTMAN;
+	} else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "CTF" ) == 0 ) ) { //added for CTF by Stradex
+		gameType = GAME_CTF;
 	}
 	if ( gameType == GAME_LASTMAN ) {
 		if ( !serverInfo.GetInt( "si_warmup" ) ) {
@@ -4368,3 +4601,96 @@ idGameLocal::GetMapLoadingGUI
 ===============
 */
 void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) { }
+
+//added by Stradex
+/*
+===============
+idGameLocal::CheckSingleLightChange
+===============
+*/
+
+void idGameLocal::CheckSingleLightChange( void ) {
+	idEntity *	ent;
+	idLight  *	entLight;
+
+	if (org_simpleLightVal != r_simpleLight.GetBool()) {
+		common->Printf("CheckSingleLightChange()...\n");
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			if (!ent->IsType( idLight::Type )) {
+				continue;
+			}
+			entLight = static_cast<idLight *>( ent );
+			entLight->UpdateSingleLightColor(r_simpleLightIntensity.GetFloat());
+			if (r_simpleLight.GetBool()) {
+				if (entLight->isGiantSimpleLight) {
+					entLight->Show();
+					entLight->On();
+				} else {
+					entLight->Hide();
+					entLight->Off();
+				}
+			} else {
+				if (entLight->isGiantSimpleLight) {
+					entLight->Hide();
+					entLight->Off();
+				} else {
+					entLight->Show();
+					entLight->On();
+				}
+			}
+			//To work with r_useStaticLighting
+			entLight->Think();
+		}
+		
+		org_simpleLightVal = r_simpleLight.GetBool();
+
+	} else if ((org_simpleLightIntensity != r_simpleLightIntensity.GetFloat()) && r_simpleLight.GetBool()) {
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			if (!ent->IsType( idLight::Type )) {
+				continue;
+			}
+			entLight = static_cast<idLight *>( ent );
+			if (!entLight->isGiantSimpleLight) {
+				continue;
+			}
+
+			entLight->UpdateSingleLightColor(r_simpleLightIntensity.GetFloat());
+			entLight->Hide();
+			entLight->Off();
+			entLight->Show();
+			entLight->On();
+		}
+		org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
+	}
+}
+
+/*
+===================
+idGameLocal::SetScriptFPS
+===================
+*/
+void idGameLocal::SetScriptFPS( const float tCom_gameHz )
+{
+	idVarDef * fpsDef = program.GetDef( &type_float, "GAME_FPS", &def_namespace );
+	if ( fpsDef != NULL ) {
+		eval_t fpsValue;
+		fpsValue._float = tCom_gameHz;
+		fpsDef->SetValue( fpsValue, false );
+
+		common->Printf("GAME_FPS: %f\n", tCom_gameHz);
+	} else {
+		common->Printf("Unable to find GAME_FPS def\n");
+	}
+
+	float frameRate = 1.0/tCom_gameHz;
+	idVarDef * frameRateDef = program.GetDef( &type_float, "GAME_FRAMETIME", &def_namespace );
+	if ( frameRateDef != NULL ) {
+		eval_t frameRateValue;
+		frameRateValue._float = frameRate;
+		frameRateDef->SetValue( frameRateValue, false );
+
+		common->Printf("GAME_FRAMETIME to: %f\n", frameRate);
+	} else {
+		common->Printf("Unable to find GAME_FRAMETIME def\n");
+	}
+}

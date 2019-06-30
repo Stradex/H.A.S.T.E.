@@ -233,7 +233,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 	}
 
 	float	dvTime = damageDef->GetFloat( "dv_time" );
-	if ( dvTime ) {
+	if ( dvTime && pm_useBobDamage.GetBool() ) { // pm_useBobDamage.GetBool() added by Stradex
 		if ( dvFinishTime < gameLocal.time ) {
 			dvFinishTime = gameLocal.time;
 		}
@@ -273,7 +273,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 	// screen blob
 	//
 	float	blobTime = damageDef->GetFloat( "blob_time" );
-	if ( blobTime ) {
+	if ( blobTime && pm_useBobDamage.GetBool() ) { // pm_useBobDamage.GetBool() added by Stradex
 		screenBlob_t	*blob = GetScreenBlob();
 		blob->startFadeTime = gameLocal.time;
 		blob->finishTime = gameLocal.time + blobTime * g_blobTime.GetFloat();

@@ -1242,7 +1242,7 @@ void idBrittleFracture::Event_Touch( idEntity *other, trace_t *trace ) {
 idBrittleFracture::ClientPredictionThink
 ================
 */
-void idBrittleFracture::ClientPredictionThink( void ) {
+void idBrittleFracture::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	// only think forward because the state is not synced through snapshots
 	if ( !gameLocal.isNewFrame ) {
 		return;

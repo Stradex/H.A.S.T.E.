@@ -38,7 +38,7 @@ const int EMPTY_RESEND_TIME				= 500;
 const int PING_RESEND_TIME				= 500;
 const int NOINPUT_IDLE_TIME				= 30000;
 
-const int HEARTBEAT_MSEC				= 5*60*1000;
+const int HEARTBEAT_MSEC				= 5*60*1000; //heartbeat every 10 minutes, edited by Stradex
 
 // must be kept in sync with authReplyMsg_t
 const char* authReplyMsg[] = {
@@ -95,6 +95,8 @@ idAsyncServer::idAsyncServer( void ) {
 	stats_average_sum = 0;
 	stats_max = 0;
 	stats_max_index = 0;
+
+	memset( &heartbeatThread, 0, sizeof( heartbeatThread ) );
 }
 
 /*
@@ -108,14 +110,25 @@ bool idAsyncServer::InitPort( void ) {
 	// if this is the first time we have spawned a server, open the UDP port
 	if ( !serverPort.GetPort() ) {
 		if ( cvarSystem->GetCVarInteger( "net_port" ) != 0 ) {
+			//UPnP by Stradex
+			if (cvarSystem->GetCVarBool("net_upnp")) {
+				serverPort.TryUPnP(cvarSystem->GetCVarInteger( "net_port" ));
+			}
+
 			if ( !serverPort.InitForPort( cvarSystem->GetCVarInteger( "net_port" ) ) ) {
 				common->Printf( "Unable to open server on port %d (net_port)\n", cvarSystem->GetCVarInteger( "net_port" ) );
 				return false;
 			}
 		} else {
+
 			// scan for multiple ports, in case other servers are running on this IP already
 			for ( lastPort = 0; lastPort < NUM_SERVER_PORTS; lastPort++ ) {
 				if ( serverPort.InitForPort( PORT_SERVER + lastPort ) ) {
+					//UPnP by Stradex
+					if (cvarSystem->GetCVarBool("net_upnp")) {
+						serverPort.TryUPnP( PORT_SERVER + lastPort );
+					}
+
 					break;
 				}
 			}
@@ -123,7 +136,9 @@ bool idAsyncServer::InitPort( void ) {
 				common->Printf( "Unable to open server network port.\n" );
 				return false;
 			}
+
 		}
+
 	}
 
 	return true;
@@ -181,6 +196,14 @@ void idAsyncServer::Spawn( void ) {
 
 	common->Printf( "Server spawned on port %i.\n", serverPort.GetPort() );
 
+	if (cvarSystem->GetCVarBool("net_upnp")) {
+		if (serverPort.upnpFailed) {
+			common->Printf( "[UPnP failed]: Unable to use port %i.\n", serverPort.GetPort() );
+		} else {
+			common->Printf( "[UPnP] Open port %i was successful.\n", serverPort.GetPort() );
+		}
+	}
+
 	// calculate a checksum on some of the essential data used
 	serverDataChecksum = declManager->GetChecksum();
 
@@ -205,6 +228,11 @@ void idAsyncServer::Kill( void ) {
 
 	if ( !active ) {
 		return;
+	}
+	//used by Stradex to destroy hearbeatThread htmlmasterserver method
+	if ( heartbeatThread.threadHandle ) {
+		Sys_TriggerEvent();
+		Sys_DestroyThread(heartbeatThread);
 	}
 
 	// drop all clients
@@ -1395,7 +1423,7 @@ void idAsyncServer::ProcessAuthMessage( const idBitMsg &msg ) {
 
 	reply = (authReply_t)msg.ReadByte();
 	if ( reply <= 0 || reply >= AUTH_MAXSTATES ) {
-		common->DPrintf( "auth: invalid reply %d\n", reply );
+		common->Printf( "auth: invalid reply %d\n", reply );
 		return;
 	}
 	clientId = msg.ReadShort( );
@@ -1404,7 +1432,7 @@ void idAsyncServer::ProcessAuthMessage( const idBitMsg &msg ) {
 	if ( reply != AUTH_OK ) {
 		replyMsg = (authReplyMsg_t)msg.ReadByte();
 		if ( replyMsg <= 0 || replyMsg >= AUTH_REPLY_MAXSTATES ) {
-			common->DPrintf( "auth: invalid reply msg %d\n", replyMsg );
+			common->Printf( "auth: invalid reply msg %d\n", replyMsg );
 			return;
 		}
 		if ( replyMsg == AUTH_REPLY_PRINT ) {
@@ -1459,7 +1487,7 @@ void idAsyncServer::ProcessAuthMessage( const idBitMsg &msg ) {
 		}
 		// maybe localize it
 		const char *l_msg = common->GetLanguageDict()->GetString( msg );
-		common->DPrintf( "auth: client %s %s - %s %s\n", Sys_NetAdrToString( client_from ), client_guid, authReplyStr[ reply ], l_msg );
+		common->Printf( "auth: client %s %s - %s %s\n", Sys_NetAdrToString( client_from ), client_guid, authReplyStr[ reply ], l_msg );
 		challenges[ i ].authReply = reply;
 		challenges[ i ].authReplyMsg = replyMsg;
 		challenges[ i ].authReplyPrint = replyPrintMsg;
@@ -1515,38 +1543,16 @@ void idAsyncServer::ProcessChallengeMessage( const netadr_t from, const idBitMsg
 	outMsg.WriteString( "challengeResponse" );
 	outMsg.WriteInt( challenges[i].challenge );
 	outMsg.WriteShort( serverId );
+	outMsg.WriteShort( static_cast<short int>(cvarSystem->GetCVarInteger("com_gameHz")) ); //added by Stradex to force client sync gamehz
 	outMsg.WriteString( cvarSystem->GetCVarString( "fs_game_base" ) );
 	outMsg.WriteString( cvarSystem->GetCVarString( "fs_game" ) );
 
 	serverPort.SendPacket( from, outMsg.GetData(), outMsg.GetSize() );
 
-#if ID_ENFORCE_KEY_CLIENT
-	if ( Sys_IsLANAddress( from ) ) {
-		// no CD Key check for LAN clients
-		challenges[i].authState = CDK_OK;
-	} else {
-		if ( idAsyncNetwork::LANServer.GetBool() ) {
-			common->Printf( "net_LANServer is enabled. Client %s is not a LAN address, will be rejected\n", Sys_NetAdrToString( from ) );
-			challenges[ i ].authState = CDK_ONLYLAN;
-		} else {
-			// emit a cd key confirmation request
-			outMsg.BeginWriting();
-			outMsg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
-			outMsg.WriteString( "srvAuth" );
-			outMsg.WriteInt( ASYNC_PROTOCOL_VERSION );
-			outMsg.WriteNetadr( from );
-			outMsg.WriteInt( -1 ); // this identifies "challenge" auth vs "connect" auth
-			// protocol 1.37 addition
-			outMsg.WriteByte( fileSystem->RunningD3XP() );
-			serverPort.SendPacket( idAsyncNetwork::GetMasterAddress(), outMsg.GetData(), outMsg.GetSize() );
-		}
-	}
-#else
 	if (! Sys_IsLANAddress( from ) ) {
 		common->Printf( "Build Does not have CD Key Enforcement enabled. Client %s is not a LAN address, but will be accepted\n", Sys_NetAdrToString( from ) );
 	}
 	challenges[i].authState = CDK_OK;
-#endif
 }
 
 /*
@@ -2111,35 +2117,41 @@ bool idAsyncServer::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 
 	// info request
 	if ( idStr::Icmp( string, "getInfo" ) == 0 ) {
+		common->Printf( "Client: getInfo\n");
 		ProcessGetInfoMessage( from, msg );
 		return false;
 	}
 
 	// remote console
 	if ( idStr::Icmp( string, "rcon" ) == 0 ) {
+		common->Printf( "Client: rcon\n");
 		ProcessRemoteConsoleMessage( from, msg );
 		return true;
 	}
 
 	if ( !active ) {
+		common->Printf( "Client: no active\n");
 		PrintOOB( from, SERVER_PRINT_MISC, "#str_04849" );
 		return false;
 	}
 
 	// challenge from a client
 	if ( idStr::Icmp( string, "challenge" ) == 0 ) {
+		common->Printf( "Client: challenge\n");
 		ProcessChallengeMessage( from, msg );
 		return false;
 	}
 
 	// connect from a client
 	if ( idStr::Icmp( string, "connect" ) == 0 ) {
+		common->Printf( "Client: connect\n");
 		ProcessConnectMessage( from, msg );
 		return false;
 	}
 
 	// pure mesasge from a client
 	if ( idStr::Icmp( string, "pureClient" ) == 0 ) {
+		common->Printf( "Client: pure\n");
 		ProcessPureMessage( from, msg );
 		return false;
 	}
@@ -2373,7 +2385,7 @@ void idAsyncServer::RunFrame( void ) {
 		do {
 
 			// blocking read with game time residual timeout
-			newPacket = serverPort.GetPacketBlocking( from, msgBuf, size, sizeof( msgBuf ), USERCMD_MSEC - gameTimeResidual - 1 );
+			newPacket = serverPort.GetPacketBlocking( from, msgBuf, size, sizeof( msgBuf ), com_gameMSRate - gameTimeResidual - 1 );
 			if ( newPacket ) {
 				msg.Init( msgBuf, sizeof( msgBuf ) );
 				msg.SetSize( size );
@@ -2388,7 +2400,7 @@ void idAsyncServer::RunFrame( void ) {
 
 		} while( newPacket );
 
-	} while( gameTimeResidual < USERCMD_MSEC );
+	} while( gameTimeResidual < com_gameMSRate );
 
 	// send heart beat to master servers
 	MasterHeartbeat();
@@ -2429,23 +2441,19 @@ void idAsyncServer::RunFrame( void ) {
 	}
 
 	// advance the server game
-	while( gameTimeResidual >= USERCMD_MSEC ) {
+	while( gameTimeResidual >= com_gameMSRate ) {
 
 		// sample input for the local client
 		LocalClientInput();
-
 		// duplicate usercmds for clients if no new ones are available
 		DuplicateUsercmds( gameFrame, gameTime );
-
 		// advance game
 		gameReturn_t ret = game->RunFrame( userCmds[gameFrame & ( MAX_USERCMD_BACKUP - 1 ) ] );
-
 		idAsyncNetwork::ExecuteSessionCommand( ret.sessionCommand );
-
 		// update time
 		gameFrame++;
-		gameTime += USERCMD_MSEC;
-		gameTimeResidual -= USERCMD_MSEC;
+		gameTime += com_gameMSRate;
+		gameTimeResidual -= com_gameMSRate;
 	}
 
 	// duplicate usercmds so there is always at least one available to send with snapshots
@@ -2513,7 +2521,6 @@ void idAsyncServer::RunFrame( void ) {
 			nextAsyncStatsTime = serverTime + 1000;
 		}
 	}
-
 	idAsyncNetwork::serverMaxClientRate.ClearModified();
 }
 
@@ -2578,6 +2585,11 @@ void idAsyncServer::MasterHeartbeat( bool force ) {
 		return;
 	}
 	nextHeartbeatTime = serverTime + HEARTBEAT_MSEC;
+	
+#if HTMLMASTERSERVER_ENABLED > 0
+	//Using HTMLMasterserver by Stradex
+	StartHeartbeatThread();
+#else
 	for ( int i = 0 ; i < MAX_MASTER_SERVERS ; i++ ) {
 		netadr_t adr;
 		if ( idAsyncNetwork::GetMasterAddress( i, adr ) ) {
@@ -2590,6 +2602,7 @@ void idAsyncServer::MasterHeartbeat( bool force ) {
 			serverPort.SendPacket( adr, outMsg.GetData(), outMsg.GetSize() );
 		}
 	}
+#endif
 }
 
 /*
@@ -2784,4 +2797,41 @@ void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const id
 
 		serverPort.SendPacket( from, outMsg.GetData(), outMsg.GetSize() );
 	}
+}
+
+/*
+===============
+ idAsyncServer::StartHearbeartThread
+===============
+*/
+void idAsyncServer::StartHeartbeatThread() {
+	if ( !heartbeatThread.threadHandle ) {
+		Sys_CreateThread( HeartbeatThread, (void *)NULL, heartbeatThread, "heartBeat" );
+	} else {
+		StopHeartbeatThread();
+	}
+}
+/*
+===============
+ idAsyncServer::StopHeartbeatThread
+===============
+*/
+void idAsyncServer::StopHeartbeatThread() {
+	Sys_TriggerEvent();
+	Sys_DestroyThread(heartbeatThread);
+}
+
+
+/*
+===============
+ idAsyncServer::StartHearbeartThread
+===============
+*/
+int HeartbeatThread( void *pexit ) {
+	
+	htmlMasterServer.addServer(idAsyncNetwork::server.GetPort()); //let know the server that we're still alive :)
+	common->Printf("HeartbeatThread send using port: %d\n", idAsyncNetwork::server.GetPort());
+
+	//used by Stradex to destroy hearbeatThread htmlmasterserver method
+	return 0;
 }

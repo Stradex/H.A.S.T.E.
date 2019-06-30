@@ -200,6 +200,9 @@ int					idThread::threadIndex = 0;
 idList<idThread *>	idThread::threadList;
 trace_t				idThread::trace;
 
+//Used by Stradex for real random generator
+int					gRandomCallsCount = 0;
+
 /*
 ================
 idThread::CurrentThread
@@ -1066,7 +1069,16 @@ idThread::Event_Random
 void idThread::Event_Random( float range ) const {
 	float result;
 
-	result = gameLocal.random.RandomFloat();
+	//Edited by Stradex
+	//result = gameLocal.random.RandomFloat();
+	srand((int)time(0) + gRandomCallsCount*10000);
+	result = static_cast< float >((rand() % 100) + 1) / 100.0;
+
+	gRandomCallsCount++;
+	if (gRandomCallsCount > 100) {
+		gRandomCallsCount = 0;
+	}
+
 	ReturnFloat( range * result );
 }
 
@@ -1769,7 +1781,7 @@ idThread::Event_GetTicsPerSecond
 ================
 */
 void idThread::Event_GetTicsPerSecond( void ) {
-	idThread::ReturnFloat( USERCMD_HZ );
+	idThread::ReturnFloat( gameLocal.gameFps );
 }
 
 /*

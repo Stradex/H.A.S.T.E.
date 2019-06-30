@@ -653,7 +653,8 @@ void idSaveGame::WriteUsercmd( const usercmd_t &usercmd ) {
 	WriteInt( usercmd.gameFrame );
 	WriteInt( usercmd.gameTime );
 	WriteInt( usercmd.duplicateCount );
-	WriteByte( usercmd.buttons );
+	//WriteByte( usercmd.buttons );
+	WriteInt( usercmd.buttons );	//Edited by Stradex
 	WriteSignedChar( usercmd.forwardmove );
 	WriteSignedChar( usercmd.rightmove );
 	WriteSignedChar( usercmd.upmove );
@@ -1424,7 +1425,8 @@ void idRestoreGame::ReadUsercmd( usercmd_t &usercmd ) {
 	ReadInt( usercmd.gameFrame );
 	ReadInt( usercmd.gameTime );
 	ReadInt( usercmd.duplicateCount );
-	ReadByte( usercmd.buttons );
+	//ReadByte( usercmd.buttons );
+	ReadInt(usercmd.buttons);	//Edited by Stradex
 	ReadSignedChar( usercmd.forwardmove );
 	ReadSignedChar( usercmd.rightmove );
 	ReadSignedChar( usercmd.upmove );

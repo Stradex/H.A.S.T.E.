@@ -37,7 +37,9 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-const int USERCMD_HZ			= 60;			// 60 frames per second
+const int STRADEX_HZ			= 120;
+const int STRADEX_MSEC			= 1000 / STRADEX_HZ;
+const int USERCMD_HZ			= 100;			// 100 FRAMES PER SECOND
 const int USERCMD_MSEC			= 1000 / USERCMD_HZ;
 
 // usercmd_t->button bits
@@ -49,6 +51,10 @@ const int BUTTON_MLOOK			= BIT(4);
 const int BUTTON_5				= BIT(5);
 const int BUTTON_6				= BIT(6);
 const int BUTTON_7				= BIT(7);
+//Added by Stradex for 3759
+const int BUTTON_SECATTACK		= BIT(8); //Secondary Attack
+const int BUTTON_SILENT			= BIT(9); //Silent Walk (unusedyet)
+const int BTN_MAXBITS			= 8; //Limit of bits (Not 9 because SILENT_WALK still not working
 
 // usercmd_t->impulse commands
 const int IMPULSE_0				= 0;			// weap 0
@@ -83,6 +89,9 @@ const int IMPULSE_28			= 28;			// vote yes
 const int IMPULSE_29			= 29;			// vote no
 const int IMPULSE_40			= 40;			// use vehicle
 
+// usercmd_t->impulse commands (Added by Stradex for 3759) De 64 en adelante
+const int IBTN_OPENINVENTORY	= 64;			// Open/Close Inventory
+
 // usercmd_t->flags
 const int UCF_IMPULSE_SEQUENCE	= 0x0001;		// toggled every time an impulse command is sent
 
@@ -91,7 +100,7 @@ public:
 	int			gameFrame;						// frame number
 	int			gameTime;						// game time
 	int			duplicateCount;					// duplication count for networking
-	byte		buttons;						// buttons
+	int			buttons;						// buttons (4bytes data, 32bits) edited by stradex
 	signed char	forwardmove;					// forward/backward movement
 	signed char	rightmove;						// left/right movement
 	signed char	upmove;							// up/down movement
@@ -112,7 +121,8 @@ typedef enum {
 	INHIBIT_ASYNC
 } inhibit_t;
 
-const int MAX_BUFFERED_USERCMD = 64;
+//Original value 64, edited by Stradex
+const int MAX_BUFFERED_USERCMD = 65;
 
 class idUsercmdGen {
 public:

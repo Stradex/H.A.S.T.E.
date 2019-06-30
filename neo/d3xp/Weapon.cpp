@@ -2709,7 +2709,7 @@ void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 		// immediately go to the firing state so we don't skip fire animations
 		if ( !WEAPON_NETFIRING && isFiring ) {
-			idealState = "Fire";
+			idealState = "Attack";
 		}
 
 		// immediately switch back to idle
@@ -2804,7 +2804,8 @@ void idWeapon::Event_WeaponState( const char *statename, int blendFrames ) {
 
 	idealState = statename;
 
-	if ( !idealState.Icmp( "Fire" ) ) {
+	//Edit by Stradex
+	if ( !idealState.Icmp( "Attack" ) ) {
 		isFiring = true;
 	} else {
 		isFiring = false;

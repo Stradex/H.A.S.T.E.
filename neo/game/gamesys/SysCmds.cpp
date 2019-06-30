@@ -581,6 +581,22 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 		if ( player ) {
 			name = player->GetUserInfo()->GetString( "ui_name", "player" );
 		}
+
+		//added by Stradex for d3xp CTF
+		// Append the player's location to team chat messages in CTF
+		if ( gameLocal.mpGame.IsGametypeFlagBased() && team && player ) {
+			idLocationEntity *locationEntity = gameLocal.LocationForPoint( player->GetEyePosition() );
+
+			if ( locationEntity ) {
+				idStr temp = "[";
+				temp += locationEntity->GetLocation();
+				temp += "] ";
+				temp += text;
+				text = temp;
+			}
+
+		}
+		//end by Stradex for d3xp CTF
 	} else {
 		name = "server";
 	}

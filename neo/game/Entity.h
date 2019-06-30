@@ -345,7 +345,7 @@ public:
 		EVENT_MAXEVENTS
 	};
 
-	virtual void			ClientPredictionThink( void );
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool			ServerReceiveEvent( int event, int time, const idBitMsg &msg );
@@ -494,7 +494,7 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			ClientPredictionThink( void );
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 	virtual void			Think( void );
 
 	void					UpdateAnimation( void );

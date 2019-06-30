@@ -85,6 +85,8 @@ public:
 	void			SetLightParent( idEntity *lparent ) { lightParent = lparent; }
 	void			SetLightLevel( void );
 
+	void			UpdateSingleLightColor( float intensity );
+
 	virtual void	ShowEditingDialog( void );
 
 	enum {
@@ -92,10 +94,13 @@ public:
 		EVENT_MAXEVENTS
 	};
 
-	virtual void	ClientPredictionThink( void );
+	virtual void	ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 	virtual void	WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void	ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+
+	//added by Stradex
+	bool			isGiantSimpleLight;
 
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
@@ -116,8 +121,13 @@ private:
 	int				fadeEnd;
 	bool			soundWasPlaying;
 
+	//Added by Stradex
+	bool			org_isVisible;
+	bool			org_isOn;
+	bool			org_simpleLightVal;
+
 private:
-	void			PresentLightDefChange( void );
+	void			PresentLightDefChange( bool forceUpdate = false );
 	void			PresentModelDefChange( void );
 
 	void			Event_SetShader( const char *shadername );

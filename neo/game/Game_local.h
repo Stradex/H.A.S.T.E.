@@ -161,6 +161,7 @@ typedef enum {
 typedef struct {
 	idEntity	*ent;
 	int			dist;
+	int			team;				//added by Stradex for D3XP CTF
 } spawnSpot_t;
 
 //============================================================================
@@ -272,7 +273,8 @@ public:
 	int						framenum;
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
-	static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
+	int						msec;					// time since last update in milliseconds
+	int						gameFps;				//added by Stradex to make com_gameHz works fine
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
@@ -331,7 +333,7 @@ public:
 	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg );
 	virtual bool			ClientApplySnapshot( int clientNum, int sequence );
 	virtual void			ClientProcessReliableMessage( int clientNum, const idBitMsg &msg );
-	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame );
+	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame, bool firstCallThisFrame );
 
 	virtual void			GetClientStats( int clientNum, char *data, const int len );
 	virtual void			SwitchTeam( int clientNum, int team );
@@ -448,6 +450,9 @@ public:
 
 	bool					NeedRestart();
 
+	//added by Stradex
+	virtual void			CheckSingleLightChange( void );
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
@@ -494,11 +499,21 @@ private:
 	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
 	int						currentInitialSpot;
 
+	//added by Stradex for D3XP CTF
+	idStaticList<spawnSpot_t, MAX_GENTITIES> teamSpawnSpots[2];
+	idStaticList<idEntity *, MAX_GENTITIES> teamInitialSpots[2];
+	int						teamCurrentInitialSpot[2];
+	//end by Stradex for D3XP CTF
+
 	idDict					newInfo;
 
 	idStrList				shakeSounds;
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
+
+	//added by Stradex
+	bool					org_simpleLightVal;
+	float					org_simpleLightIntensity;
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
@@ -518,6 +533,7 @@ private:
 	void					RunDebugInfo( void );
 
 	void					InitScriptForMap( void );
+	void					SetScriptFPS( const float tCom_gameHz );
 
 	void					InitConsoleCommands( void );
 	void					ShutdownConsoleCommands( void );

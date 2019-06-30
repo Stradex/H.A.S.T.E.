@@ -115,6 +115,9 @@ idCVar r_skipSpecular( "r_skipSpecular", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_C
 idCVar r_skipBump( "r_skipBump", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "uses a flat surface instead of the bump map" );
 idCVar r_skipDiffuse( "r_skipDiffuse", "0", CVAR_RENDERER | CVAR_BOOL, "use black for diffuse" );
 idCVar r_skipROQ( "r_skipROQ", "0", CVAR_RENDERER | CVAR_BOOL, "skip ROQ decoding" );
+//added by Stradex
+idCVar r_useStaticLighting( "r_useStaticLighting", "0", CVAR_GAME | CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "1 = don't accept any light updates, making everything static" );
+
 
 idCVar r_ignore( "r_ignore", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
 idCVar r_ignore2( "r_ignore2", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
@@ -137,7 +140,7 @@ idCVar r_shadowPolygonFactor( "r_shadowPolygonFactor", "0", CVAR_RENDERER | CVAR
 idCVar r_frontBuffer( "r_frontBuffer", "0", CVAR_RENDERER | CVAR_BOOL, "draw to front buffer for debugging" );
 idCVar r_skipSubviews( "r_skipSubviews", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = don't render any gui elements on surfaces" );
 idCVar r_skipGuiShaders( "r_skipGuiShaders", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all gui elements on surfaces, 2 = skip drawing but still handle events, 3 = draw but skip events", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
-idCVar r_skipParticles( "r_skipParticles", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all particle systems", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1> );
+idCVar r_skipParticles( "r_skipParticles", "0", CVAR_RENDERER | CVAR_GAME | CVAR_INTEGER | CVAR_NOCHEAT, "1 = skip all particle systems", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1> );
 idCVar r_subviewOnly( "r_subviewOnly", "0", CVAR_RENDERER | CVAR_BOOL, "1 = don't render main view, allowing subviews to be debugged" );
 idCVar r_shadows( "r_shadows", "1", CVAR_RENDERER | CVAR_BOOL  | CVAR_ARCHIVE, "enable shadows" );
 idCVar r_testARBProgram( "r_testARBProgram", "0", CVAR_RENDERER | CVAR_BOOL, "experiment with vertex/fragment programs" );
@@ -558,9 +561,9 @@ static void initSortedVidModes()
 //     to overwrite the default resolution list in the system options menu
 
 // "r_custom*;640x480;800x600;1024x768;..."
-idStr R_GetVidModeListString()
+idStr R_GetVidModeListString(bool addCustom)
 {
-	idStr ret = "r_custom*";
+	idStr ret = addCustom ? "r_custom*" : "";
 
 	for(int i=0; i<s_numVidModes; ++i)
 	{
@@ -576,9 +579,9 @@ idStr R_GetVidModeListString()
 }
 
 // r_mode values for resolutions from R_GetVidModeListString(): "-1;3;4;5;..."
-idStr R_GetVidModeValsString()
+idStr R_GetVidModeValsString(bool addCustom)
 {
-	idStr ret =  "-1"; // for custom resolutions using r_customWidth/r_customHeight
+	idStr ret = addCustom ? "-1" : ""; // for custom resolutions using r_customWidth/r_customHeight
 	for(int i=0; i<s_numVidModes; ++i)
 	{
 		// for some reason, modes 0-2 are not used. maybe too small for GUI?

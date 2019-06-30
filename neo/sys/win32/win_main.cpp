@@ -295,7 +295,7 @@ static int GetHomeDir(char *dst, size_t size)
 	if (len == 0)
 		return 0;
 
-	idStr::Append(dst, size, "/My Games/dhewm3");
+	idStr::Append(dst, size, "/cfgs/dhewm3");
 
 	return len;
 }
@@ -367,11 +367,29 @@ bool Sys_GetPath(sysPath_t type, idStr &path) {
 
 	case PATH_CONFIG:
 	case PATH_SAVE:
+		/*
 		if (GetHomeDir(buf, sizeof(buf)) < 1) {
 			Sys_Error("ERROR: Couldn't get dir to home path");
 			return false;
 		}
 
+		path = buf;
+		*/
+		if (Sys_GetPath(PATH_EXE, path)) {
+			path.StripFilename();
+
+			s = path;
+			s.AppendPath("cfgs");
+			if (_stat(s.c_str(), &st) != -1 && st.st_mode & _S_IFDIR) {
+				path = s;
+				return true;
+			}
+		}
+
+		if (GetHomeDir(buf, sizeof(buf)) < 1) {
+			Sys_Error("ERROR: Couldn't get dir to home path");
+			return false;
+		}
 		path = buf;
 		return true;
 

@@ -100,7 +100,8 @@ const char *idWindow::ScriptNames[] = {
 	"onTrigger",
 	"onActionRelease",
 	"onEnter",
-	"onEnterRelease"
+	"onEnterRelease",
+	"onSecAction"			//Right click action added by Stradex
 };
 
 /*
@@ -594,7 +595,7 @@ idWindow::RunTimeEvents
 */
 bool idWindow::RunTimeEvents(int time) {
 
-	if ( time - lastTimeRun < USERCMD_MSEC ) {
+	if ( time - lastTimeRun < com_gameMSRate ) {
 		//common->Printf("Skipping gui time events at %i\n", time);
 		return false;
 	}
@@ -708,12 +709,16 @@ idWindow::HandleEvent
 const char *idWindow::HandleEvent(const sysEvent_t *event, bool *updateVisuals) {
 	static bool actionDownRun;
 	static bool actionUpRun;
+	static bool actionSecDownRun;	//Secondary click down by Stradex
+	static bool actionSecUpRun;	//Secondary click up by Stradex (unused yet)
 
 	cmd = "";
 
 	if ( flags & WIN_DESKTOP ) {
 		actionDownRun = false;
 		actionUpRun = false;
+		actionSecDownRun = false;
+		actionSecUpRun = false;
 		if (expressionRegisters.Num() && ops.Num()) {
 			EvalRegs();
 		}
@@ -731,7 +736,6 @@ const char *idWindow::HandleEvent(const sysEvent_t *event, bool *updateVisuals) 
 			}
 
 			if (event->evValue == K_MOUSE1) {
-
 				if (!event->evValue2 && GetCaptureChild()) {
 					GetCaptureChild()->LoseCapture();
 					gui->GetDesktop()->captureChild = NULL;
@@ -780,7 +784,7 @@ const char *idWindow::HandleEvent(const sysEvent_t *event, bool *updateVisuals) 
 					actionUpRun = RunScript( ON_ACTIONRELEASE );
 				}
 			} else if (event->evValue == K_MOUSE2) {
-
+				//common->Printf("Secondary click start...\n");
 				if (!event->evValue2 && GetCaptureChild()) {
 					GetCaptureChild()->LoseCapture();
 					gui->GetDesktop()->captureChild = NULL;
@@ -808,6 +812,11 @@ const char *idWindow::HandleEvent(const sysEvent_t *event, bool *updateVisuals) 
 							}
 						}
 					}
+				}
+				//Added by Stradex secondary click action
+				if (event->evValue2 && !actionSecDownRun) {
+					actionSecDownRun = RunScript( ON_SECACTION );
+					//common->Printf("Secondary click end...\n");
 				}
 			} else if (event->evValue == K_MOUSE3) {
 				if (gui_edit.GetBool()) {

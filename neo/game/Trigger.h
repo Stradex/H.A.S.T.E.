@@ -89,7 +89,8 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-private:
+//private: //commented by Stradex for D3XP CTF
+protected: 
 	float				wait;
 	float				random;
 	float				delay;
@@ -285,6 +286,27 @@ private:
 	idClipModel *		clipModel;
 
 	void				Event_Trigger( idEntity *activator );
+};
+
+/*
+===============================================================================
+  Trigger that responces to CTF flags
+===============================================================================
+*/
+class idTrigger_Flag : public idTrigger_Multi {
+public:
+	CLASS_PROTOTYPE( idTrigger_Flag );
+
+						idTrigger_Flag( void );
+	void				Spawn( void );
+
+private:
+	int					team;
+	bool				player;			// flag must be attached/carried by player
+
+	const idEventDef *	eventFlag;
+
+	void				Event_Touch( idEntity *other, trace_t *trace );
 };
 
 #endif /* !__GAME_TRIGGER_H__ */

@@ -234,6 +234,9 @@ public:
 	bool		GetPacket( netadr_t &from, void *data, int &size, int maxSize );
 	bool		GetPacketBlocking( netadr_t &from, void *data, int &size, int maxSize, int timeout );
 	void		SendPacket( const netadr_t to, const void *data, int size );
+	//added by Stradex
+	bool		TryUPnP(int portNumber);
+	bool		upnpFailed;
 
 	int			packetsRead;
 	int			bytesRead;

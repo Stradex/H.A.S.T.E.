@@ -855,9 +855,9 @@ void R_SetViewMatrix( viewDef_t *viewDef ) {
 	memset( world, 0, sizeof(*world) );
 
 	// the model matrix is an identity
-	world->modelMatrix[0*4+0] = 1;
-	world->modelMatrix[1*4+1] = 1;
-	world->modelMatrix[2*4+2] = 1;
+	world->modelMatrix[0*4+0] = 1.0f;
+	world->modelMatrix[1*4+1] = 1.0f;
+	world->modelMatrix[2*4+2] = 1.0f;
 
 	// transform by the camera placement
 	origin = viewDef->renderView.vieworg;
@@ -908,7 +908,8 @@ void R_SetupProjection( void ) {
 		jitterx = random.RandomFloat();
 		jittery = random.RandomFloat();
 	} else {
-		jitterx = jittery = 0;
+		jitterx = 0.0f;
+		jittery = 0.0f;
 	}
 
 	//

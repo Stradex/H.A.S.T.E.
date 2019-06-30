@@ -379,8 +379,27 @@ void GL_State( int stateBits ) {
 	backEnd.glState.glStateBits = stateBits;
 }
 
-
-
+//From Doom 3 BFG Edition
+/*
+========================
+GL_Clear
+========================
+*/
+void GL_Clear( bool color, bool depth, bool stencil, byte stencilValue, float r, float g, float b, float a ) {
+	int clearFlags = 0;
+	if ( color ) {
+		qglClearColor( r, g, b, a );
+		clearFlags |= GL_COLOR_BUFFER_BIT;
+	}
+	if ( depth ) {
+		clearFlags |= GL_DEPTH_BUFFER_BIT;
+	}
+	if ( stencil ) {
+		qglClearStencil( stencilValue );
+		clearFlags |= GL_STENCIL_BUFFER_BIT;
+	}
+	qglClear( clearFlags );
+}
 
 /*
 ============================================================================
@@ -558,6 +577,10 @@ const void	RB_CopyRender( const void *data ) {
 
 	if (cmd->image) {
 		cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
+	}
+
+	if ( cmd->clearColorAfterCopy ) {
+		GL_Clear( true, false, false, STENCIL_SHADOW_TEST_VALUE, 0, 0, 0, 0 );
 	}
 }
 

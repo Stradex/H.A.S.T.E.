@@ -44,6 +44,8 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+extern float SCR_DrawFPS( float y );
+
 class idConsole {
 public:
 	virtual			~idConsole( void ) {}

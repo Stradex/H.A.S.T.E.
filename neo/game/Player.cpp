@@ -26,6 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+//BUTTON_SECATTACK, use it to secondary attack in future
+
 #include "sys/platform.h"
 #include "idlib/LangDict.h"
 #include "framework/async/NetworkSystem.h"
@@ -820,7 +822,8 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 			}
 
 			if ( !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || ( weaponName == "weapon_fists" ) || ( weaponName == "weapon_soulcube" ) ) {
-				if ( ( weapons & ( 1 << i ) ) == 0 || gameLocal.isMultiplayer ) {
+				//if ( ( weapons & ( 1 << i ) ) == 0 || gameLocal.isMultiplayer ) { //always pickup in MP?, LOL
+				if ( ( weapons & ( 1 << i ) ) == 0 || cvarSystem->GetCVarBool( "si_alwaysPickup" )) { //CVAR to enable disable always pickup
 					if ( owner->GetUserInfo()->GetBool( "ui_autoSwitch" ) && idealWeapon ) {
 						assert( !gameLocal.isClient );
 						*idealWeapon = i;
@@ -1000,6 +1003,8 @@ idPlayer::idPlayer() {
 	colorBarIndex			= 0;
 	forcedReady				= false;
 	wantSpectate			= false;
+
+	carryingFlag			= false; //added by Stradex for CTF
 
 	lastHitToggle			= false;
 
@@ -1295,6 +1300,7 @@ void idPlayer::Init( void ) {
 	stamina = pm_stamina.GetFloat();
 
 	// air always initialized to maximum too
+	pm_airTics.SetFloat((static_cast<float>(gameLocal.gameFps)/60.0)*pm_airTics.GetFloat()); //update for com_gameHz
 	airTics = pm_airTics.GetFloat();
 	airless = false;
 
@@ -1457,6 +1463,13 @@ void idPlayer::Spawn( void ) {
 		}
 		if ( hud ) {
 			hud->Activate( true, gameLocal.time );
+
+			//added by Stradex for CTF
+			if ( gameLocal.mpGame.IsGametypeFlagBased() ) {
+				hud->SetStateInt( "red_team_score", gameLocal.mpGame.GetFlagPoints(0) );
+				hud->SetStateInt( "blue_team_score", gameLocal.mpGame.GetFlagPoints(1) );
+			}
+			//end by Stradex for CTF
 		}
 
 		// load cursor
@@ -1574,6 +1587,7 @@ void idPlayer::Spawn( void ) {
 	inventory.pdaOpened = false;
 	inventory.selPDA = 0;
 
+	/* //Delete later - Stradex
 	if ( !gameLocal.isMultiplayer ) {
 		if ( g_skill.GetInteger() < 2 ) {
 			if ( health < 25 ) {
@@ -1592,6 +1606,7 @@ void idPlayer::Spawn( void ) {
 			}
 		}
 	}
+	*/
 }
 
 /*
@@ -1604,6 +1619,17 @@ Release any resources used by the player.
 idPlayer::~idPlayer() {
 	delete weapon.GetEntity();
 	weapon = NULL;
+
+	//added by Stradex for CTF
+	//if ( enviroSuitLight.IsValid() ) {
+	//	enviroSuitLight.GetEntity()->ProcessEvent( &EV_Remove );
+	//}
+	
+	// have to do this here, idMultiplayerGame::DisconnectClient() is too late
+	if ( gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeFlagBased() ) {
+		ReturnFlag();
+	}
+	//end by Stradex for CTF
 }
 
 /*
@@ -2075,6 +2101,16 @@ void idPlayer::PrepareForRestart( void ) {
 	Spectate( true );
 	forceRespawn = true;
 
+	//added by Stradex for CTF
+	// Confirm reset hud states
+	DropFlag();
+
+	if ( hud ) {
+		hud->SetStateInt( "red_flagstatus", 0 );
+		hud->SetStateInt( "blue_flagstatus", 0 );
+	}
+	//end by Stradex for CTF
+
 	// we will be restarting program, clear the client entities from program-related things first
 	ShutdownThreads();
 
@@ -2126,6 +2162,15 @@ void idPlayer::ServerSpectate( bool spectate ) {
 	if ( !spectate ) {
 		SpawnFromSpawnSpot();
 	}
+
+	//added by Stradex for CTF
+	// drop the flag if player was carrying it
+	if ( spectate && gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeFlagBased() &&
+		 carryingFlag )
+	{
+		DropFlag();
+	}
+	//end by Stradex for CTF
 }
 
 /*
@@ -2334,7 +2379,8 @@ void idPlayer::UpdateSkinSetup( bool restart ) {
 	if ( restart ) {
 		team = ( idStr::Icmp( GetUserInfo()->GetString( "ui_team" ), "Blue" ) == 0 );
 	}
-	if ( gameLocal.gameType == GAME_TDM ) {
+	
+	if ( gameLocal.mpGame.IsGametypeTeamBased() ) { /* CTF */
 		if ( team ) {
 			baseSkinName = "skins/characters/player/marine_mp_blue";
 		} else {
@@ -2452,7 +2498,7 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 	ready = newready;
 	team = ( idStr::Icmp( userInfo->GetString( "ui_team" ), "Blue" ) == 0 );
 	// server maintains TDM balance
-	if ( canModify && gameLocal.gameType == GAME_TDM && !gameLocal.mpGame.IsInGame( entityNumber ) && g_balanceTDM.GetBool() ) {
+	if ( canModify && gameLocal.mpGame.IsGametypeTeamBased() && !gameLocal.mpGame.IsInGame( entityNumber ) && g_balanceTDM.GetBool() ) { /* CTF */
 		modifiedInfo |= BalanceTDM( );
 	}
 	UpdateSkinSetup( false );
@@ -2556,6 +2602,22 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 		_hud->HandleNamedEvent( "armorPulse" );
 		inventory.armorPulse = false;
 	}
+
+	//added by Stradex for CTF
+	if ( gameLocal.mpGame.IsGametypeFlagBased() && _hud )
+	{
+		_hud->SetStateInt( "red_flagstatus", gameLocal.mpGame.GetFlagStatus( 0 ) );
+		_hud->SetStateInt( "blue_flagstatus", gameLocal.mpGame.GetFlagStatus( 1 ) );
+
+		_hud->SetStateInt( "red_team_score",  gameLocal.mpGame.GetFlagPoints( 0 ) );
+		_hud->SetStateInt( "blue_team_score", gameLocal.mpGame.GetFlagPoints( 1 ) );
+
+		_hud->HandleNamedEvent( "RedFlagStatusChange" );
+		_hud->HandleNamedEvent( "BlueFlagStatusChange" );
+	}
+	//end by Stradex for CTF
+
+	_hud->HandleNamedEvent( "selfTeam" );
 
 	UpdateHudAmmo( _hud );
 }
@@ -2771,7 +2833,7 @@ void idPlayer::StopFiring( void ) {
 idPlayer::FireWeapon
 ===============
 */
-void idPlayer::FireWeapon( void ) {
+void idPlayer::FireWeapon( bool isSecAttack ) {
 	idMat3 axis;
 	idVec3 muzzle;
 
@@ -2789,7 +2851,7 @@ void idPlayer::FireWeapon( void ) {
 	if ( !hiddenWeapon && weapon.GetEntity()->IsReady() ) {
 		if ( weapon.GetEntity()->AmmoInClip() || weapon.GetEntity()->AmmoAvailable() ) {
 			AI_ATTACK_HELD = true;
-			weapon.GetEntity()->BeginAttack();
+			weapon.GetEntity()->BeginAttack( isSecAttack );
 			if ( ( weapon_soulcube >= 0 ) && ( currentWeapon == weapon_soulcube ) ) {
 				if ( hud ) {
 					hud->HandleNamedEvent( "soulCubeNotReady" );
@@ -2960,7 +3022,6 @@ bool idPlayer::GiveItem( idItem *item ) {
 	if ( gave && ( numPickup == inventory.pickupItemNames.Num() ) ) {
 		inventory.AddPickupName( item->spawnArgs.GetString( "inv_name" ), item->spawnArgs.GetString( "inv_icon" ) );
 	}
-
 	return gave;
 }
 
@@ -3886,9 +3947,17 @@ void idPlayer::Weapon_Combat( void ) {
 	// check for attack
 	AI_WEAPON_FIRED = false;
 	if ( !influenceActive ) {
-		if ( ( usercmd.buttons & BUTTON_ATTACK ) && !weaponGone ) {
-			FireWeapon();
-		} else if ( oldButtons & BUTTON_ATTACK ) {
+		//if ( ( usercmd.buttons & BUTTON_ATTACK ) && !weaponGone ) {
+		//secondary attack by Stradex
+		if ( (( usercmd.buttons & BUTTON_ATTACK ) || ( usercmd.buttons & BUTTON_SECATTACK )) && !weaponGone ) {
+
+			if ( usercmd.buttons & BUTTON_SECATTACK ) {
+				FireWeapon(true);
+			} else {
+				FireWeapon(false);
+			}
+			
+		} else if ((  oldButtons & BUTTON_ATTACK ) || (  oldButtons & BUTTON_SECATTACK )) {
 			AI_ATTACK_HELD = false;
 			weapon.GetEntity()->EndAttack();
 		}
@@ -4654,11 +4723,11 @@ void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 
 	// allow falling a bit further for multiplayer
 	if ( gameLocal.isMultiplayer ) {
-		fatalDelta	= 75.0f;
-		hardDelta	= 50.0f;
+		fatalDelta	= 100.0f; //edit by stradex
+		hardDelta	= 75.0f; //edit by stradex
 	} else {
-		fatalDelta	= 65.0f;
-		hardDelta	= 45.0f;
+		fatalDelta	= 100.0f; //edit by stradex
+		hardDelta	= 75.0f; //edit by stradex
 	}
 
 	if ( delta > fatalDelta ) {
@@ -5617,6 +5686,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 			UseVehicle();
 			break;
 		}
+		//Added by Stradex
+		case IBTN_OPENINVENTORY: {
+			gameLocal.Printf("Use key...\n");
+			break;
+		}
 	}
 }
 
@@ -5678,7 +5752,7 @@ void idPlayer::EvaluateControls( void ) {
 idPlayer::AdjustSpeed
 ==============
 */
-void idPlayer::AdjustSpeed( void ) {
+void idPlayer::AdjustSpeed(float speedMultiplier) {
 	float speed;
 	float rate;
 
@@ -5725,7 +5799,7 @@ void idPlayer::AdjustSpeed( void ) {
 		speed *= 0.33f;
 	}
 
-	physicsObj.SetSpeed( speed, pm_crouchspeed.GetFloat() );
+	physicsObj.SetSpeed( speed*speedMultiplier, pm_crouchspeed.GetFloat()*speedMultiplier ); //speedMultiplier for netcode clientprediction stradex
 }
 
 /*
@@ -5918,7 +5992,7 @@ void idPlayer::GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const {
 idPlayer::Move
 ==============
 */
-void idPlayer::Move( void ) {
+void idPlayer::Move( float speedMultiplier ) {
 	float newEyeOffset;
 	idVec3 oldOrigin;
 	idVec3 oldVelocity;
@@ -5926,8 +6000,8 @@ void idPlayer::Move( void ) {
 
 	// save old origin and velocity for crashlanding
 	oldOrigin = physicsObj.GetOrigin();
-	oldVelocity = physicsObj.GetLinearVelocity();
-	pushVelocity = physicsObj.GetPushedLinearVelocity();
+	oldVelocity = physicsObj.GetLinearVelocity()*speedMultiplier;
+	pushVelocity = physicsObj.GetPushedLinearVelocity()*speedMultiplier;
 
 	// set physics variables
 	physicsObj.SetMaxStepHeight( pm_stepsize.GetFloat() );
@@ -6079,7 +6153,7 @@ void idPlayer::UpdateHud( void ) {
 	}
 
 	if ( gameLocal.realClientTime == lastMPAimTime ) {
-		if ( MPAim != -1 && gameLocal.gameType == GAME_TDM
+		if ( MPAim != -1 && gameLocal.mpGame.IsGametypeTeamBased() /* CTF */
 			&& gameLocal.entities[ MPAim ] && gameLocal.entities[ MPAim ]->IsType( idPlayer::Type )
 			&& static_cast< idPlayer * >( gameLocal.entities[ MPAim ] )->team == team ) {
 				aimed = static_cast< idPlayer * >( gameLocal.entities[ MPAim ] );
@@ -6516,6 +6590,15 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 	// drop the weapon as an item
 	DropWeapon( true );
 
+	//added by Stradex for CTF
+	// drop the flag if player was carrying it
+	if ( gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeFlagBased() &&
+		 carryingFlag )
+	{
+		DropFlag();
+	}
+	//End by Stradex for CTF
+
 	if ( !g_testDeath.GetBool() ) {
 		LookAtKiller( inflictor, attacker );
 	}
@@ -6574,8 +6657,21 @@ callback function for when another entity received damage from this entity.  dam
 void idPlayer::DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage ) {
 	assert( !gameLocal.isClient );
 	damage *= PowerUpModifier( BERSERK );
-	if ( damage && ( victim != this ) && victim->IsType( idActor::Type ) ) {
-		SetLastHitTime( gameLocal.time );
+	//if ( damage && ( victim != this ) && victim->IsType( idActor::Type ) ) {
+	if ( damage && ( victim != this ) && ( victim->IsType( idActor::Type ) || victim->IsType( idDamagable::Type ) ) ) { //added by Stradex for CTF
+		idPlayer *victimPlayer = NULL;
+
+		/* No damage feedback sound for hitting friendlies in CTF */
+		if ( victim->IsType( idPlayer::Type ) ) {
+			victimPlayer = static_cast<idPlayer*>(victim);
+		}
+
+		if ( gameLocal.mpGame.IsGametypeFlagBased() && victimPlayer && this->team == victimPlayer->team ) {
+			/* Do nothing ... */
+		} else {
+			SetLastHitTime( gameLocal.time );
+		}
+		//SetLastHitTime( gameLocal.time );
 	}
 }
 
@@ -6645,7 +6741,7 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	if ( !damageDef->GetBool( "noArmor" ) ) {
 		float armor_protection;
 
-		armor_protection = ( gameLocal.isMultiplayer ) ? g_armorProtectionMP.GetFloat() : g_armorProtection.GetFloat();
+		armor_protection = g_armorProtection.GetFloat();
 
 		armorSave = ceil( damage * armor_protection );
 		if ( armorSave >= inventory.armor ) {
@@ -6665,7 +6761,7 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	}
 
 	// check for team damage
-	if ( gameLocal.gameType == GAME_TDM
+	if ( gameLocal.mpGame.IsGametypeTeamBased() /* CTF */
 		&& !gameLocal.serverInfo.GetBool( "si_teamDamage" )
 		&& !damageDef->GetBool( "noTeam" )
 		&& player
@@ -7784,7 +7880,12 @@ void idPlayer::Event_ExitTeleporter( void ) {
 idPlayer::ClientPredictionThink
 ================
 */
-void idPlayer::ClientPredictionThink( void ) {
+void idPlayer::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
+	//Normalize the var just in case
+	if (callsPerFrame < 1)	{
+		callsPerFrame =1;
+	}
+
 	renderEntity_t *headRenderEnt;
 
 	oldFlags = usercmd.flags;
@@ -7816,8 +7917,19 @@ void idPlayer::ClientPredictionThink( void ) {
 	}
 
 	scoreBoardOpen = ( ( usercmd.buttons & BUTTON_SCORES ) != 0 || forceScoreBoard );
+	
 
-	AdjustSpeed();
+	if ( entityNumber != gameLocal.localClientNum ) { //Other players
+		if (net_clientUnlagged.GetBool()) {
+			if (lastFrameCall) {
+				AdjustSpeed(static_cast<float>(callsPerFrame));
+			}
+		} else {
+			AdjustSpeed();
+		}
+	} else { //Current player
+		AdjustSpeed();
+	}
 
 	UpdateViewAngles();
 
@@ -7840,7 +7952,18 @@ void idPlayer::ClientPredictionThink( void ) {
 
 	if ( !isLagged ) {
 		// don't allow client to move when lagged
-		Move();
+		if ( entityNumber != gameLocal.localClientNum ) { //Other players
+			if (net_clientUnlagged.GetBool()) {
+				if (lastFrameCall) {
+					//common->Printf("Speed multiplier %d\n", callsPerFrame);
+					Move(static_cast<float>(callsPerFrame));
+				}
+			} else {
+				Move();
+			}
+		} else { //Current player
+			Move();
+		}
 	}
 
 	// update GUIs, Items, and character interactions
@@ -8022,6 +8145,7 @@ void idPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( weaponGone, 1 );
 	msg.WriteBits( isLagged, 1 );
 	msg.WriteBits( isChatting, 1 );
+	msg.WriteBits( carryingFlag, 1 ); //added by Stradex for D3XP CTF
 }
 
 /*
@@ -8059,6 +8183,7 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	weaponGone = msg.ReadBits( 1 ) != 0;
 	isLagged = msg.ReadBits( 1 ) != 0;
 	isChatting = msg.ReadBits( 1 ) != 0;
+	carryingFlag = msg.ReadBits( 1 ) != 0; //added by Stradex for D3XP CTF
 
 	// no msg reading below this
 
@@ -8499,6 +8624,13 @@ void idPlayer::DrawPlayerIcons( void ) {
 		playerIcon.FreeIcon();
 		return;
 	}
+
+	//added by Stradex for D3XP CTF
+	// Never draw icons for hidden players.
+	if ( this->IsHidden() )
+		return;
+	//end by Stradex for D3XP CTF
+
 	playerIcon.Draw( this, headJoint );
 }
 
@@ -8518,5 +8650,56 @@ idPlayer::NeedsIcon
 */
 bool idPlayer::NeedsIcon( void ) {
 	// local clients don't render their own icons... they're only info for other clients
-	return entityNumber != gameLocal.localClientNum && ( isLagged || isChatting );
+
+	return entityNumber != gameLocal.localClientNum && ( ( g_CTFArrows.GetBool() && gameLocal.mpGame.IsGametypeFlagBased() && !IsHidden() && !AI_DEAD ) || ( isLagged || isChatting ) ); //added by Stradex for CTF
+	//return entityNumber != gameLocal.localClientNum && ( isLagged || isChatting );
+}
+
+/*
+===============
+CTF Methods
+==============
+*/
+
+/*
+===============
+idPlayer::DropFlag()
+==============
+*/
+void idPlayer::DropFlag( void ) {
+	if ( !carryingFlag || !gameLocal.isMultiplayer || !gameLocal.mpGame.IsGametypeFlagBased() ) /* CTF */
+		return;
+
+	idEntity * entity = gameLocal.mpGame.GetTeamFlag( 1 - this->latchedTeam );
+	if ( entity ) {
+		idItemTeam * item = static_cast<idItemTeam*>(entity);
+
+		if ( item->carried && !item->dropped ) {
+			item->Drop( health <= 0 );
+			carryingFlag = false;
+		}
+	}
+
+}
+
+void idPlayer::ReturnFlag() {
+
+	if ( !carryingFlag || !gameLocal.isMultiplayer || !gameLocal.mpGame.IsGametypeFlagBased() ) /* CTF */
+		return;
+
+	idEntity * entity = gameLocal.mpGame.GetTeamFlag( 1 - this->latchedTeam );
+	if ( entity ) {
+		idItemTeam * item = static_cast<idItemTeam*>(entity);
+
+		if ( item->carried && !item->dropped ) {
+			item->Return();
+			carryingFlag = false;
+		}
+	}
+}
+
+void idPlayer::FreeModelDef( void ) {
+	idAFEntity_Base::FreeModelDef();
+	if ( gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeFlagBased() )
+		playerIcon.FreeIcon();
 }

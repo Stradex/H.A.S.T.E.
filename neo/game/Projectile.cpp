@@ -459,6 +459,8 @@ void idProjectile::Think( void ) {
 	}
 
 	// add the light
+	if (!r_simpleLight.GetBool()) //Add by Stradex, improve simplelight
+	{
 	if ( renderLight.lightRadius.x > 0.0f && g_projectileLights.GetBool() ) {
 		renderLight.origin = GetPhysics()->GetOrigin() + GetPhysics()->GetAxis() * lightOffset;
 		renderLight.axis = GetPhysics()->GetAxis();
@@ -477,6 +479,7 @@ void idProjectile::Think( void ) {
 		} else {
 			lightDefHandle = gameRenderWorld->AddLightDef( &renderLight );
 		}
+	}
 	}
 }
 
@@ -844,19 +847,47 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// explosion light
 	light_shader = spawnArgs.GetString( "mtr_explode_light_shader" );
+
+	//added by Stradex for ROE CTF
+	if ( gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool("si_midnight") )
+	{
+		light_shader = "lights/midnight_grenade";
+	}
+	//end added by Stradex 
+
 	if ( *light_shader ) {
 		renderLight.shader = declManager->FindMaterial( light_shader, false );
 		renderLight.pointLight = true;
 		renderLight.lightRadius[0] =
 		renderLight.lightRadius[1] =
 		renderLight.lightRadius[2] = spawnArgs.GetFloat( "explode_light_radius" );
+
+		//added by Stradex for ROE CTF
+		// Midnight ctf
+		if ( gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool("si_midnight") )
+		{
+			renderLight.lightRadius[0] = 
+			renderLight.lightRadius[1] =
+			renderLight.lightRadius[2] = spawnArgs.GetFloat( "explode_light_radius" ) * 2;
+		}
+		//end added by Stradex 
+
 		spawnArgs.GetVector( "explode_light_color", "1 1 1", lightColor );
 		renderLight.shaderParms[SHADERPARM_RED] = lightColor.x;
 		renderLight.shaderParms[SHADERPARM_GREEN] = lightColor.y;
 		renderLight.shaderParms[SHADERPARM_BLUE] = lightColor.z;
 		renderLight.shaderParms[SHADERPARM_ALPHA] = 1.0f;
 		renderLight.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
-		light_fadetime = spawnArgs.GetFloat( "explode_light_fadetime", "0.5" );
+
+		//added by Stradex for ROE CTF
+		// Midnight ctf
+		if ( gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool("si_midnight") )
+		{
+			light_fadetime = 3.0f;
+		} else {
+			light_fadetime = spawnArgs.GetFloat( "explode_light_fadetime", "0.5" );
+		}
+		//end added by Stradex 
 		lightStartTime = gameLocal.time;
 		lightEndTime = gameLocal.time + SEC2MS( light_fadetime );
 		BecomeActive( TH_THINK );
@@ -1005,6 +1036,12 @@ void idProjectile::Event_Touch( idEntity *other, trace_t *trace ) {
 		return;
 	}
 
+	//added by Stradex for CTF
+	// Projectiles do not collide with flags
+	if ( other->IsType( idItemTeam::Type ) )
+		return;
+	//end by Stradex for CTF
+
 	if ( other != owner.GetEntity() ) {
 		trace_t collision;
 
@@ -1068,10 +1105,18 @@ bool idProjectile::ClientPredictionCollide( idEntity *soundEnt, const idDict &pr
 idProjectile::ClientPredictionThink
 ================
 */
-void idProjectile::ClientPredictionThink( void ) {
+void idProjectile::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	if ( !renderEntity.hModel ) {
 		return;
 	}
+
+	/*
+	if (net_clientUnlagged.GetBool() && lastFrameCall) { //UNLAGGED test
+		//physicsObj.SetLinearVelocity( physicsObj.GetLinearVelocity() * callsPerFrame);
+		//physicsObj.SetAngularVelocity(physicsObj.GetAngularVelocity() * callsPerFrame);
+	}
+	*/
+
 	Think();
 }
 
@@ -1430,7 +1475,7 @@ void idGuidedProjectile::Launch( const idVec3 &start, const idVec3 &dir, const i
 	angles = vel.ToAngles();
 	speed = vel.Length();
 	rndScale = spawnArgs.GetAngles( "random", "15 15 0" );
-	turn_max = spawnArgs.GetFloat( "turn_max", "180" ) / ( float )USERCMD_HZ;
+	turn_max = spawnArgs.GetFloat( "turn_max", "180" ) / ( float )gameLocal.gameFps;
 	clamp_dist = spawnArgs.GetFloat( "clamp_dist", "256" );
 	burstMode = spawnArgs.GetBool( "burstMode" );
 	unGuided = false;

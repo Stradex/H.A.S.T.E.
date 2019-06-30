@@ -176,6 +176,7 @@ public:
 	void				GetAsyncStatsAvgMsg( idStr &msg );
 
 	void				PrintLocalServerInfo( void );
+	void				StopHeartbeatThread( void ); //added by Stradex for htmlmasterserver method
 
 private:
 	bool				active;						// true if server is active
@@ -216,6 +217,9 @@ private:
 	int					stats_max;
 	int					stats_max_index;
 
+	//added by Stradex in order to use HTMLMasterserver
+	xthreadInfo			heartbeatThread;
+
 	void				PrintOOB( const netadr_t to, int opcode, const char *string );
 	void				DuplicateUsercmds( int frame, int time );
 	void				ClearClient( int clientNum );
@@ -254,6 +258,9 @@ private:
 	int					UpdateTime( int clamp );
 	void				SendEnterGameToClient( int clientNum );
 	void				ProcessDownloadRequestMessage( const netadr_t from, const idBitMsg &msg );
+	void				StartHeartbeatThread( void ); //added by Stradex for htmlmasterserver method
+
+	friend int			HeartbeatThread( void *pexit ); //added by Stradex for htmlmasterserver method
 };
 
 #endif /* !__ASYNCSERVER_H__ */

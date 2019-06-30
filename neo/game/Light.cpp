@@ -34,6 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Light.h"
 
+
 /*
 ===============================================================================
 
@@ -155,6 +156,19 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	args->GetFloat( "shaderParm5", "0", renderLight->shaderParms[5] );
 	args->GetFloat( "shaderParm6", "0", renderLight->shaderParms[6] );
 	args->GetFloat( "shaderParm7", "0", renderLight->shaderParms[ SHADERPARM_MODE ] );
+
+	//added by stradex for simple rendering
+	/*
+	if (r_simpleLight.GetBool()) {
+		renderLight->noSpecular = true;
+		renderLight->noShadows = true;
+		renderLight->parallel = true;
+	} else {
+		args->GetBool( "noshadows", "0", renderLight->noShadows );
+		args->GetBool( "nospecular", "0", renderLight->noSpecular );
+		args->GetBool( "parallel", "0", renderLight->parallel );
+	}
+	*/
 	args->GetBool( "noshadows", "0", renderLight->noShadows );
 	args->GetBool( "nospecular", "0", renderLight->noSpecular );
 	args->GetBool( "parallel", "0", renderLight->parallel );
@@ -162,6 +176,7 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	args->GetString( "texture", "lights/squarelight1", &texture );
 	// allow this to be NULL
 	renderLight->shader = declManager->FindMaterial( texture, false );
+
 }
 
 /*
@@ -209,6 +224,10 @@ idLight::idLight() {
 	fadeStart			= 0;
 	fadeEnd				= 0;
 	soundWasPlaying		= false;
+	org_isVisible		= true;
+	org_isOn			= true;
+	org_simpleLightVal	= r_simpleLight.GetBool();
+	isGiantSimpleLight	= false;
 }
 
 /*
@@ -355,9 +374,33 @@ void idLight::Spawn( void ) {
 	}
 
 	spawnArgs.GetBool( "start_off", "0", start_off );
+	spawnArgs.GetBool( "stradex_simple_light", "0", isGiantSimpleLight );
+
+	//Added by Stradex
+	org_simpleLightVal	= r_simpleLight.GetBool();
+	org_isVisible = !spawnArgs.GetBool( "hide", "0");
+	org_isOn = !start_off;
+	UpdateSingleLightColor(r_simpleLightIntensity.GetFloat());
+
+	if (r_simpleLight.GetBool() && !isGiantSimpleLight) {
+		start_off = true;
+	} else if (isGiantSimpleLight && !r_simpleLight.GetBool()) {
+		start_off = true;
+	}
 	if ( start_off ) {
 		Off();
+		//add by Stradex, if r_useStaticLighting or r_simpleLight enabled then we must force the lightDefChange for the r_simplelight to work
+		if (cvarSystem->GetCVarBool("r_useStaticLighting") || r_simpleLight.GetBool()) {
+			PresentLightDefChange(true);
+		}
 	}
+
+	//added by Stradex for d3xp CTF
+	// Midnight CTF
+	if ( gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.serverInfo.GetBool("si_midnight") && !spawnArgs.GetBool("midnight_override") ) {
+		Off();
+	}
+	//end by Stradex for d3xp CTF
 
 	health = spawnArgs.GetInt( "health", "0" );
 	spawnArgs.GetString( "broken", "", brokenModel );
@@ -567,6 +610,9 @@ idLight::On
 ================
 */
 void idLight::On( void ) {
+	//added by Stradex
+	org_isOn = true;
+
 	currentLevel = levels;
 	// offset the start time of the shader to sync it to the game time
 	renderLight.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
@@ -584,6 +630,9 @@ idLight::Off
 ================
 */
 void idLight::Off( void ) {
+	//added by Stradex
+	org_isOn = false;
+
 	currentLevel = 0;
 	// kill any sound it was making
 	if ( refSound.referenceSound && refSound.referenceSound->CurrentlyPlaying() ) {
@@ -707,10 +756,10 @@ void idLight::BecomeBroken( idEntity *activator ) {
 idLight::PresentLightDefChange
 ================
 */
-void idLight::PresentLightDefChange( void ) {
+void idLight::PresentLightDefChange( bool forceUpdate ) {
 	// let the renderer apply it to the world
 	if ( ( lightDefHandle != -1 ) ) {
-		gameRenderWorld->UpdateLightDef( lightDefHandle, &renderLight );
+		gameRenderWorld->UpdateLightDef( lightDefHandle, &renderLight, forceUpdate );
 	} else {
 		lightDefHandle = gameRenderWorld->AddLightDef( &renderLight );
 	}
@@ -764,7 +813,11 @@ void idLight::Present( void ) {
 	}
 
 	// update the renderLight and renderEntity to render the light and flare
-	PresentLightDefChange();
+	if (r_simpleLight.GetBool() && isGiantSimpleLight) {
+		PresentLightDefChange(true);
+	} else {
+		PresentLightDefChange();
+	}
 	PresentModelDefChange();
 }
 
@@ -787,6 +840,39 @@ void idLight::Think( void ) {
 			}
 			SetColor( color );
 		}
+	}
+	//gameLocal.Printf("Light thinking\n");
+	//added by Stradex
+	if (org_simpleLightVal != r_simpleLight.GetBool()) {
+		org_simpleLightVal = r_simpleLight.GetBool();
+		//gameLocal.Printf("Simple light changed...\n");
+
+		if (r_simpleLight.GetBool()) {
+			if (isGiantSimpleLight) {
+				Show();
+			} else {
+				Hide();
+			}
+		} else {
+			if (isGiantSimpleLight) {
+				Hide();
+			} else {
+				if (org_isVisible) {
+					Show();
+				} else {
+					Hide();
+				}
+				if (org_isOn) {
+					On();
+				} else {
+					Off();
+				}
+			}
+		}
+
+		PresentLightDefChange(true);
+		PresentModelDefChange();
+		UpdateVisuals();
 	}
 
 	RunPhysics();
@@ -909,6 +995,9 @@ idLight::Event_Hide
 ================
 */
 void idLight::Event_Hide( void ) {
+	//added by Stradex
+	org_isVisible = false;
+
 	Hide();
 	PresentModelDefChange();
 	Off();
@@ -920,9 +1009,13 @@ idLight::Event_Show
 ================
 */
 void idLight::Event_Show( void ) {
-	Show();
-	PresentModelDefChange();
-	On();
+	//added by Stradex
+	org_isVisible = true;
+	if (this->isGiantSimpleLight || !r_simpleLight.GetBool()) {
+		Show();
+		PresentModelDefChange();
+		On();
+	}
 }
 
 /*
@@ -931,7 +1024,9 @@ idLight::Event_On
 ================
 */
 void idLight::Event_On( void ) {
-	On();
+	if (this->isGiantSimpleLight || !r_simpleLight.GetBool()) {
+		On();
+	}
 }
 
 /*
@@ -1033,7 +1128,7 @@ void idLight::Event_FadeIn( float time ) {
 idLight::ClientPredictionThink
 ================
 */
-void idLight::ClientPredictionThink( void ) {
+void idLight::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	Think();
 }
 
@@ -1155,4 +1250,20 @@ bool idLight::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 	}
 
 	return idEntity::ClientReceiveEvent( event, time, msg );
+}
+
+void idLight::UpdateSingleLightColor( float intensity ) {
+	if (!this->isGiantSimpleLight) {
+		return;
+	}
+	
+	float slNormalizedIntensity = intensity;
+	if (slNormalizedIntensity > 1.0) {
+		slNormalizedIntensity = 1.0;
+	} else if (slNormalizedIntensity < 0.0) {
+		slNormalizedIntensity = 0.0;
+	}
+
+	slNormalizedIntensity = slNormalizedIntensity*0.6; //1.0 is too bright
+	this->SetColor(slNormalizedIntensity, slNormalizedIntensity, slNormalizedIntensity);
 }

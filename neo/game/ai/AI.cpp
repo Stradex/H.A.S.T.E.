@@ -4475,7 +4475,7 @@ void idAI::TriggerWeaponEffects( const idVec3 &muzzle ) {
 	idVec3 org;
 	idMat3 axis;
 
-	if ( !g_muzzleFlash.GetBool() ) {
+	if ( !g_muzzleFlash.GetBool() || r_simpleLight.GetBool() ) {
 		return;
 	}
 
@@ -4517,7 +4517,10 @@ void idAI::UpdateMuzzleFlash( void ) {
 			animator.GetJointTransform( flashJointWorld, gameLocal.time, muzzle, worldMuzzleFlash.axis );
 			muzzle = physicsObj.GetOrigin() + ( muzzle + modelOffset ) * viewAxis * physicsObj.GetGravityAxis();
 			worldMuzzleFlash.origin = muzzle;
-			gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
+			//Added by Stradex, no lights in r_simplelight mode
+			if (!r_simpleLight.GetBool()) {
+				gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
+			}
 		}
 	}
 }

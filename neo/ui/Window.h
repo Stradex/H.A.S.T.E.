@@ -185,6 +185,7 @@ public:
 		ON_ACTIONRELEASE,
 		ON_ENTER,
 		ON_ENTERRELEASE,
+		ON_SECACTION,		//Right click action added by Stradex
 		SCRIPT_COUNT
 	};
 

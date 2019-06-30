@@ -478,7 +478,9 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 			}
 
 			// free decoder memory if no sound was decoded for a while
-			if ( chan->decoder != NULL && chan->decoder->GetLastDecodeTime() < current44kHzTime - SOUND_DECODER_FREE_DELAY ) {
+			//if ( chan->decoder != NULL && chan->decoder->GetLastDecodeTime() < current44kHzTime - SOUND_DECODER_FREE_DELAY ) { //edit by Stradex
+			if ( chan->decoder != NULL && chan->decoder->GetLastDecodeTime() < current44kHzTime - (1000 * MIXBUFFER_SAMPLES / com_gameMSRate) ) {
+			
 				chan->decoder->ClearDecoder();
 			}
 

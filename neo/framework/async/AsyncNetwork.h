@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "idlib/BitMsg.h"
 #include "framework/async/MsgChannel.h"
+#include "framework/async/Masterserver.h" //added by Stradex
 #include "framework/async/AsyncClient.h"
 #include "framework/async/AsyncServer.h"
 #include "framework/Compressor.h"
@@ -45,6 +46,8 @@ If you have questions concerning this license or the applicable additional terms
 
 ===============================================================================
 */
+
+#define	HTMLMASTERSERVER_ENABLED	1 //added by Stradex, set 0 to use original D3 master servers
 
 
 // unreliable server -> client messages
@@ -166,9 +169,12 @@ public:
 	static idCVar			serverAllowServerMod;			// let a pure server start with a different game code than what is referenced in game code
 	static idCVar			idleServer;						// serverinfo reply, indicates all clients are idle
 	static idCVar			clientDownload;					// preferred download policy
+	static idCVar			serverNetHz;					// HZ the server works in added by Stradex
+	static idCVar			webmaster;						// WEB based master server added by Stradex
 
 	// same message used for offline check and network reply
 	static void				BuildInvalidKeyMsg( idStr &msg, bool valid[ 2 ] );
+	static int				netTimeResidual; //added by Stradex to sync net with serverNetHz
 
 private:
 	static int				realTime;
@@ -181,6 +187,7 @@ private:
 	static void				GetServerInfo_f( const idCmdArgs &args );
 	static void				GetLANServers_f( const idCmdArgs &args );
 	static void				ListServers_f( const idCmdArgs &args );
+	static void				GetNewServersList_f( const idCmdArgs &args ); //added by Stradex
 	static void				RemoteConsole_f( const idCmdArgs &args );
 	static void				Heartbeat_f( const idCmdArgs &args );
 	static void				Kick_f( const idCmdArgs &args );

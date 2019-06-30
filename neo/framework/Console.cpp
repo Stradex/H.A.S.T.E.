@@ -223,9 +223,11 @@ float SCR_DrawFPS( float y ) {
 		fps = (fps + 5)/10;
 
 		s = va( "%ifps", fps );
+		//s =  va( "%ifps", engine_current_fps );
 		w = strlen( s ) * BIGCHAR_WIDTH;
 
 		renderSystem->DrawBigStringExt( 635 - w, idMath::FtoiFast( y ) + 2, s, colorWhite, true, localConsole.charSetShader);
+		
 	}
 
 	return y + BIGCHAR_HEIGHT + 4;

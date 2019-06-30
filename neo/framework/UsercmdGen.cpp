@@ -92,12 +92,16 @@ typedef enum {
 	UB_BUTTON5,
 	UB_BUTTON6,
 	UB_BUTTON7,
+	UB_BUTTON8,
 
 	UB_ATTACK,
 	UB_SPEED,
 	UB_ZOOM,
 	UB_SHOWSCORES,
 	UB_MLOOK,
+	//Added by Stradex
+	UB_SECATTACK,
+	UB_SILENTWALK,
 
 	UB_IMPULSE0,
 	UB_IMPULSE1,
@@ -163,7 +167,8 @@ typedef enum {
 	UB_IMPULSE61,
 	UB_IMPULSE62,
 	UB_IMPULSE63,
-
+	//Added by Stradex
+	UB_OPENINVENTORY, //Impulse 64
 	UB_MAX_BUTTONS
 } usercmdButton_t;
 
@@ -199,6 +204,7 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_button5",		UB_BUTTON5 },
 	{ "_button6",		UB_BUTTON6 },
 	{ "_button7",		UB_BUTTON7 },
+	{ "_button8",		UB_BUTTON8 },
 
 	{ "_impulse0",		UB_IMPULSE0 },
 	{ "_impulse1",		UB_IMPULSE1 },
@@ -265,6 +271,10 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_impulse62",		UB_IMPULSE62 },
 	{ "_impulse63",		UB_IMPULSE63 },
 
+//3759 added by Stradex
+	{ "_secattack",		UB_SECATTACK },
+	{ "_silent",		UB_SILENTWALK },
+	{ "_openinv",		UB_OPENINVENTORY },
 	{ NULL,				UB_NONE },
 };
 
@@ -532,9 +542,9 @@ void idUsercmdGenLocal::AdjustAngles( void ) {
 	float	speed;
 
 	if ( toggled_run.on ^ ( in_alwaysRun.GetBool() && idAsyncNetwork::IsActive() ) ) {
-		speed = idMath::M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat();
+		speed = idMath::M_MS2SEC * com_gameMSRate * in_angleSpeedKey.GetFloat();
 	} else {
-		speed = idMath::M_MS2SEC * USERCMD_MSEC;
+		speed = idMath::M_MS2SEC * com_gameMSRate;
 	}
 
 	if ( !ButtonState( UB_STRAFE ) ) {
@@ -681,9 +691,9 @@ void idUsercmdGenLocal::JoystickMove( void ) {
 	float	anglespeed;
 
 	if ( toggled_run.on ^ ( in_alwaysRun.GetBool() && idAsyncNetwork::IsActive() ) ) {
-		anglespeed = idMath::M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat();
+		anglespeed = idMath::M_MS2SEC * com_gameMSRate * in_angleSpeedKey.GetFloat();
 	} else {
-		anglespeed = idMath::M_MS2SEC * USERCMD_MSEC;
+		anglespeed = idMath::M_MS2SEC * com_gameMSRate;
 	}
 
 	if ( !ButtonState( UB_STRAFE ) ) {
@@ -708,7 +718,7 @@ void idUsercmdGenLocal::CmdButtons( void ) {
 	cmd.buttons = 0;
 
 	// figure button bits
-	for (i = 0 ; i <= 7 ; i++) {
+	for (i = 0 ; i <= BTN_MAXBITS ; i++) {
 		if ( ButtonState( (usercmdButton_t)( UB_BUTTON0 + i ) ) ) {
 			cmd.buttons |= 1 << i;
 		}
@@ -717,6 +727,11 @@ void idUsercmdGenLocal::CmdButtons( void ) {
 	// check the attack button
 	if ( ButtonState( UB_ATTACK ) ) {
 		cmd.buttons |= BUTTON_ATTACK;
+	}
+
+	// check the secondary attack button (by Stradex)
+	if (ButtonState( UB_SECATTACK ) ) {
+		cmd.buttons |= BUTTON_SECATTACK;
 	}
 
 	// check the run button
@@ -938,13 +953,13 @@ void idUsercmdGenLocal::Key( int keyNum, bool down ) {
 	keyState[ keyNum ] = down;
 
 	int action = idKeyInput::GetUsercmdAction( keyNum );
-
 	if ( down ) {
 
 		buttonState[ action ]++;
 
 		if ( !Inhibited()  ) {
-			if ( action >= UB_IMPULSE0 && action <= UB_IMPULSE61 ) {
+			//Modified by stradex to recognize UB_OPENINVENTORY
+			if ( (action >= UB_IMPULSE0 && action <= UB_IMPULSE61) || (action == UB_OPENINVENTORY)) {
 				cmd.impulse = action - UB_IMPULSE0;
 				cmd.flags ^= UCF_IMPULSE_SEQUENCE;
 			}

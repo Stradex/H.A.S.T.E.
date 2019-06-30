@@ -163,6 +163,15 @@ const idEventDef AI_CanReachEntity( "canReachEntity", "E", 'd' );
 const idEventDef AI_CanReachEnemy( "canReachEnemy", NULL, 'd' );
 const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e", 'v' );
 
+//By Stradex for 3759
+const idEventDef AI_FindAlly( "findAlly", "d", 'e' );
+const idEventDef AI_FindAllyAI( "findAllyAI", "d", 'e' );
+const idEventDef AI_FindAllyInCombat( "findAllyInCombat", "d", 'e' );
+const idEventDef AI_FindAllyInCombatAI( "findAllyInCombatAI", "d", 'e' );
+const idEventDef AI_SumHealthEnemiesVisible( "sumHealthEnemiesVisible", "d", 'f' );
+const idEventDef AI_SumHealthAlliesInRange( "sumHealthAlliesInRange", "f", 'f' );
+const idEventDef AI_CountEnemiesVisible( "countEnemiesVisible", "d", 'f' );
+
 CLASS_DECLARATION( idActor, idAI )
 	EVENT( EV_Activate,							idAI::Event_Activate )
 	EVENT( EV_Touch,							idAI::Event_Touch )
@@ -292,6 +301,14 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEntity,					idAI::Event_CanReachEntity )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
+	//Added by Stradex for 3759
+	EVENT( AI_FindAlly,							idAI::Event_FindAlly )
+	EVENT( AI_FindAllyAI,						idAI::Event_FindAllyAI )
+	EVENT( AI_FindAllyInCombat,					idAI::Event_FindAllyInCombat )
+	EVENT( AI_FindAllyInCombatAI,				idAI::Event_FindAllyInCombatAI )
+	EVENT( AI_SumHealthEnemiesVisible,			idAI::Event_SumHealthEnemiesVisible )
+	EVENT( AI_SumHealthAlliesInRange,			idAI::Event_SumHealthAlliesInRange )
+	EVENT( AI_CountEnemiesVisible,				idAI::Event_CountEnemiesVisible )
 END_CLASS
 
 /*
@@ -2705,4 +2722,300 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 	}
 
 	idThread::ReturnVector( pos );
+}
+
+
+//Added by Stradex
+
+/*
+=====================
+idAI::Event_FindAlly
+=====================
+*/
+void idAI::Event_FindAlly( int useFOV ) {
+	int			i;
+	idEntity	*ent;
+	idAI		*entAI;
+
+	if ( gameLocal.InPlayerPVS( this ) ) {
+		for ( i = 0; i < gameLocal.numClients ; i++ ) {
+			ent = gameLocal.entities[ i ];
+
+			if ( !ent || !ent->IsType( idAI::Type ) ) {
+				continue;
+			}
+
+			//Don't wanna be my own ally...
+			if (ent == this) {
+				continue;
+			}
+
+			entAI = static_cast<idAI *>( ent );
+			if ( ( entAI->health <= 0 ) || ( ReactionTo( entAI ) & ATTACK_ON_SIGHT ) || (entAI->team != team) ) {
+				continue;
+			}
+
+			if ( CanSee( entAI, useFOV != 0 ) ) {
+				idThread::ReturnEntity( entAI );
+				return;
+			}
+		}
+	}
+
+	idThread::ReturnEntity( NULL );
+}
+
+/*
+=====================
+idAI::Event_FindAllyAI
+=====================
+*/
+void idAI::Event_FindAllyAI( int useFOV ) {
+	idEntity	*ent;
+	idAI		*entAI;
+	idAI		*bestAlly;
+	float		bestDist;
+	float		dist;
+	idVec3		delta;
+	pvsHandle_t pvs;
+
+	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
+	bestDist = idMath::INFINITY;
+	bestAlly = NULL;
+	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idAI::Type ) ) {
+			continue;
+		}
+
+		//Don't wanna be my own ally...
+		if (ent == this) {
+			continue;
+		}
+
+		entAI = static_cast<idAI *>( ent );
+		if ( ( entAI->health <= 0 ) || ( ReactionTo( entAI ) & ATTACK_ON_SIGHT ) || (entAI->team != team) ) {
+			continue;
+		}
+
+		if ( !gameLocal.pvs.InCurrentPVS( pvs, entAI->GetPVSAreas(), entAI->GetNumPVSAreas() ) ) {
+			continue;
+		}
+
+		delta = physicsObj.GetOrigin() - entAI->GetPhysics()->GetOrigin();
+		dist = delta.LengthSqr();
+		if ( ( dist < bestDist ) && CanSee( entAI, useFOV != 0 ) ) {
+			bestDist = dist;
+			bestAlly = entAI;
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS( pvs );
+	idThread::ReturnEntity( bestAlly );
+}
+
+/*
+=====================
+idAI::Event_FindAllyInCombat
+=====================
+*/
+void idAI::Event_FindAllyInCombat( int useFOV ) {
+	int			i;
+	idEntity	*ent;
+	idAI		*entAI;
+
+	if ( gameLocal.InPlayerPVS( this ) ) {
+		for ( i = 0; i < gameLocal.numClients ; i++ ) {
+			ent = gameLocal.entities[ i ];
+
+			if ( !ent || !ent->IsType( idAI::Type ) ) {
+				continue;
+			}
+
+			//Don't wanna be my own ally...
+			if (ent == this) {
+				continue;
+			}
+
+			entAI = static_cast<idAI *>( ent );
+
+			if ( ( entAI->health <= 0 ) || ( ReactionTo( entAI ) & ATTACK_ON_SIGHT ) || !entAI->GetEnemy() || (entAI->team != team) ) {
+				continue;
+			}
+
+			if ( CanSee( entAI, useFOV != 0 ) ) {
+				idThread::ReturnEntity( entAI );
+				return;
+			}
+			
+		}
+	}
+
+	idThread::ReturnEntity( NULL );
+}
+
+/*
+=====================
+idAI::Event_FindAllyInCombatAI
+=====================
+*/
+void idAI::Event_FindAllyInCombatAI( int useFOV ) {
+	idEntity	*ent;
+	idAI		*entAI;
+	idAI		*bestAlly;
+	float		bestDist;
+	float		dist;
+	idVec3		delta;
+	pvsHandle_t pvs;
+
+	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
+	bestDist = idMath::INFINITY;
+	bestAlly = NULL;
+	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idAI::Type )) {
+			continue;
+		}
+		//Don't wanna be my own ally...
+		if (ent == this) {
+			continue;
+		}
+
+		entAI = static_cast<idAI *>( ent );
+		if ( ( entAI->health <= 0 ) || ( ReactionTo( entAI ) & ATTACK_ON_SIGHT ) || !entAI->GetEnemy() || (entAI->team != team) ) {
+			continue;
+		}
+
+		if ( !gameLocal.pvs.InCurrentPVS( pvs, entAI->GetPVSAreas(), entAI->GetNumPVSAreas() ) ) {
+			continue;
+		}
+
+		delta = physicsObj.GetOrigin() - entAI->GetPhysics()->GetOrigin();
+		dist = delta.LengthSqr();
+		if ( ( dist < bestDist ) && CanSee( entAI, useFOV != 0 ) ) {
+			bestDist = dist;
+			bestAlly = entAI;
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS( pvs );
+	idThread::ReturnEntity( bestAlly );
+}
+
+/*
+=====================
+idAI::Event_SumHealthEnemiesVisible
+=====================
+*/
+void idAI::Event_SumHealthEnemiesVisible( int useFOV ) {
+	idEntity	*ent;
+	idActor		*actor;
+	pvsHandle_t pvs;
+	float sumHealth = 0.0;
+
+	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
+	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
+			continue;
+		}
+
+		actor = static_cast<idActor *>( ent );
+		if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
+			continue;
+		}
+
+		if ( !gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) ) {
+			continue;
+		}
+
+		if (CanSee( actor, useFOV != 0 ) ) {
+			sumHealth += static_cast<float>( actor->health );
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS( pvs );
+	idThread::ReturnFloat( sumHealth );
+}
+
+/*
+=====================
+idAI::Event_SumHealthAlliesInRange
+=====================
+*/
+void idAI::Event_SumHealthAlliesInRange( float range ) {
+	idEntity	*ent;
+	idAI		*entAI;
+	float		dist;
+	idVec3		delta;
+	pvsHandle_t pvs;
+	float sumHealth = 0.0;
+
+	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
+	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idAI::Type ) ) {
+			continue;
+		}
+
+		//Don't wanna be my own ally...
+		if (ent == this) {
+			continue;
+		}
+
+		entAI = static_cast<idAI *>( ent );
+		if ( ( entAI->health <= 0 ) || ( ReactionTo( entAI ) & ATTACK_ON_SIGHT ) || (entAI->team != team) ) {
+			continue;
+		}
+
+		if ( !gameLocal.pvs.InCurrentPVS( pvs, entAI->GetPVSAreas(), entAI->GetNumPVSAreas() ) ) {
+			continue;
+		}
+
+		delta = physicsObj.GetOrigin() - entAI->GetPhysics()->GetOrigin();
+		dist = delta.LengthSqr();
+		if ( dist < range ) {
+			sumHealth += static_cast<float>( entAI->health );
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS( pvs );
+
+	idThread::ReturnFloat( sumHealth );
+}
+
+/*
+=====================
+idAI::Event_CountEnemiesVisible
+=====================
+*/
+void idAI::Event_CountEnemiesVisible( int useFOV ) {
+	idEntity	*ent;
+	idActor		*actor;
+	pvsHandle_t pvs;
+	float enemyCount = 0.0;
+
+	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
+	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
+			continue;
+		}
+
+		actor = static_cast<idActor *>( ent );
+		if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
+			continue;
+		}
+
+		if ( !gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) ) {
+			continue;
+		}
+
+		if (CanSee( actor, useFOV != 0 ) ) {
+			enemyCount += 1.0;
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS( pvs );
+	idThread::ReturnFloat( enemyCount );
 }

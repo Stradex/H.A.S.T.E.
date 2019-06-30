@@ -877,7 +877,7 @@ void idRenderSystemLocal::UnCrop() {
 CaptureRenderToImage
 ================
 */
-void idRenderSystemLocal::CaptureRenderToImage( const char *imageName ) {
+void idRenderSystemLocal::CaptureRenderToImage( const char *imageName, bool clearColorAfterCopy ) {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
@@ -907,6 +907,8 @@ void idRenderSystemLocal::CaptureRenderToImage( const char *imageName ) {
 	cmd->imageWidth = rc->width;
 	cmd->imageHeight = rc->height;
 	cmd->image = image;
+	//From DOOM 3 BFG Edition
+	cmd->clearColorAfterCopy = clearColorAfterCopy;
 
 	guiModel->Clear();
 }

@@ -59,7 +59,7 @@ typedef enum {
 } soundDemoCommand_t;
 
 const int SOUND_MAX_CHANNELS		= 8;
-const int SOUND_DECODER_FREE_DELAY	= 1000 * MIXBUFFER_SAMPLES / USERCMD_MSEC;		// four seconds
+//const int SOUND_DECODER_FREE_DELAY	= 1000 * MIXBUFFER_SAMPLES / 16;		// four seconds (edit later stradex)
 
 const int PRIMARYFREQ				= 44100;			// samples per second
 const float SND_EPSILON				= 1.0f / 32768.0f;	// if volume is below this, it will always multiply to zero
@@ -535,7 +535,7 @@ public:
 	virtual void			ProcessDemoCommand( idDemoFile *readDemo );
 
 	// background music
-	virtual void			PlayShaderDirectly( const char *name, int channel = -1 );
+	virtual void			PlayShaderDirectly( const char *name, int channel = -1, bool isMusic = false ); //isMusic added by Stradex
 
 	// pause and unpause the sound world
 	virtual void			Pause( void );
@@ -761,6 +761,7 @@ public:
 	static idCVar			s_showLevelMeter;
 	static idCVar			s_meterTopTime;
 	static idCVar			s_volume;
+	static idCVar			s_musicvolume;				//Music Volume added by Stradex
 	static idCVar			s_constantAmplitude;
 	static idCVar			s_playDefaultSound;
 	static idCVar			s_useOcclusion;
