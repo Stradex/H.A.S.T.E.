@@ -5,6 +5,7 @@
 .cproject
 .project
 .settings/
+
 /base.dir
 /d3xp.dir
 /Debug
@@ -12,3 +13,5 @@
 /Win32
 /dhewm3ded.dir
 /dhewm3.dir
+/idlib.dir
+*.sdf
