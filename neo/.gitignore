@@ -15,3 +15,8 @@
 /dhewm3.dir
 /idlib.dir
 *.sdf
+*.vcxproj
+*.sln
+*.exe
+*.bin
+*.dll
