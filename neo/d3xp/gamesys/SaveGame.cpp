@@ -544,11 +544,6 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 	WriteBool( renderEntity.weaponDepthHack );
 
 	WriteInt( renderEntity.forceUpdate );
-
-#ifdef _D3XP
-	WriteInt( renderEntity.timeGroup );
-	WriteInt( renderEntity.xrayIndex );
-#endif
 }
 
 /*
@@ -658,7 +653,8 @@ void idSaveGame::WriteUsercmd( const usercmd_t &usercmd ) {
 	WriteInt( usercmd.gameFrame );
 	WriteInt( usercmd.gameTime );
 	WriteInt( usercmd.duplicateCount );
-	WriteByte( usercmd.buttons );
+	//WriteByte( usercmd.buttons );
+	WriteInt( usercmd.buttons );	//Edited by Stradex
 	WriteSignedChar( usercmd.forwardmove );
 	WriteSignedChar( usercmd.rightmove );
 	WriteSignedChar( usercmd.upmove );
@@ -1322,11 +1318,6 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 	ReadBool( renderEntity.weaponDepthHack );
 
 	ReadInt( renderEntity.forceUpdate );
-
-#ifdef _D3XP
-	ReadInt( renderEntity.timeGroup );
-	ReadInt( renderEntity.xrayIndex );
-#endif
 }
 
 /*
@@ -1434,7 +1425,8 @@ void idRestoreGame::ReadUsercmd( usercmd_t &usercmd ) {
 	ReadInt( usercmd.gameFrame );
 	ReadInt( usercmd.gameTime );
 	ReadInt( usercmd.duplicateCount );
-	ReadInt( usercmd.buttons );
+	//ReadByte( usercmd.buttons );
+	ReadInt(usercmd.buttons);	//Edited by Stradex
 	ReadSignedChar( usercmd.forwardmove );
 	ReadSignedChar( usercmd.rightmove );
 	ReadSignedChar( usercmd.upmove );

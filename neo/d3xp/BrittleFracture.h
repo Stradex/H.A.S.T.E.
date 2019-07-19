@@ -85,7 +85,7 @@ public:
 		EVENT_MAXEVENTS
 	};
 
-	virtual void				ClientPredictionThink( void );
+	virtual void				ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 	virtual bool				ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
 private:
@@ -103,10 +103,6 @@ private:
 	float						friction;
 	float						bouncyness;
 	idStr						fxFracture;
-
-#ifdef _D3XP
-	bool						isXraySurface;
-#endif
 
 	// state
 	idPhysics_StaticMulti		physicsObj;

@@ -45,25 +45,24 @@ If you have questions concerning this license or the applicable additional terms
 
 class idPlayer;
 
-#ifdef CTF
+//added by Stradex from D3XP for CTF
 class idItemTeam;
-#endif
-
 
 typedef enum {
-	GAME_SP = 0,
+	GAME_SP,
 	GAME_DM,
 	GAME_TOURNEY,
 	GAME_TDM,
 	GAME_LASTMAN,
-#ifdef CTF
-	GAME_CTF,
-	GAME_COUNT,
-#endif
+	GAME_CTF, //added by Stradex from D3XP for CTF
+	//COOP START
+	GAME_COOP,
+	GAME_SURVIVAL,
+	//COOP ENDS
+	GAME_COUNT //added by Stradex from D3XP for CTF
 } gameType_t;
 
-#ifdef CTF
-
+//added by Stradex from D3XP for CTF
 // Used by the UI
 typedef enum {
 	FLAGSTATUS_INBASE = 0,
@@ -71,8 +70,6 @@ typedef enum {
 	FLAGSTATUS_STRAY  = 2,
 	FLAGSTATUS_NONE   = 3
 } flagStatus_t;
-
-#endif
 
 
 typedef enum {
@@ -86,6 +83,7 @@ typedef struct mpPlayerState_s {
 	int				ping;			// player ping
 	int				fragCount;		// kills
 	int				teamFragCount;	// team kills
+	int				livesLeft;		// COOP: SURVIVAL: Lives reamaining
 	int				wins;			// wins
 	playerVote_t	vote;			// player's vote
 	bool			scoreBoardUp;	// toggle based on player scoreboard button, used to activate de-activate the scoreboard gui
@@ -97,17 +95,12 @@ const int CHAT_FADE_TIME	= 400;
 const int FRAGLIMIT_DELAY	= 2000;
 
 const int MP_PLAYER_MINFRAGS = -100;
-#ifdef CTF
-const int MP_PLAYER_MAXFRAGS = 400;	// in CTF frags are player points
-#else
-const int MP_PLAYER_MAXFRAGS = 100;
-#endif
+const int MP_PLAYER_MAXFRAGS = 400;	// in CTF frags are player points (edited by Stradex from D3XP for CTF)
 const int MP_PLAYER_MAXWINS	= 100;
 const int MP_PLAYER_MAXPING	= 999;
+const int MP_PLAYER_MAXLIVES = 100; //COOP
 
-#ifdef CTF
-const int MP_CTF_MAXPOINTS = 25;
-#endif
+const int MP_CTF_MAXPOINTS = 25; //added by Stradex from D3XP for CTF
 
 typedef struct mpChatLine_s {
 	idStr			line;
@@ -125,15 +118,13 @@ typedef enum {
 	SND_TWO,
 	SND_ONE,
 	SND_SUDDENDEATH,
-#ifdef CTF
-	SND_FLAG_CAPTURED_YOURS,
-	SND_FLAG_CAPTURED_THEIRS,
-	SND_FLAG_RETURN,
-	SND_FLAG_TAKEN_YOURS,
-	SND_FLAG_TAKEN_THEIRS,
-	SND_FLAG_DROPPED_YOURS,
-	SND_FLAG_DROPPED_THEIRS,
-#endif
+	SND_FLAG_CAPTURED_YOURS,  //added by Stradex from D3XP for CTF
+	SND_FLAG_CAPTURED_THEIRS,  //added by Stradex from D3XP for CTF
+	SND_FLAG_RETURN,  //added by Stradex from D3XP for CTF
+	SND_FLAG_TAKEN_YOURS,  //added by Stradex from D3XP for CTF
+	SND_FLAG_TAKEN_THEIRS,  //added by Stradex from D3XP for CTF
+	SND_FLAG_DROPPED_YOURS,  //added by Stradex from D3XP for CTF
+	SND_FLAG_DROPPED_THEIRS,  //added by Stradex from D3XP for CTF
 	SND_COUNT
 } snd_evt_t;
 
@@ -188,9 +179,9 @@ public:
 
 	static const char *GlobalSoundStrings[ SND_COUNT ];
 	void			PlayGlobalSound( int to, snd_evt_t evt, const char *shader = NULL );
-#ifdef CTF
+
+	 //added by Stradex from D3XP for CTF
 	void			PlayTeamSound( int toTeam, snd_evt_t evt, const char *shader = NULL );	// sound that's sent only to member of toTeam team
-#endif
 
 	// more compact than a chat line
 	typedef enum {
@@ -209,16 +200,12 @@ public:
 		MSG_TELEFRAGGED,
 		MSG_JOINTEAM,
 		MSG_HOLYSHIT,
-#ifdef CTF
-		MSG_POINTLIMIT,
-
-		MSG_FLAGTAKEN,
-		MSG_FLAGDROP,
-		MSG_FLAGRETURN,
-		MSG_FLAGCAPTURE,
-		MSG_SCOREUPDATE,
-
-#endif
+		MSG_POINTLIMIT, //added by Stradex from D3XP for CTF
+		MSG_FLAGTAKEN, //added by Stradex from D3XP for CTF
+		MSG_FLAGDROP, //added by Stradex from D3XP for CTF
+		MSG_FLAGRETURN, //added by Stradex from D3XP for CTF
+		MSG_FLAGCAPTURE, //added by Stradex from D3XP for CTF
+		MSG_SCOREUPDATE, //added by Stradex from D3XP for CTF
 		MSG_COUNT
 	} msg_evt_t;
 	void			PrintMessageEvent( int to, msg_evt_t evt, int parm1 = -1, int parm2 = -1 );
@@ -291,7 +278,8 @@ public:
 	void			ClientReadWarmupTime( const idBitMsg &msg );
 
 	void			ServerClientConnect( int clientNum );
-#ifdef CTF
+
+	//added by Stradex from D3XP for CTF
 	void            ClearHUDStatus( void );
 	int             GetFlagPoints( int team );	// Team points in CTF
 	void			SetFlagMsg( bool b );		// allow flag event messages to be sent
@@ -300,9 +288,21 @@ public:
 
 	int             player_red_flag;            // Ent num of red flag carrier for HUD
 	int             player_blue_flag;           // Ent num of blue flag carrier for HUD
+	//end by Stradex from D3XP for CTF
 
-#endif
 	void			PlayerStats( int clientNum, char *data, const int len );
+
+	//COOP START
+	void			CreateNewCheckpoint (idVec3 pos);
+	void			WantUseCheckpoint( int clientNum );
+	void			WantAddCheckpoint( int clientNum , bool isGlobal=false);
+	void			WantNoClip( int clientNum );
+	void			IncrementFrags(idPlayer* player);
+	void			SavePersistentPlayersInfo( void );
+
+	idVec3			playerCheckpoints[ MAX_CLIENTS ]; //added for coop checkpoints
+	bool			playerUseCheckpoints[ MAX_CLIENTS ]; //added for coop checkpoints
+	//COOP END
 
 private:
 	static const char	*MPGuis[];
@@ -374,14 +374,15 @@ private:
 	gameType_t		lastGameType;			// for restarts
 	int				startFragLimit;			// synchronize to clients in initial state, set on -> GAMEON
 
-#ifdef CTF
+	//added by Stradex from D3XP for CTF
 	idItemTeam *	teamFlags[ 2 ];
 	int				teamPoints[ 2 ];
 
 	bool			flagMsgOn;
 
 	const char *	gameTypeVoteMap[ GAME_COUNT ];
-#endif
+
+	//end by Stradex from D3XP for CTF
 
 private:
 	void			UpdatePlayerRanks();
@@ -389,15 +390,10 @@ private:
 	// updates the passed gui with current score information
 	void			UpdateRankColor( idUserInterface *gui, const char *mask, int i, const idVec3 &vec );
 	void			UpdateScoreboard( idUserInterface *scoreBoard, idPlayer *player );
-#ifdef CTF
-	void			UpdateCTFScoreboard( idUserInterface *scoreBoard, idPlayer *player );
-#endif
 
-#ifndef CTF
-	// We declare this publically above so we can call it during a map restart.
-	void			ClearGuis( void );
-#endif
+	void			UpdateCTFScoreboard( idUserInterface *scoreBoard, idPlayer *player ); //added by Stradex from D3XP for CTF
 
+	//void			ClearGuis( void ); //commented by Stradex for ROE CTF
 	void			DrawScoreBoard( idPlayer *player );
 	void			UpdateHud( idPlayer *player, idUserInterface *hud );
 	bool			Warmup( void );
@@ -406,11 +402,11 @@ private:
 	idPlayer *		FragLimitHit( void );
 	idPlayer *		FragLeader( void );
 	bool			TimeLimitHit( void );
-#ifdef CTF
-	bool			PointLimitHit( void );
+
+	bool			PointLimitHit( void ); //added by Stradex from D3XP for CTF
 	// return team with most points
-	int				WinningTeam( void );
-#endif
+	int				WinningTeam( void ); //added by Stradex from D3XP for CTF
+
 	void			NewState( gameState_t news, idPlayer *player = NULL );
 	void			UpdateWinsLosses( idPlayer *winner );
 	// fill any empty tourney slots based on the current tourney ranks
@@ -439,13 +435,11 @@ private:
 	void			DumpTourneyLine( void );
 	void			SuddenRespawn( void );
 
-#ifdef CTF
-	void			FindTeamFlags( void );
-#endif
+	void			FindTeamFlags( void ); //added by Stradex for D3XP CTF
 
+	//added by Stradex for D3XP CTF
 public:
 
-#ifdef CTF
 	idItemTeam *	GetTeamFlag( int team );
 	flagStatus_t    GetFlagStatus( int team );
 	void			TeamScoreCTF( int team, int delta );
@@ -456,17 +450,15 @@ public:
 
 	void			SetBestGametype( const char * map );
 	void			ReloadScoreboard();
-#endif
 
-#ifdef _D3XP
 	idStr			GetBestGametype( const char* map, const char* gametype );
-#endif
 
-/* #ifdef CTF ... merge the below IsGametypeFlagBased */
-bool            IsGametypeFlagBased( void );
-bool            IsGametypeTeamBased( void );
-/* #endif CTF */
+	bool            IsGametypeFlagBased( void );
+	bool            IsGametypeTeamBased( void );
 
+	//end by Stradex from D3XP for CTF
+
+	bool            IsGametypeCoopBased( void ) const; //COOP
 };
 
 ID_INLINE idMultiplayerGame::gameState_t idMultiplayerGame::GetGameState( void ) const {

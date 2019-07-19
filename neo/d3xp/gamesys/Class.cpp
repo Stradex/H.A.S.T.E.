@@ -943,15 +943,6 @@ bool idClass::ProcessEventArgPtr( const idEventDef *ev, intptr_t *data ) {
 	assert( ev );
 	assert( idEvent::initialized );
 
-#ifdef _D3XP
-	SetTimeState ts;
-
-	if ( IsType( idEntity::Type ) ) {
-		idEntity *ent = (idEntity*)this;
-		ts.PushState( ent->timeGroup );
-	}
-#endif
-
 	if ( g_debugTriggers.GetBool() && ( ev == &EV_Activate ) && IsType( idEntity::Type ) ) {
 		const idEntity *ent = *reinterpret_cast<idEntity **>( data );
 		gameLocal.Printf( "%d: '%s' activated by '%s'\n", gameLocal.framenum, static_cast<idEntity *>( this )->GetName(), ent ? ent->GetName() : "NULL" );
@@ -999,4 +990,68 @@ idClass::Event_SafeRemove
 void idClass::Event_SafeRemove( void ) {
 	// Forces the remove to be done at a safe time
 	PostEventMS( &EV_Remove, 0 );
+}
+
+
+/************
+	SPECIFIC COOP CLIENT-SIDE STUFF
+*************/
+
+/*
+================
+idClass::CS_PostEventArgs
+================
+*/
+bool idClass::CS_PostEventArgs( const idEventDef *ev, int time, int numargs, ... ) {
+	idTypeInfo	*c;
+	idEvent		*event;
+	va_list		args;
+
+	assert( ev );
+
+	if ( !idEvent::initialized ) {
+		return false;
+	}
+
+	c = GetType();
+	if ( !c->eventMap[ ev->GetEventNum() ] ) {
+		// we don't respond to this event, so ignore it
+		return false;
+	}
+
+	va_start( args, numargs );
+	event = idEvent::Alloc( ev, numargs, args );
+	va_end( args );
+
+	event->Schedule( this, c, time );
+
+	return true;
+}
+
+/*
+================
+idClass::CS_PostEventSec
+================
+*/
+bool idClass::CS_PostEventSec( const idEventDef *ev, float time ) {
+	return CS_PostEventArgs( ev, SEC2MS( time ), 0 );
+}
+
+/*
+================
+idClass::CS_PostEventSec
+================
+*/
+bool idClass::CS_PostEventSec( const idEventDef *ev, float time, idEventArg arg1 ) {
+	return CS_PostEventArgs( ev, SEC2MS( time ), 1, &arg1 );
+}
+
+
+/*
+================
+idClass::CS_PostEventMS
+================
+*/
+bool idClass::CS_PostEventMS( const idEventDef *ev, int time ) {
+	return CS_PostEventArgs( ev, time, 0 );
 }

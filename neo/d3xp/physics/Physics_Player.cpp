@@ -41,16 +41,18 @@ const float PM_SWIMSCALE		= 0.5f;
 const float PM_LADDERSPEED		= 100.0f;
 const float PM_STEPSCALE		= 1.0f;
 
-const float PM_ACCELERATE		= 10.0f;
-const float PM_AIRACCELERATE	= 1.0f;
+const float PM_ACCELERATE		= 16.0f; //edit by Stradex
+const float PM_AIRACCELERATE	= 1.2f; //edit by Stradex
 const float PM_WATERACCELERATE	= 4.0f;
 const float PM_FLYACCELERATE	= 8.0f;
 
-const float PM_FRICTION			= 6.0f;
+const float PM_FRICTION			= 5.0f; //edit by Stradex
+const float PM_WEAKFRICTION		= 1.0f; //add by Stradex
 const float PM_AIRFRICTION		= 0.0f;
 const float PM_WATERFRICTION	= 1.0f;
 const float PM_FLYFRICTION		= 3.0f;
 const float PM_NOCLIPFRICTION	= 12.0f;
+const int	PM_CSLIDEMAXTIME	= 1000;
 
 const float MIN_WALK_NORMAL		= 0.7f;		// can't walk on very steep slopes
 const float OVERCLIP			= 1.001f;
@@ -474,7 +476,11 @@ void idPhysics_Player::Friction( void ) {
 			// if getting knocked back, no friction
 			if ( !(current.movementFlags & PMF_TIME_KNOCKBACK) ) {
 				control = speed < PM_STOPSPEED ? PM_STOPSPEED : speed;
-				drop += control * PM_FRICTION * frametime;
+				if (current.crouchSlideTime > 0) {
+					drop += control * PM_WEAKFRICTION * frametime;
+				} else {
+					drop += control * PM_FRICTION * frametime;
+				}
 			}
 		}
 	}
@@ -610,6 +616,14 @@ void idPhysics_Player::AirMove( void ) {
 	float		wishspeed;
 	float		scale;
 
+	//Works only if the player isn't pressing crouch
+	if ( command.upmove >= 0 && current.velocity * gravityNormal > 0 ) {	
+		current.crouchSlideTime += framemsec*2 ;
+		if ( current.crouchSlideTime > PM_CSLIDEMAXTIME ) {
+			current.crouchSlideTime = PM_CSLIDEMAXTIME;
+		}
+	}
+
 	idPhysics_Player::Friction();
 
 	scale = idPhysics_Player::CmdScale( command );
@@ -636,7 +650,8 @@ void idPhysics_Player::AirMove( void ) {
 		current.velocity.ProjectOntoPlane( groundTrace.c.normal, OVERCLIP );
 	}
 
-	idPhysics_Player::SlideMove( true, false, false, false );
+	idPhysics_Player::SlideMove( true, true, false, false ); //edit by stradex
+	//idPhysics_Player::SlideMove( true, false, false, false ); //this is fine for a SP game
 }
 
 /*
@@ -740,7 +755,8 @@ void idPhysics_Player::WalkMove( void ) {
 
 	gameLocal.push.InitSavingPushedEntityPositions();
 
-	idPhysics_Player::SlideMove( false, true, true, true );
+	idPhysics_Player::SlideMove( false, true, true, false ); //edit by stradex
+	//idPhysics_Player::SlideMove( false, true, true, true ); //this is fine for a SP game
 }
 
 /*
@@ -1095,10 +1111,16 @@ void idPhysics_Player::CheckDuck( void ) {
 		}
 
 		if ( current.movementFlags & PMF_DUCKED ) {
-			playerSpeed = crouchSpeed;
+			if (current.crouchSlideTime <= 0)
+			{
+				playerSpeed = crouchSpeed;
+			}
 			maxZ = pm_crouchheight.GetFloat();
 		} else {
 			maxZ = pm_normalheight.GetFloat();
+			if ( groundPlane ) {
+				current.crouchSlideTime = 0;
+			}
 		}
 	}
 	// if the clipModel height should change
@@ -1195,6 +1217,8 @@ bool idPhysics_Player::CheckJump( void ) {
 	if ( current.movementFlags & PMF_DUCKED ) {
 		return false;
 	}
+
+	current.crouchSlideTime = 0; //add by Stradex
 
 	groundPlane = false;		// jumping away
 	walking = false;
@@ -1307,6 +1331,14 @@ void idPhysics_Player::DropTimers( void ) {
 		}
 		else {
 			current.movementTime -= framemsec;
+		}
+	}
+
+	if ( groundPlane && current.crouchSlideTime ) {
+		if ( framemsec >= current.crouchSlideTime ) {
+			current.crouchSlideTime = 0;
+		} else {
+			current.crouchSlideTime -= framemsec;
 		}
 	}
 }
@@ -1536,6 +1568,7 @@ void idPhysics_Player_SavePState( idSaveGame *savefile, const playerPState_t &st
 	savefile->WriteInt( state.movementType );
 	savefile->WriteInt( state.movementFlags );
 	savefile->WriteInt( state.movementTime );
+	savefile->WriteInt( state.crouchSlideTime ); //added by Stradex
 }
 
 /*
@@ -1552,6 +1585,7 @@ void idPhysics_Player_RestorePState( idRestoreGame *savefile, playerPState_t &st
 	savefile->ReadInt( state.movementType );
 	savefile->ReadInt( state.movementFlags );
 	savefile->ReadInt( state.movementTime );
+	savefile->ReadInt( state.crouchSlideTime ); //added by Stradex
 }
 
 /*
@@ -2013,6 +2047,7 @@ void idPhysics_Player::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( current.movementType, PLAYER_MOVEMENT_TYPE_BITS );
 	msg.WriteBits( current.movementFlags, PLAYER_MOVEMENT_FLAGS_BITS );
 	msg.WriteDeltaInt( 0, current.movementTime );
+	msg.WriteDeltaInt( 0, current.crouchSlideTime ); //add by Stradex (we should use long like Q4)
 }
 
 /*
@@ -2041,4 +2076,6 @@ void idPhysics_Player::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	if ( clipModel ) {
 		clipModel->Link( gameLocal.clip, self, 0, current.origin, clipModel->GetAxis() );
 	}
+
+	current.crouchSlideTime = msg.ReadDeltaInt( 0 ); //added by Stradex
 }

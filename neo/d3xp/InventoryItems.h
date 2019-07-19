@@ -26,35 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __GAME_WORLDSPAWN_H__
-#define __GAME_WORLDSPAWN_H__
 
-#include "Entity.h"
+#ifndef __GAME_INVENTORYITEMS_H__
+#define __GAME_INVENTORYITEMS_H__
 
-/*
-===============================================================================
-
-  World entity.
-
-===============================================================================
-*/
-
-class idWorldspawn : public idEntity {
-public:
-	CLASS_PROTOTYPE( idWorldspawn );
-
-					~idWorldspawn();
-
-	void			Spawn( void );
-
-	void			Save( idRestoreGame *savefile );
-	void			Restore( idRestoreGame *savefile );
-
-	//added for coop
-	void			InitializateMapScript( void );
-
-private:
-	void			Event_Remove( void );
-};
-
-#endif /* !__GAME_WORLDSPAWN_H__ */
+#endif /* !__GAME_PLAYER_H__ */

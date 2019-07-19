@@ -89,12 +89,8 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-#ifdef CTF
-protected:
-#else
-private:
-#endif
-
+//private: //commented by Stradex for D3XP CTF
+protected: 
 	float				wait;
 	float				random;
 	float				delay;
@@ -292,12 +288,9 @@ private:
 	void				Event_Trigger( idEntity *activator );
 };
 
-#ifdef CTF
 /*
 ===============================================================================
-
   Trigger that responces to CTF flags
-
 ===============================================================================
 */
 class idTrigger_Flag : public idTrigger_Multi {
@@ -315,7 +308,5 @@ private:
 
 	void				Event_Touch( idEntity *other, trace_t *trace );
 };
-
-#endif /* CTF */
 
 #endif /* !__GAME_TRIGGER_H__ */

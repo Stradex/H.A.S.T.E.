@@ -69,6 +69,7 @@ typedef struct playerPState_s {
 	int						movementType;
 	int						movementFlags;
 	int						movementTime;
+	int						crouchSlideTime; //Like Q4 :)
 } playerPState_t;
 
 class idPhysics_Player : public idPhysics_Actor {

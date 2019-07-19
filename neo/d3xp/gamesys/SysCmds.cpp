@@ -156,26 +156,6 @@ void Cmd_ReloadScript_f( const idCmdArgs &args ) {
 	// recompile the scripts
 	gameLocal.program.Startup( SCRIPT_DEFAULT );
 
-#ifdef _D3XP
-	// loads a game specific main script file
-	idStr gamedir;
-	int i;
-	for ( i = 0; i < 2; i++ ) {
-		if ( i == 0 ) {
-			gamedir = cvarSystem->GetCVarString( "fs_game_base" );
-		} else if ( i == 1 ) {
-			gamedir = cvarSystem->GetCVarString( "fs_game" );
-		}
-		if ( gamedir.Length() > 0 ) {
-			idStr scriptFile = va( "script/%s_main.script", gamedir.c_str() );
-			if ( fileSystem->ReadFile(scriptFile.c_str(), NULL) > 0 ) {
-				gameLocal.program.CompileFile( scriptFile.c_str() );
-				gameLocal.program.FinishCompilation();
-			}
-		}
-	}
-#endif
-
 	// error out so that the user can rerun the scripts
 	gameLocal.Error( "Exiting map to reload scripts" );
 }
@@ -346,7 +326,7 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 	}
 
 	if ( give_all || idStr::Icmp( name, "weapons" ) == 0 ) {
-		player->inventory.weapons = 0xffffffff >> ( 32 - MAX_WEAPONS );
+		player->inventory.weapons = BIT( MAX_WEAPONS ) - 1;
 		player->CacheWeapons();
 
 		if ( !give_all ) {
@@ -380,37 +360,6 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		return;
 	}
 
-#ifdef _D3XP
-	if ( idStr::Icmp( name, "invulnerability" ) == 0 ) {
-		if ( args.Argc() > 2 ) {
-			player->GivePowerUp( INVULNERABILITY, atoi( args.Argv( 2 ) ) );
-		}
-		else {
-			player->GivePowerUp( INVULNERABILITY, 30000 );
-		}
-		return;
-	}
-
-	if ( idStr::Icmp( name, "helltime" ) == 0 ) {
-		if ( args.Argc() > 2 ) {
-			player->GivePowerUp( HELLTIME, atoi( args.Argv( 2 ) ) );
-		}
-		else {
-			player->GivePowerUp( HELLTIME, 30000 );
-		}
-		return;
-	}
-
-	if ( idStr::Icmp( name, "envirosuit" ) == 0 ) {
-		if ( args.Argc() > 2 ) {
-			player->GivePowerUp( ENVIROSUIT, atoi( args.Argv( 2 ) ) );
-		}
-		else {
-			player->GivePowerUp( ENVIROSUIT, 30000 );
-		}
-		return;
-	}
-#endif
 	if ( idStr::Icmp( name, "pda" ) == 0 ) {
 		player->GivePDA( args.Argv(2), NULL );
 		return;
@@ -526,7 +475,19 @@ void Cmd_Noclip_f( const idCmdArgs &args ) {
 	} else {
 		msg = "noclip ON\n";
 	}
-	player->noclip = !player->noclip;
+	if (gameLocal.isMultiplayer) {
+		if (gameLocal.isClient) {
+			idBitMsg	outMsg;
+			byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
+			outMsg.Init( msgBuf, sizeof( msgBuf ) );
+			outMsg.WriteByte( GAME_RELIABLE_MESSAGE_NOCLIP );
+			networkSystem->ClientSendReliableMessage( outMsg );
+		} else {
+			player->noclip = !player->noclip;
+		}
+	} else {
+		player->noclip = !player->noclip;
+	}
 
 	gameLocal.Printf( "%s", msg );
 }
@@ -633,7 +594,7 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 			name = player->GetUserInfo()->GetString( "ui_name", "player" );
 		}
 
-#ifdef CTF
+		//added by Stradex for d3xp CTF
 		// Append the player's location to team chat messages in CTF
 		if ( gameLocal.mpGame.IsGametypeFlagBased() && team && player ) {
 			idLocationEntity *locationEntity = gameLocal.LocationForPoint( player->GetEyePosition() );
@@ -647,9 +608,7 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 			}
 
 		}
-#endif
-
-
+		//end by Stradex for d3xp CTF
 	} else {
 		name = "server";
 	}
@@ -2097,13 +2056,7 @@ static void Cmd_RecordViewNotes_f( const idCmdArgs &args ) {
 
 	idStr str = args.Argv(1);
 	str.SetFileExtension( ".txt" );
-
-#ifdef _D3XP
-	idFile *file = fileSystem->OpenFileAppend( str, false, "fs_cdpath" );
-#else
 	idFile *file = fileSystem->OpenFileAppend( str );
-#endif
-
 	if ( file ) {
 		file->WriteFloatString( "\"view\"\t( %s )\t( %s )\r\n", origin.ToString(), axis.ToString() );
 		file->WriteFloatString( "\"comments\"\t\"%s: %s\"\r\n\r\n", args.Argv(2), args.Argv(3) );
@@ -2343,32 +2296,6 @@ void Cmd_NextGUI_f( const idCmdArgs &args ) {
 	player->Teleport( origin, angles, NULL );
 }
 
-#ifdef _D3XP
-void Cmd_SetActorState_f( const idCmdArgs &args ) {
-
-	if ( args.Argc() != 3 ) {
-		common->Printf( "usage: setActorState <entity name> <state>\n" );
-		return;
-	}
-
-	idEntity* ent;
-	ent = gameLocal.FindEntity( args.Argv( 1 ) );
-	if ( !ent ) {
-		gameLocal.Printf( "entity not found\n" );
-		return;
-	}
-
-
-	if(!ent->IsType(idActor::Type)) {
-		gameLocal.Printf( "entity not an actor\n" );
-		return;
-	}
-
-	idActor* actor = (idActor*)ent;
-	actor->PostEventMS(&AI_SetState, 0, args.Argv(2));
-}
-#endif
-
 static void ArgCompletion_DefFile( const idCmdArgs &args, void(*callback)( const char *s ) ) {
 	cmdSystem->ArgCompletion_FolderExtension( args, callback, "def/", true, ".def", NULL );
 }
@@ -2395,6 +2322,84 @@ void Cmd_TestId_f( const idCmdArgs &args ) {
 	}
 	gameLocal.mpGame.AddChatLine( common->GetLanguageDict()->GetString( id ), "<nothing>", "<nothing>", "<nothing>" );
 }
+
+//COOP Specific
+
+/*
+===============
+Cmd_Checkpoint_f
+This is only used for test in coop, probably going to be deleted or declared as cheat only in the final release
+===============
+*/
+void Cmd_Checkpoint_f( const idCmdArgs &args ) {
+	const char *name;
+	idPlayer	*player;
+	int			commandType=COOP_CMD_ADDCHECKPOINT;
+	if ( args.Argc() == 1 ) {
+		common->Printf( "usage: <go> create a current checkpoint, <add> save current, <global> save for all players\n" );
+		return;
+	}
+
+	player = gameLocal.GetLocalPlayer();
+	if ( !player || player->spectating ) { // !gameLocal.CheatsOk()
+		return;
+	}
+
+	name = args.Argv( 1 );
+
+	if ( idStr::Icmp( name, "go" ) == 0 ) {
+		commandType = COOP_CMD_GOTOCHECKPOINT;
+	} else if ( idStr::Icmp( name, "global" ) == 0 ) {
+		commandType = COOP_CMD_GLOBALCHECKPOINT;
+	} 
+
+	if (commandType == COOP_CMD_GLOBALCHECKPOINT && !gameLocal.CheatsOk()) {
+		common->Printf( "checkpoint global works only with net_allowcheats 1\n" );
+		return;
+	}
+
+	if ( gameLocal.isMultiplayer ) {
+		if ( gameLocal.isClient ) { //Client
+			idBitMsg	outMsg;
+			byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
+			outMsg.Init( msgBuf, sizeof( msgBuf ) );
+
+			switch(commandType) {
+				case COOP_CMD_ADDCHECKPOINT:
+					outMsg.WriteByte( GAME_RELIABLE_MESSAGE_ADDCHECKPOINT );
+				break;
+				case COOP_CMD_GOTOCHECKPOINT:
+					outMsg.WriteByte( GAME_RELIABLE_MESSAGE_GOTOCHECKPOINT );
+				break;
+				case COOP_CMD_GLOBALCHECKPOINT:
+				default:
+					outMsg.WriteByte( GAME_RELIABLE_MESSAGE_GLOBALCHECKPOINT );
+				break;
+			}
+
+
+			networkSystem->ClientSendReliableMessage( outMsg );
+		} else { //server
+			if (gameLocal.localClientNum < 0) {
+				return; //dedicated server
+			}
+			switch(commandType) {
+				case COOP_CMD_ADDCHECKPOINT:
+					gameLocal.mpGame.WantAddCheckpoint(gameLocal.localClientNum);
+				break;
+				case COOP_CMD_GOTOCHECKPOINT:
+					gameLocal.mpGame.WantUseCheckpoint(gameLocal.localClientNum);
+				break;
+				case COOP_CMD_GLOBALCHECKPOINT:
+					gameLocal.mpGame.WantAddCheckpoint(gameLocal.localClientNum, true);
+				break;
+			}
+		}
+	}
+
+
+}
+
 
 /*
 =================
@@ -2505,9 +2510,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "nextGUI",				Cmd_NextGUI_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleport the player to the next func_static with a gui" );
 	cmdSystem->AddCommand( "testid",				Cmd_TestId_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"output the string for the specified id." );
 
-#ifdef _D3XP
-	cmdSystem->AddCommand( "setActorState",			Cmd_SetActorState_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"Manually sets an actors script state", idGameLocal::ArgCompletion_EntityName );
-#endif
+	//added for Coop specific
+	cmdSystem->AddCommand( "checkpoint",			Cmd_Checkpoint_f,				CMD_FL_GAME,				"Checkpoints for coop" );
 }
 
 /*

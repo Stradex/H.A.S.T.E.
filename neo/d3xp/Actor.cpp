@@ -365,14 +365,6 @@ const idEventDef AI_SetNextState( "setNextState", "s" );
 const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
-#ifdef _D3XP
-const idEventDef EV_SetDamageGroupScale( "setDamageGroupScale", "sf" );
-const idEventDef EV_SetDamageGroupScaleAll( "setDamageGroupScaleAll", "f" );
-const idEventDef EV_GetDamageGroupScale( "getDamageGroupScale", "s", 'f' );
-const idEventDef EV_SetDamageCap( "setDamageCap", "f" );
-const idEventDef EV_SetWaitState( "setWaitState" , "s" );
-const idEventDef EV_GetWaitState( "getWaitState", NULL, 's' );
-#endif
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -416,14 +408,6 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_SetState,					idActor::Event_SetState )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
-#ifdef _D3XP
-	EVENT( EV_SetDamageGroupScale,		idActor::Event_SetDamageGroupScale )
-	EVENT( EV_SetDamageGroupScaleAll,	idActor::Event_SetDamageGroupScaleAll )
-	EVENT( EV_GetDamageGroupScale,		idActor::Event_GetDamageGroupScale )
-	EVENT( EV_SetDamageCap,				idActor::Event_SetDamageCap )
-	EVENT( EV_SetWaitState,				idActor::Event_SetWaitState )
-	EVENT( EV_GetWaitState,				idActor::Event_GetWaitState )
-#endif
 END_CLASS
 
 /*
@@ -474,10 +458,6 @@ idActor::idActor( void ) {
 
 	enemyNode.SetOwner( this );
 	enemyList.SetOwner( this );
-
-#ifdef _D3XP
-	damageCap = -1;
-#endif
 }
 
 /*
@@ -684,7 +664,7 @@ void idActor::SetupHead( void ) {
 	int					i;
 	const idKeyValue	*sndKV;
 
-	if ( gameLocal.isClient ) {
+	if ( gameLocal.isClient && !gameLocal.mpGame.IsGametypeCoopBased()) { //head joints in coop
 		return;
 	}
 
@@ -713,24 +693,10 @@ void idActor::SetupHead( void ) {
 			sndKV = spawnArgs.MatchPrefix( "snd_", sndKV );
 		}
 
-#ifdef _D3XP
-		// copy slowmo param to the head
-		args.SetBool( "slowmo", spawnArgs.GetBool("slowmo", "1") );
-#endif
-
-
-		headEnt = static_cast<idAFAttachment *>( gameLocal.SpawnEntityType( idAFAttachment::Type, &args ) );
+		headEnt = static_cast<idAFAttachment *>( gameLocal.SpawnEntityType( idAFAttachment::Type, &args , true) ); // COOP: In coop we can spawn heads
 		headEnt->SetName( va( "%s_head", name.c_str() ) );
 		headEnt->SetBody( this, headModel, damageJoint );
 		head = headEnt;
-
-#ifdef _D3XP
-		idStr xSkin;
-		if ( spawnArgs.GetString( "skin_head_xray", "", xSkin ) ) {
-			headEnt->xraySkin = declManager->FindSkin( xSkin.c_str() );
-			headEnt->UpdateModel();
-		}
-#endif
 
 		idVec3		origin;
 		idMat3		axis;
@@ -903,10 +869,6 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( "" );
 	}
 
-#ifdef _D3XP
-	savefile->WriteInt(damageCap);
-#endif
-
 }
 
 /*
@@ -1015,10 +977,6 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	if ( statename.Length() > 0 ) {
 		idealState = GetScriptFunction( statename );
 	}
-
-#ifdef _D3XP
-	savefile->ReadInt(damageCap);
-#endif
 }
 
 /*
@@ -1065,13 +1023,7 @@ void idActor::Show( void ) {
 		if ( ent->GetBindMaster() == this ) {
 			ent->Show();
 			if ( ent->IsType( idLight::Type ) ) {
-#ifdef _D3XP
-				if(!spawnArgs.GetBool("lights_off", "0")) {
-					static_cast<idLight *>( ent )->On();
-				}
-#endif
-
-
+				static_cast<idLight *>( ent )->On();
 			}
 		}
 	}
@@ -2207,6 +2159,13 @@ calls Damage()
 */
 void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 					  const char *damageDefName, const float damageScale, const int location ) {
+
+	//COOP START
+	if (gameLocal.isClient) {
+		return; //Client should never produce damage
+	}
+	//COOP END
+
 	if ( !fl.takedamage ) {
 		return;
 	}
@@ -2218,24 +2177,9 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		attacker = gameLocal.world;
 	}
 
-#ifdef _D3XP
-	SetTimeState ts( timeGroup );
-
-	// Helltime boss is immune to all projectiles except the helltime killer
-	if ( finalBoss && idStr::Icmp(inflictor->GetEntityDefName(), "projectile_helltime_killer") ) {
-		return;
-	}
-
-	// Maledict is immume to the falling asteroids
-	if ( !idStr::Icmp( GetEntityDefName(), "monster_boss_d3xp_maledict" ) &&
-		(!idStr::Icmp( damageDefName, "damage_maledict_asteroid" ) || !idStr::Icmp( damageDefName, "damage_maledict_asteroid_splash" ) ) ) {
-		return;
-	}
-#else
 	if ( finalBoss && !inflictor->IsType( idSoulCubeMissile::Type ) ) {
 		return;
 	}
-#endif
 
 	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
 	if ( !damageDef ) {
@@ -2249,20 +2193,12 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	attacker->DamageFeedback( this, inflictor, damage );
 	if ( damage > 0 ) {
 		health -= damage;
-
-#ifdef _D3XP
-		//Check the health against any damage cap that is currently set
-		if(damageCap >= 0 && health < damageCap) {
-			health = damageCap;
-		}
-#endif
-
 		if ( health <= 0 ) {
 			if ( health < -999 ) {
 				health = -999;
 			}
 			Killed( inflictor, attacker, damage, dir, location );
-			if ( ( health < -20 ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) ) {
+			if ( ( (health < -20) || gameLocal.mpGame.IsGametypeCoopBased() ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) ) { //instant gib in coop
 				Gib( dir, damageDefName );
 			}
 		} else {
@@ -3347,59 +3283,3 @@ idActor::Event_GetHead
 void idActor::Event_GetHead( void ) {
 	idThread::ReturnEntity( head.GetEntity() );
 }
-
-#ifdef _D3XP
-/*
-================
-idActor::Event_SetDamageGroupScale
-================
-*/
-void idActor::Event_SetDamageGroupScale( const char* groupName, float scale) {
-
-	for( int i = 0; i < damageScale.Num(); i++ ) {
-		if ( damageGroups[ i ] == groupName ) {
-			damageScale[ i ] = scale;
-		}
-	}
-}
-
-/*
-================
-idActor::Event_SetDamageGroupScaleAll
-================
-*/
-void idActor::Event_SetDamageGroupScaleAll( float scale ) {
-
-	for( int i = 0; i < damageScale.Num(); i++ ) {
-		damageScale[ i ] = scale;
-	}
-}
-
-void idActor::Event_GetDamageGroupScale( const char* groupName ) {
-
-	for( int i = 0; i < damageScale.Num(); i++ ) {
-		if ( damageGroups[ i ] == groupName ) {
-			idThread::ReturnFloat(damageScale[i]);
-			return;
-		}
-	}
-
-	idThread::ReturnFloat(0);
-}
-
-void idActor::Event_SetDamageCap( float _damageCap ) {
-	damageCap = _damageCap;
-}
-
-void idActor::Event_SetWaitState( const char* waitState) {
-	SetWaitState(waitState);
-}
-
-void idActor::Event_GetWaitState() {
-	if(WaitState()) {
-		idThread::ReturnString(WaitState());
-	} else {
-		idThread::ReturnString("");
-	}
-}
-#endif

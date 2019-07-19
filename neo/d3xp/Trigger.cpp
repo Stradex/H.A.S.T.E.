@@ -399,13 +399,7 @@ void idTrigger_Multi::TriggerAction( idEntity *activator ) {
 	} else {
 		// we can't just remove (this) here, because this is a touch function
 		// called while looping through area links...
-#ifdef _D3XP
-		// If the player spawned inside the trigger, the player Spawn function called Think directly,
-		// allowing for multiple triggers on a trigger_once.  Increasing the nextTriggerTime prevents it.
-		nextTriggerTime = gameLocal.time + 99999;
-#else
 		nextTriggerTime = gameLocal.time + 1;
-#endif
 		PostEventMS( &EV_Remove, 0 );
 	}
 }
@@ -1003,26 +997,8 @@ void idTrigger_Hurt::Event_Touch( idEntity *other, trace_t *trace ) {
 	const char *damage;
 
 	if ( on && other && gameLocal.time >= nextTime ) {
-#ifdef _D3XP
-		bool playerOnly = spawnArgs.GetBool( "playerOnly" );
-		if ( playerOnly ) {
-			if ( !other->IsType( idPlayer::Type ) ) {
-				return;
-			}
-		}
-#endif
 		damage = spawnArgs.GetString( "def_damage", "damage_painTrigger" );
-
-#ifdef _D3XP
-		idVec3 dir = vec3_origin;
-		if(spawnArgs.GetBool("kick_from_center", "0")) {
-			dir = other->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-			dir.Normalize();
-		}
-		other->Damage( NULL, NULL, dir, damage, 1.0f, INVALID_JOINT );
-#else
 		other->Damage( NULL, NULL, vec3_origin, damage, 1.0f, INVALID_JOINT );
-#endif
 
 		ActivateTargets( other );
 		CallScript();
@@ -1215,12 +1191,10 @@ void idTrigger_Touch::Disable( void ) {
 	BecomeInactive( TH_THINK );
 }
 
-#ifdef CTF
+//Added by Stradex for D3XP CTF
 /*
 ===============================================================================
-
   idTrigger_Flag
-
 ===============================================================================
 */
 
@@ -1311,7 +1285,6 @@ void idTrigger_Flag::Event_Touch( idEntity *other, trace_t *trace ) {
 
 /*
 		ServerSendEvent( eventFlag->GetEventNum(), NULL, true, false );
-
 		idThread *thread;
 		if ( scriptFlag ) {
 			thread = new idThread();
@@ -1322,5 +1295,3 @@ void idTrigger_Flag::Event_Touch( idEntity *other, trace_t *trace ) {
 		idTrigger_Multi::Event_Touch( other, trace );
 	}
 }
-
-#endif

@@ -240,6 +240,12 @@ public:
 
 	void						Event_Remove( void );
 
+	//COOP START
+	bool						CS_PostEventMS( const idEventDef *ev, int time );
+	bool						CS_PostEventSec( const idEventDef *ev, float time );
+	bool						CS_PostEventSec( const idEventDef *ev, float time, idEventArg arg1 );
+	//COOP END
+
 	// Static functions
 	static void					Init( void );
 	static void					Shutdown( void );
@@ -256,6 +262,8 @@ private:
 
 	bool						PostEventArgs( const idEventDef *ev, int time, int numargs, ... );
 	bool						ProcessEventArgs( const idEventDef *ev, int numargs, ... );
+
+	bool						CS_PostEventArgs( const idEventDef *ev, int time, int numargs, ... ); //COOP
 
 	void						Event_SafeRemove( void );
 

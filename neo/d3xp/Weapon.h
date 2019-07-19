@@ -32,10 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "script/Script_Thread.h"
 #include "Entity.h"
 #include "Light.h"
-#include "Grabber.h"
 #include "Actor.h"
-
-class idFuncEmitter;
 
 /*
 ===============================================================================
@@ -44,10 +41,6 @@ class idFuncEmitter;
 
 ===============================================================================
 */
-
-#ifdef _D3XP
-extern const idEventDef EV_Weapon_State;
-#endif
 
 typedef enum {
 	WP_READY,
@@ -67,28 +60,6 @@ static const int LIGHTID_WORLD_MUZZLE_FLASH = 1;
 static const int LIGHTID_VIEW_MUZZLE_FLASH = 100;
 
 class idMoveableItem;
-
-#ifdef _D3XP
-typedef struct {
-	char			name[64];
-	char			particlename[128];
-	bool			active;
-	int				startTime;
-	jointHandle_t	joint;			//The joint on which to attach the particle
-	bool			smoke;			//Is this a smoke particle
-	const idDeclParticle* particle;		//Used for smoke particles
-	idFuncEmitter*  emitter;		//Used for non-smoke particles
-} WeaponParticle_t;
-
-typedef struct {
-	char			name[64];
-	bool			active;
-	int				startTime;
-	jointHandle_t	joint;
-	int				lightHandle;
-	renderLight_t	light;
-} WeaponLight_t;
-#endif
 
 class idWeapon : public idAnimatedEntity {
 public:
@@ -136,7 +107,7 @@ public:
 	void					HideWorldModel( void );
 	void					ShowWorldModel( void );
 	void					OwnerDied( void );
-	void					BeginAttack( void );
+	void					BeginAttack( bool isSecAttack = false  ); //isSecAttack added by Stradex
 	void					EndAttack( void );
 	bool					IsReady( void ) const;
 	bool					IsReloading( void ) const;
@@ -145,11 +116,6 @@ public:
 	idEntity *				DropItem( const idVec3 &velocity, int activateDelay, int removeDelay, bool died );
 	bool					CanDrop( void ) const;
 	void					WeaponStolen( void );
-
-#ifdef _D3XP
-	weaponStatus_t			GetStatus() { return status; };
-
-#endif
 
 	// Script state management
 	virtual idThread *		ConstructScriptObject( void );
@@ -174,14 +140,12 @@ public:
 	ammo_t					GetAmmoType( void ) const;
 	int						AmmoAvailable( void ) const;
 	int						AmmoInClip( void ) const;
+	void					SetAmmoInClip( int newClip); //added by Stradex
 	void					ResetAmmoClip( void );
 	int						ClipSize( void ) const;
 	int						LowAmmo( void ) const;
 	int						AmmoRequired( void ) const;
-#ifdef _D3XP
-	int						AmmoCount() const;
-	int						GetGrabberState() const;
-#endif
+	int						AltAmmoRequired( void ) const; //added by Stradex
 
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
@@ -194,15 +158,17 @@ public:
 	};
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
-	virtual void			ClientPredictionThink( void );
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 
 private:
 	// script control
 	idScriptBool			WEAPON_ATTACK;
+	idScriptBool			WEAPON_SECATTACK; //added by Stradex
 	idScriptBool			WEAPON_RELOAD;
 	idScriptBool			WEAPON_NETRELOAD;
 	idScriptBool			WEAPON_NETENDRELOAD;
 	idScriptBool			WEAPON_NETFIRING;
+	idScriptBool			WEAPON_NETALTFIRING; //added by Stradex
 	idScriptBool			WEAPON_RAISEWEAPON;
 	idScriptBool			WEAPON_LOWERWEAPON;
 	weaponStatus_t			status;
@@ -215,6 +181,7 @@ private:
 
 	// precreated projectile
 	idEntity				*projectileEnt;
+	idEntity				*altProjectileEnt; //added by Stradex
 
 	idPlayer *				owner;
 	idEntityPtr<idAnimatedEntity>	worldModel;
@@ -252,6 +219,7 @@ private:
 	const idDeclEntityDef *	weaponDef;
 	const idDeclEntityDef *	meleeDef;
 	idDict					projectileDict;
+	idDict					altProjectileDict; //added by Stradex
 	float					meleeDistance;
 	idStr					meleeDefName;
 	idDict					brassDict;
@@ -289,6 +257,7 @@ private:
 	// ammo management
 	ammo_t					ammoType;
 	int						ammoRequired;		// amount of ammo to use each shot.  0 means weapon doesn't need ammo.
+	int						altAmmoRequired;	// Added by Stradex, ammount of ammo the secondary fire requires
 	int						clipSize;			// 0 means no reload
 	int						ammoClip;
 	int						lowAmmo;			// if ammo in clip hits this threshold, snd_
@@ -296,6 +265,7 @@ private:
 												// a projectile is launched
 	// mp client
 	bool					isFiring;
+	bool					isAltFiring;
 
 	// zoom
 	int						zoomFov;			// variable zoom fov per weapon
@@ -310,13 +280,6 @@ private:
 	jointHandle_t			flashJointWorld;
 	jointHandle_t			barrelJointWorld;
 	jointHandle_t			ejectJointWorld;
-
-#ifdef _D3XP
-	jointHandle_t			smokeJointView;
-
-	idHashTable<WeaponParticle_t>	weaponParticles;
-	idHashTable<WeaponLight_t>		weaponLights;
-#endif
 
 	// sound
 	const idSoundShader *	sndHum;
@@ -375,6 +338,7 @@ private:
 	void					Event_AddToClip( int amount );
 	void					Event_AmmoInClip( void );
 	void					Event_AmmoAvailable( void );
+	void					Event_AltAmmoAvailable( void ); //added by Stradex
 	void					Event_TotalAmmoCount( void );
 	void					Event_ClipSize( void );
 	void					Event_PlayAnim( int channel, const char *animname );
@@ -390,6 +354,8 @@ private:
 	void					Event_SetLightParms( float parm0, float parm1, float parm2, float parm3 );
 	void					Event_LaunchProjectiles( int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower );
 	void					Event_CreateProjectile( void );
+	void					Event_LaunchAltProjectiles( int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower); //add by Stradex
+	void					Event_CreateAltProjectile( void ); //add by Stradex
 	void					Event_EjectBrass( void );
 	void					Event_Melee( void );
 	void					Event_GetWorldModel( void );
@@ -398,26 +364,6 @@ private:
 	void					Event_NetReload( void );
 	void					Event_IsInvisible( void );
 	void					Event_NetEndReload( void );
-
-#ifdef _D3XP
-	idGrabber				grabber;
-	int						grabberState;
-
-	void					Event_Grabber( int enable );
-	void					Event_GrabberHasTarget( void );
-	void					Event_GrabberSetGrabDistance( float dist );
-	void					Event_LaunchProjectilesEllipse( int num_projectiles, float spreada, float spreadb, float fuseOffset, float power );
-	void					Event_LaunchPowerup( const char* powerup, float duration, int useAmmo );
-
-	void					Event_StartWeaponSmoke();
-	void					Event_StopWeaponSmoke();
-
-	void					Event_StartWeaponParticle( const char* name);
-	void					Event_StopWeaponParticle( const char* name);
-
-	void					Event_StartWeaponLight( const char* name);
-	void					Event_StopWeaponLight( const char* name);
-#endif
 };
 
 ID_INLINE bool idWeapon::IsLinked( void ) {

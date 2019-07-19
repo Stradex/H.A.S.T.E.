@@ -164,11 +164,6 @@ public:
 	void				Spawn( void );
 	void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 
-#ifdef _D3XP
-	virtual void		Hide( void );
-	virtual void		Show( void );
-#endif
-
 private:
 	int					count;
 	int					nextTriggerTime;
@@ -280,9 +275,20 @@ public:
 	bool					StartRagdoll( void );
 	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
 
+	//COOP START
+	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const; //added for COOP
+	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg ); //added for COOP
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ); //added for COOP
+	virtual void			Think( void ); //added for COOP
+	//COOP END
+
 private:
 	int						num_anims;
 	int						current_anim_index;
+	//coop start
+	int						currentAnimPlaying; //for coop
+	bool					hasBeenActivated; //added for Coop
+	//coop end
 	int						anim;
 	int						blendFrames;
 	jointHandle_t			soundJoint;
@@ -298,10 +304,6 @@ private:
 	void					Event_Footstep( void );
 	void					Event_LaunchMissiles( const char *projectilename, const char *sound, const char *launchjoint, const char *targetjoint, int numshots, int framedelay );
 	void					Event_LaunchMissilesUpdate( int launchjoint, int targetjoint, int numshots, int framedelay );
-#ifdef _D3XP
-	void					Event_SetAnimation( const char *animName );
-	void					Event_GetAnimationLength();
-#endif
 };
 
 
@@ -329,11 +331,22 @@ public:
 	void				Fade( const idVec4 &to, float fadeTime );
 	virtual void		Think( void );
 
+	//added for coop
+	enum {
+		EVENT_STATIC_ACTIVATE = idEntity::EVENT_MAXEVENTS,
+		EVENT_STATIC_REMOVE,
+		EVENT_MAXEVENTS
+	};
+	//end for coop
+
+
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual bool		ClientReceiveEvent( int event, int time, const idBitMsg &msg ); //added for coop
 
 private:
 	void				Event_Activate( idEntity *activator );
+	void				Event_Remove( void ); //added for coop
 
 	int					spawnTime;
 	bool				active;
@@ -531,12 +544,23 @@ public:
 
 	virtual void		Show( void );
 
+	//added for coop
+	enum {
+		EVENT_BEAM_ACTIVATE = idEntity::EVENT_MAXEVENTS,
+		EVENT_BEAM_REMOVE,
+		EVENT_MAXEVENTS
+	};
+	//end for coop
+
+	virtual void		ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ); //added for COOP
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
+	virtual bool		ClientReceiveEvent( int event, int time, const idBitMsg &msg ); //added for coop
 
 private:
 	void				Event_MatchTarget( void );
 	void				Event_Activate( idEntity *activator );
+	void				Event_Remove( void ); //added for coop
 
 	idEntityPtr<idBeam>	target;
 	idEntityPtr<idBeam>	master;
@@ -773,128 +797,5 @@ private:
 	idList<int>			targetTime;
 	idList<idVec3>		lastTargetPos;
 };
-
-#ifdef _D3XP
-/*
-===============================================================================
-
-idShockwave
-
-===============================================================================
-*/
-class idShockwave : public idEntity {
-public:
-	CLASS_PROTOTYPE( idShockwave );
-
-	idShockwave();
-	~idShockwave();
-
-	void				Spawn( void );
-	void				Think( void );
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-private:
-	void				Event_Activate( idEntity *activator );
-
-	bool				isActive;
-	int					startTime;
-	int					duration;
-
-	float				startSize;
-	float				endSize;
-	float				currentSize;
-
-	float				magnitude;
-
-	float				height;
-	bool				playerDamaged;
-	float				playerDamageSize;
-
-};
-
-/*
-===============================================================================
-
-idFuncMountedObject
-
-===============================================================================
-*/
-class idFuncMountedObject : public idEntity {
-public:
-	CLASS_PROTOTYPE( idFuncMountedObject );
-
-	idFuncMountedObject();
-	~idFuncMountedObject();
-
-	void				Spawn( void );
-	void				Think( void );
-
-	void				GetAngleRestrictions( int &yaw_min, int &yaw_max, int &pitch );
-
-private:
-	int					harc;
-	int					varc;
-
-	void				Event_Touch( idEntity *other, trace_t *trace );
-	void				Event_Activate( idEntity *activator );
-
-public:
-	bool				isMounted;
-	function_t	*		scriptFunction;
-	idPlayer *			mountedPlayer;
-};
-
-
-class idFuncMountedWeapon : public idFuncMountedObject {
-public:
-	CLASS_PROTOTYPE( idFuncMountedWeapon );
-
-	idFuncMountedWeapon();
-	~idFuncMountedWeapon();
-
-	void				Spawn( void );
-	void				Think( void );
-
-private:
-
-	// The actual turret that moves with the player's view
-	idEntity	*		turret;
-
-	// the muzzle bone's position, used for launching projectiles and trailing smoke
-	idVec3				muzzleOrigin;
-	idMat3				muzzleAxis;
-
-	float				weaponLastFireTime;
-	float				weaponFireDelay;
-
-	const idDict *		projectile;
-
-	const idSoundShader	*soundFireWeapon;
-
-	void				Event_PostSpawn( void );
-};
-
-/*
-===============================================================================
-
-idPortalSky
-
-===============================================================================
-*/
-class idPortalSky : public idEntity {
-public:
-	CLASS_PROTOTYPE( idPortalSky );
-
-	idPortalSky();
-	~idPortalSky();
-
-	void				Spawn( void );
-	void				Event_PostSpawn();
-	void				Event_Activate( idEntity *activator );
-};
-
-#endif /* _D3XP */
 
 #endif /* !__GAME_MISC_H__ */

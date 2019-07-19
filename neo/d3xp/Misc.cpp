@@ -197,9 +197,16 @@ void idPlayerStart::TeleportPlayer( idPlayer *player ) {
 	const char *viewName = spawnArgs.GetString( "visualView", "" );
 	idEntity *ent = viewName ? gameLocal.FindEntity( viewName ) : NULL;
 
-#ifdef _D3XP
-	SetTimeState ts( player->timeGroup );
-#endif
+	//COOP START
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isServer) { //create a new global checkpoint at this position for Coop
+		if ( f && ent ) {
+			gameLocal.mpGame.CreateNewCheckpoint(ent->GetPhysics()->GetOrigin());
+		} else {
+			gameLocal.mpGame.CreateNewCheckpoint(GetPhysics()->GetOrigin());
+		}
+
+	}
+	//COOP END
 
 	if ( f && ent ) {
 		// place in private camera view for some time
@@ -230,11 +237,14 @@ idPlayerStart::Event_TeleportPlayer
 void idPlayerStart::Event_TeleportPlayer( idEntity *activator ) {
 	idPlayer *player;
 
-	if ( activator->IsType( idPlayer::Type ) ) {
+	if ( activator && activator->IsType( idPlayer::Type ) ) {
 		player = static_cast<idPlayer*>( activator );
+	} else if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.GetCoopPlayer()) {
+		player = gameLocal.GetCoopPlayer(); //COOP
 	} else {
 		player = gameLocal.GetLocalPlayer();
 	}
+
 	if ( player ) {
 		if ( spawnArgs.GetBool( "visualFx" ) ) {
 
@@ -568,28 +578,6 @@ void idDamagable::Killed( idEntity *inflictor, idEntity *attacker, int damage, c
 	BecomeBroken( attacker );
 }
 
-#ifdef _D3XP
-/*
-================
-idDamagable::Hide
-================
-*/
-void idDamagable::Hide( void ) {
-	idEntity::Hide();
-	GetPhysics()->SetContents( 0 );
-}
-
-/*
-================
-idDamagable::Show
-================
-*/
-void idDamagable::Show( void ) {
-	idEntity::Show();
-	GetPhysics()->SetContents( CONTENTS_SOLID );
-}
-#endif
-
 /*
 ================
 idDamagable::Event_BecomeBroken
@@ -918,10 +906,6 @@ const idEventDef EV_LaunchMissiles( "launchMissiles", "ssssdf" );
 const idEventDef EV_LaunchMissilesUpdate( "<launchMissiles>", "dddd" );
 const idEventDef EV_AnimDone( "<AnimDone>", "d" );
 const idEventDef EV_StartRagdoll( "startRagdoll" );
-#ifdef _D3XP
-const idEventDef EV_SetAnimation( "setAnimation", "s" );
-const idEventDef EV_GetAnimationLength( "getAnimationLength", NULL, 'f' );
-#endif
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idAnimated )
 	EVENT( EV_Activate,				idAnimated::Event_Activate )
@@ -933,10 +917,6 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idAnimated )
 	EVENT( EV_FootstepRight,		idAnimated::Event_Footstep )
 	EVENT( EV_LaunchMissiles,		idAnimated::Event_LaunchMissiles )
 	EVENT( EV_LaunchMissilesUpdate,	idAnimated::Event_LaunchMissilesUpdate )
-#ifdef _D3XP
-	EVENT( EV_SetAnimation,			idAnimated::Event_SetAnimation )
-	EVENT( EV_GetAnimationLength,	idAnimated::Event_GetAnimationLength )
-#endif
 END_CLASS
 
 /*
@@ -946,6 +926,8 @@ idAnimated::idAnimated
 */
 idAnimated::idAnimated() {
 	anim = 0;
+	currentAnimPlaying = 0; //FOR COOP
+	hasBeenActivated = false; //FOR COOP
 	blendFrames = 0;
 	soundJoint = INVALID_JOINT;
 	activated = false;
@@ -1064,6 +1046,8 @@ void idAnimated::Spawn( void ) {
 	}
 
 	spawnArgs.GetFloat( "wait", "-1", wait );
+
+	currentAnimPlaying = animator.CurrentAnim( ANIMCHANNEL_ALL )->AnimNum(); //for coop
 
 	if ( wait >= 0 ) {
 		PostEventSec( &EV_Activate, wait, this );
@@ -1205,11 +1189,17 @@ void idAnimated::Event_AnimDone( int animindex ) {
 
 	if ( ( animindex >= num_anims ) && spawnArgs.GetBool( "remove" ) ) {
 		Hide();
-		PostEventMS( &EV_Remove, 0 );
+		if (gameLocal.isServer || !gameLocal.mpGame.IsGametypeCoopBased()) {
+			PostEventMS( &EV_Remove, 0 );
+		}
 	} else if ( spawnArgs.GetBool( "auto_advance" ) ) {
 		PlayNextAnim();
 	} else {
 		activated = false;
+	}
+
+	if (gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased()) {
+		return;
 	}
 
 	ActivateTargets( activator.GetEntity() );
@@ -1233,6 +1223,7 @@ void idAnimated::Event_Activate( idEntity *_activator ) {
 	}
 
 	activated = true;
+	hasBeenActivated = true; //for coop only
 	activator = _activator;
 	ProcessEvent( &EV_Animated_Start );
 }
@@ -1366,38 +1357,99 @@ void idAnimated::Event_LaunchMissiles( const char *projectilename, const char *s
 	ProcessEvent( &EV_LaunchMissilesUpdate, launch, target, numshots - 1, framedelay );
 }
 
-#ifdef _D3XP
+//STRADEX COOP METHODS START
+
 /*
 =====================
-idAnimated::Event_SetAnimation
+idAnimated::Think
 =====================
 */
-void idAnimated::Event_SetAnimation( const char *animName ) {
+void idAnimated::Think( void ) {
+	idAFEntity_Gibbable::Think();
 
-	//BSM Nerve: Need to add some error checking so we don't change the animation
-	//in the middle of the existing animation
-	anim = animator.GetAnim( animName );
-	if ( !anim ) {
-		gameLocal.Error( "idAnimated '%s' at (%s): cannot find anim '%s'", name.c_str(), GetPhysics()->GetOrigin().ToString(0), animName );
+	if (!gameLocal.mpGame.IsGametypeCoopBased()) {
+		return;
 	}
-
+	//coop stuff
+	currentAnimPlaying = animator.CurrentAnim( ANIMCHANNEL_ALL )->AnimNum();
 }
 
 /*
 =====================
-idAnimated::Event_GetAnimationLength
+idAnimated::ClientPredictionThink
 =====================
 */
-void idAnimated::Event_GetAnimationLength() {
-	float length = 0;
+void idAnimated::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
+	if (!gameLocal.mpGame.IsGametypeCoopBased()) {
+		idAFEntity_Gibbable::ClientPredictionThink(lastFrameCall, firstFrameCall, callsPerFrame);
+		return;
+	}
+	//coop stuff
+	UpdateAnimation();
+	UpdateVisuals();
+	Present();
+	//UpdateDamageEffects();
+	//LinkCombat();
+}
 
-	if(anim) {
-		length = (float)(animator.AnimLength( anim )) / 1000.f;
+/*
+=====================
+idAnimated::WriteToSnapshot
+=====================
+*/
+void idAnimated::WriteToSnapshot( idBitMsgDelta &msg ) const {
+	if (!gameLocal.mpGame.IsGametypeCoopBased()) {
+		idAFEntity_Gibbable::WriteBindToSnapshot(msg);
+		return;
 	}
 
-	idThread::ReturnFloat(length);
+	//common->Warning("[COOP] sending snapshot for %s\n", this->GetName());
+	//FIXME: Snapshot being sended every single f*cking frame
+	//coop stuff
+	WriteBindToSnapshot( msg );
+	msg.WriteShort(currentAnimPlaying);
+	msg.WriteBits(hasBeenActivated, 1);
 }
-#endif
+
+/*
+=====================
+idAnimated::ReadFromSnapshot
+=====================
+*/
+void idAnimated::ReadFromSnapshot( const idBitMsgDelta &msg ) {
+	if (!gameLocal.mpGame.IsGametypeCoopBased()) {
+		idAFEntity_Gibbable::ReadFromSnapshot(msg);
+		return;
+	}
+	int newAnim, newActivated;
+	//coop stuff
+	ReadBindFromSnapshot( msg );
+	newAnim = msg.ReadShort();
+	newActivated = msg.ReadBits( 1 ) != 0;
+
+	//common->Warning("[COOP] reading snapshot for %s\n", this->GetName());
+
+	if ((newAnim != this->currentAnimPlaying) || (newActivated != this->hasBeenActivated)) {
+		this->activated = newActivated;
+		this->hasBeenActivated = newActivated;
+		this->currentAnimPlaying = newAnim;
+		int cycle;
+		Show();
+		spawnArgs.GetInt( "cycle", "1", cycle );
+		animator.CycleAnim( ANIMCHANNEL_ALL, this->currentAnimPlaying, gameLocal.time, FRAME2MS( blendFrames ) );
+		animator.CurrentAnim( ANIMCHANNEL_ALL )->SetCycleCount( cycle );
+		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+		animator.ForceUpdate();
+		//common->Warning("[COOP] New animation for %s\n", this->GetName());
+	}
+	if ( msg.HasChanged() ) {
+		UpdateVisuals();
+	}
+}
+
+//STRADEX COOP METHODS END
+
+
 
 /*
 ===============================================================================
@@ -1411,6 +1463,7 @@ void idAnimated::Event_GetAnimationLength() {
 
 CLASS_DECLARATION( idEntity, idStaticEntity )
 	EVENT( EV_Activate,				idStaticEntity::Event_Activate )
+	EVENT( EV_Remove,				idStaticEntity::Event_Remove ) //added for coop
 END_CLASS
 
 /*
@@ -1600,6 +1653,17 @@ void idStaticEntity::Event_Activate( idEntity *activator ) {
 		} else {
 			Hide();
 		}
+
+		//COOP START
+		if ( gameLocal.isServer && gameLocal.mpGame.IsGametypeCoopBased() ) { //extra sync for coop
+			idBitMsg	msg;
+			byte		msgBuf[MAX_EVENT_PARAM_SIZE];
+
+			msg.Init( msgBuf, sizeof( msgBuf ) );
+			msg.WriteBits( IsHidden()?1:0, 1 );
+			ServerSendEvent( EVENT_STATIC_ACTIVATE, &msg, true, -1, true ); //saveLastOnly  = true to only save the last event from this entity
+		}
+		//COOP END
 	}
 
 	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( spawnTime );
@@ -1648,6 +1712,56 @@ void idStaticEntity::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		UpdateVisuals();
 	}
 }
+
+//COOP STUFF
+
+/*
+================
+idStaticEntity::Event_Remove
+================
+*/
+void idStaticEntity::Event_Remove( void ) {
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isServer) {
+		ServerSendEvent( EVENT_STATIC_REMOVE, NULL, true, -1 );
+	}
+	delete this;
+}
+
+
+/*
+================
+idStaticEntity::ClientReceiveEvent
+================
+*/
+bool idStaticEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
+	if (!gameLocal.mpGame.IsGametypeCoopBased()) {
+		return idEntity::ClientReceiveEvent( event, time, msg ); //OG D3 netcode non-coop
+	}
+	switch( event ) {
+		case EVENT_STATIC_ACTIVATE: {
+			bool hidden = (msg.ReadBits( 1 ) != 0);
+			if ( hidden != IsHidden() ) {
+				if ( hidden ) {
+					Hide();
+				} else {
+					Show();
+				}
+
+				UpdateVisuals();
+			}
+			return true;
+		}
+		case EVENT_STATIC_REMOVE: {
+			CS_PostEventMS( &EV_Remove, 0 );
+			return true;
+		}
+		default:
+			break;
+	}
+
+	return idEntity::ClientReceiveEvent( event, time, msg );
+}
+//END COOP STUFF
 
 
 /*
@@ -1907,7 +2021,7 @@ void idFuncSmoke::Think( void ) {
 	}
 
 	if ( ( thinkFlags & TH_UPDATEPARTICLES) && !IsHidden() ) {
-		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/ ) ) {
+		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() ) ) {
 			if ( restart ) {
 				smokeTime = gameLocal.time;
 			} else {
@@ -2168,6 +2282,7 @@ const char *idLocationEntity::GetLocation( void ) const {
 CLASS_DECLARATION( idEntity, idBeam )
 	EVENT( EV_PostSpawn,			idBeam::Event_MatchTarget )
 	EVENT( EV_Activate,				idBeam::Event_Activate )
+	EVENT( EV_Remove,				idBeam::Event_Remove ) //added for coop
 END_CLASS
 
 /*
@@ -2214,7 +2329,11 @@ void idBeam::Spawn( void ) {
 
 	SetModel( "_BEAM" );
 	Hide();
-	PostEventMS( &EV_PostSpawn, 0 );
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient) {
+		CS_PostEventMS( &EV_PostSpawn, 0 );
+	} else {
+		PostEventMS( &EV_PostSpawn, 0 );
+	}
 }
 
 /*
@@ -2325,6 +2444,16 @@ void idBeam::Event_Activate( idEntity *activator ) {
 	} else {
 		Hide();
 	}
+	//COOP START
+	if ( gameLocal.isServer && gameLocal.mpGame.IsGametypeCoopBased() ) { //extra sync for coop
+		idBitMsg	msg;
+		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
+
+		msg.Init( msgBuf, sizeof( msgBuf ) );
+		msg.WriteBits( IsHidden()?1:0, 1 );
+		ServerSendEvent( EVENT_BEAM_ACTIVATE, &msg, true, -1, true ); //saveLastOnly  = true to only save the last event from this entity
+	}
+	//COOP END
 }
 
 /*
@@ -2357,6 +2486,80 @@ void idBeam::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		UpdateVisuals();
 	}
 }
+
+//COOP STUFF
+
+/*
+================
+idStaticEntity::Event_Remove
+================
+*/
+void idBeam::Event_Remove( void ) {
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isServer) {
+		ServerSendEvent( EVENT_BEAM_REMOVE, NULL, true, -1 );
+	}
+	delete this;
+}
+
+
+/*
+================
+idBeam::ClientReceiveEvent
+================
+*/
+bool idBeam::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
+	if (!gameLocal.mpGame.IsGametypeCoopBased()) {
+		return idEntity::ClientReceiveEvent( event, time, msg ); //OG D3 netcode non-coop
+	}
+	switch( event ) {
+		case EVENT_BEAM_ACTIVATE: {
+			bool hidden = (msg.ReadBits( 1 ) != 0);
+			if ( hidden != IsHidden() ) {
+				if ( hidden ) {
+					Hide();
+				} else {
+					Show();
+				}
+
+				UpdateVisuals();
+			}
+			return true;
+		}
+		case EVENT_BEAM_REMOVE: {
+			CS_PostEventMS( &EV_Remove, 0 );
+			return true;
+		}
+		default:
+			break;
+	}
+
+	return idEntity::ClientReceiveEvent( event, time, msg );
+}
+
+/*
+================
+idBeam::ClientPredictionThink
+================
+*/
+void idBeam::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
+	idBeam *masterEnt;
+
+	if ( !IsHidden() && !target.GetEntity() ) {
+		// hide if our target is removed
+		Hide();
+	}
+
+	RunPhysics();
+
+	masterEnt = master.GetEntity();
+	if ( masterEnt ) {
+		const idVec3 &origin = GetPhysics()->GetOrigin();
+		masterEnt->SetBeamTarget( origin );
+	}
+	Present();
+}
+//END COOP STUFF
+
 
 
 /*
@@ -2925,6 +3128,11 @@ idFuncRadioChatter::Event_Activate
 ================
 */
 void idFuncRadioChatter::Event_Activate( idEntity *activator ) {
+
+	if (gameLocal.mpGame.IsGametypeCoopBased()) {
+		return; //No radio chatter in coop
+	}
+
 	idPlayer *player;
 	const char	*sound;
 	const idSoundShader *shader;
@@ -3007,11 +3215,11 @@ void idPhantomObjects::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( min_wait );
 	savefile->WriteInt( max_wait );
 	target.Save( savefile );
-
 	savefile->WriteInt( targetTime.Num() );
 	for( i = 0; i < targetTime.Num(); i++ ) {
 		savefile->WriteInt( targetTime[ i ] );
 	}
+
 	for( i = 0; i < lastTargetPos.Num(); i++ ) {
 		savefile->WriteVec3( lastTargetPos[ i ] );
 	}
@@ -3044,8 +3252,16 @@ void idPhantomObjects::Restore( idRestoreGame *savefile ) {
 	for( i = 0; i < num; i++ ) {
 		savefile->ReadInt( targetTime[ i ] );
 	}
-	for( i = 0; i < num; i++ ) {
-		savefile->ReadVec3( lastTargetPos[ i ] );
+
+	if ( savefile->GetBuildNumber() == INITIAL_RELEASE_BUILD_NUMBER ) {
+		// these weren't saved out in the first release
+		for( i = 0; i < num; i++ ) {
+			lastTargetPos[ i ].Zero();
+		}
+	} else {
+		for( i = 0; i < num; i++ ) {
+			savefile->ReadVec3( lastTargetPos[ i ] );
+		}
 	}
 }
 
@@ -3214,549 +3430,3 @@ void idPhantomObjects::Think( void ) {
 		BecomeInactive( TH_THINK );
 	}
 }
-
-#ifdef _D3XP
-/*
-===============================================================================
-
-idShockwave
-
-===============================================================================
-*/
-CLASS_DECLARATION( idEntity, idShockwave )
-EVENT( EV_Activate,			idShockwave::Event_Activate )
-END_CLASS
-
-/*
-===============
-idShockwave::idShockwave
-===============
-*/
-idShockwave::idShockwave() {
-	isActive = false;
-	startTime = 0;
-	duration = 0;
-	startSize = 0.f;
-	endSize = 0.f;
-	currentSize = 0.f;
-	magnitude = 0.f;
-
-	height = 0.0f;
-	playerDamaged = false;
-	playerDamageSize = 0.0f;
-}
-
-/*
-===============
-idShockwave::~idShockwave
-===============
-*/
-idShockwave::~idShockwave() {
-}
-
-/*
-===============
-idShockwave::Save
-===============
-*/
-void idShockwave::Save( idSaveGame *savefile ) const {
-	savefile->WriteBool( isActive );
-	savefile->WriteInt( startTime );
-	savefile->WriteInt( duration );
-
-	savefile->WriteFloat( startSize );
-	savefile->WriteFloat( endSize );
-	savefile->WriteFloat( currentSize );
-
-	savefile->WriteFloat( magnitude );
-
-	savefile->WriteFloat( height );
-	savefile->WriteBool( playerDamaged );
-	savefile->WriteFloat( playerDamageSize );
-}
-
-/*
-===============
-idShockwave::Restore
-===============
-*/
-void idShockwave::Restore( idRestoreGame *savefile ) {
-	savefile->ReadBool( isActive );
-	savefile->ReadInt( startTime );
-	savefile->ReadInt( duration );
-
-	savefile->ReadFloat( startSize );
-	savefile->ReadFloat( endSize );
-	savefile->ReadFloat( currentSize );
-
-	savefile->ReadFloat( magnitude );
-
-	savefile->ReadFloat( height );
-	savefile->ReadBool( playerDamaged );
-	savefile->ReadFloat( playerDamageSize );
-
-}
-
-/*
-===============
-idShockwave::Spawn
-===============
-*/
-void idShockwave::Spawn() {
-
-	spawnArgs.GetInt( "duration", "1000", duration );
-	spawnArgs.GetFloat( "startsize", "8", startSize );
-	spawnArgs.GetFloat( "endsize", "512", endSize );
-	spawnArgs.GetFloat( "magnitude", "100", magnitude );
-
-	spawnArgs.GetFloat( "height", "0", height);
-	spawnArgs.GetFloat( "player_damage_size", "20", playerDamageSize);
-
-	if ( spawnArgs.GetBool( "start_on" ) ) {
-		ProcessEvent( &EV_Activate, this );
-	}
-}
-
-/*
-===============
-idShockwave::Think
-===============
-*/
-void idShockwave::Think() {
-	int endTime;
-
-	if ( !isActive ) {
-		BecomeInactive( TH_THINK );
-		return;
-	}
-
-	endTime = startTime + duration;
-
-	if ( gameLocal.time < endTime ) {
-		float u;
-		float newSize;
-
-		// Expand shockwave
-		u = (float)(gameLocal.time - startTime) / (float)duration;
-		newSize = startSize + u * (endSize - startSize);
-
-		// Find all clipmodels between currentSize and newSize
-		idVec3		pos, end;
-		idClipModel *clipModelList[ MAX_GENTITIES ];
-		idClipModel *clip;
-		idEntity	*ent;
-		int			i, listedClipModels;
-
-		// Set bounds
-		pos = GetPhysics()->GetOrigin();
-
-		float zVal;
-		if(!height) {
-			zVal = newSize;
-		} else {
-			zVal = height/2.0f;
-		}
-
-		//Expand in a sphere
-		end = pos + idVec3( newSize, newSize, zVal );
-		idBounds bounds( end );
-		end = pos + idVec3( -newSize, -newSize, -zVal );
-		bounds.AddPoint( end );
-
-		if(g_debugShockwave.GetBool()) {
-			gameRenderWorld->DebugBounds(colorRed,  bounds, vec3_origin);
-		}
-
-		listedClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
-
-		for ( i = 0; i < listedClipModels; i++ ) {
-			clip = clipModelList[ i ];
-			ent = clip->GetEntity();
-
-			if ( ent->IsHidden() ) {
-				continue;
-			}
-
-			if ( !ent->IsType( idMoveable::Type ) && !ent->IsType( idAFEntity_Base::Type ) && !ent->IsType( idPlayer::Type )) {
-				continue;
-			}
-
-			idVec3 point = ent->GetPhysics()->GetOrigin();
-			idVec3 force = point - pos;
-
-			float dist = force.Normalize();
-
-			if(ent->IsType( idPlayer::Type )) {
-
-				if(ent->GetPhysics()->GetAbsBounds().IntersectsBounds(bounds)) {
-
-				//For player damage we check the current radius and a specified player damage ring size
-					if ( dist <= newSize && dist > newSize-playerDamageSize ) {
-
-						idStr damageDef = spawnArgs.GetString("def_player_damage", "");
-						if(damageDef.Length() > 0 && !playerDamaged) {
-
-							playerDamaged = true;	//Only damage once per shockwave
-							idPlayer* player = static_cast< idPlayer* >( ent );
-							idVec3 dir = ent->GetPhysics()->GetOrigin() - pos;
-							dir.NormalizeFast();
-							player->Damage(NULL, NULL, dir, damageDef, 1.0f, INVALID_JOINT);
-						}
-					}
-				}
-
-			} else {
-
-				// If the object is inside the current expansion...
-				if ( dist <= newSize && dist > currentSize ) {
-					force.z += 4.f;
-					force.NormalizeFast();
-
-					if ( ent->IsType( idAFEntity_Base::Type ) ) {
-						force = force * (ent->GetPhysics()->GetMass() * magnitude * 0.01f);
-					} else {
-						force = force * ent->GetPhysics()->GetMass() * magnitude;
-					}
-
-					// Kick it up, move force point off object origin
-					float rad = ent->GetPhysics()->GetBounds().GetRadius();
-					point.x += gameLocal.random.CRandomFloat() * rad;
-					point.y += gameLocal.random.CRandomFloat() * rad;
-
-					int j;
-					for( j=0; j < ent->GetPhysics()->GetNumClipModels(); j++ ) {
-						ent->GetPhysics()->AddForce( j, point, force );
-					}
-				}
-			}
-		}
-
-		// Update currentSize for next frame
-		currentSize = newSize;
-
-	} else {
-
-		// turn off
-		isActive = false;
-	}
-}
-
-/*
-===============
-idShockwave::Event_Activate
-===============
-*/
-void idShockwave::Event_Activate( idEntity *activator ) {
-
-	isActive = true;
-	startTime = gameLocal.time;
-	playerDamaged = false;
-
-	BecomeActive( TH_THINK );
-}
-
-
-/*
-===============================================================================
-
-idFuncMountedObject
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idEntity, idFuncMountedObject )
-EVENT( EV_Touch,			idFuncMountedObject::Event_Touch )
-EVENT( EV_Activate,			idFuncMountedObject::Event_Activate )
-END_CLASS
-
-/*
-===============
-idFuncMountedObject::idFuncMountedObject
-===============
-*/
-idFuncMountedObject::idFuncMountedObject() {
-	isMounted = false;
-	scriptFunction = NULL;
-	mountedPlayer = NULL;
-	harc = 0;
-	varc = 0;
-}
-
-/*
-===============
-idFuncMountedObject::idFuncMountedObject
-===============
-*/
-idFuncMountedObject::~idFuncMountedObject() {
-}
-
-/*
-===============
-idFuncMountedObject::Spawn
-===============
-*/
-void idFuncMountedObject::Spawn( void ) {
-	// Get viewOffset
-	spawnArgs.GetInt( "harc", "45", harc );
-	spawnArgs.GetInt( "varc", "30", varc );
-
-	// Get script function
-	idStr funcName = spawnArgs.GetString( "call", "" );
-	if ( funcName.Length() ) {
-		scriptFunction = gameLocal.program.FindFunction( funcName );
-		if ( scriptFunction == NULL ) {
-			gameLocal.Warning( "idFuncMountedObject '%s' at (%s) calls unknown function '%s'\n", name.c_str(), GetPhysics()->GetOrigin().ToString(0), funcName.c_str() );
-		}
-	}
-
-	BecomeActive( TH_THINK );
-}
-
-/*
-================
-idFuncMountedObject::Think
-================
-*/
-void idFuncMountedObject::Think( void ) {
-
-	idEntity::Think();
-}
-
-/*
-================
-idFuncMountedObject::GetViewInfo
-================
-*/
-void idFuncMountedObject::GetAngleRestrictions( int &yaw_min, int &yaw_max, int &pitch ) {
-	idMat3		axis;
-	idAngles	angs;
-
-	axis = GetPhysics()->GetAxis();
-	angs = axis.ToAngles();
-
-	yaw_min = angs.yaw - harc;
-	yaw_min = idMath::AngleNormalize180( yaw_min );
-
-	yaw_max = angs.yaw + harc;
-	yaw_max = idMath::AngleNormalize180( yaw_max );
-
-	pitch = varc;
-}
-
-/*
-================
-idFuncMountedObject::Event_Touch
-================
-*/
-void idFuncMountedObject::Event_Touch( idEntity *other, trace_t *trace ) {
-
-	ProcessEvent( &EV_Activate, other );
-}
-
-/*
-================
-idFuncMountedObject::Event_Activate
-================
-*/
-void idFuncMountedObject::Event_Activate( idEntity *activator ) {
-	if ( !isMounted && activator->IsType( idPlayer::Type ) ) {
-		idPlayer *client = (idPlayer *)activator;
-
-		mountedPlayer = client;
-
-		/*
-		// Place player at path_corner targeted by mounted object
-		int i;
-		idPathCorner	*spot;
-
-		for ( i = 0; i < targets.Num(); i++ ) {
-		if ( targets[i]->IsType( idPathCorner::Type ) ) {
-		spot = (idPathCorner*)targets[i];
-		break;
-		}
-		}
-
-		mountedPlayer->GetPhysics()->SetOrigin( spot->GetPhysics()->GetOrigin() );
-		mountedPlayer->GetPhysics()->SetAxis( spot->GetPhysics()->GetAxis() );
-		*/
-
-		mountedPlayer->Bind( this, true );
-		mountedPlayer->mountedObject = this;
-
-		// Call a script function
-		idThread	*mountthread;
-		if ( scriptFunction ) {
-			mountthread = new idThread( scriptFunction );
-			mountthread->DelayedStart( 0 );
-		}
-
-		isMounted = true;
-	}
-}
-
-/*
-===============================================================================
-
-idFuncMountedWeapon
-
-===============================================================================
-*/
-CLASS_DECLARATION( idFuncMountedObject, idFuncMountedWeapon )
-EVENT( EV_PostSpawn,		idFuncMountedWeapon::Event_PostSpawn )
-END_CLASS
-
-idFuncMountedWeapon::idFuncMountedWeapon() {
-	turret = NULL;
-	weaponLastFireTime = 0;
-	weaponFireDelay = 0;
-	projectile = NULL;
-}
-
-idFuncMountedWeapon::~idFuncMountedWeapon() {
-}
-
-
-void idFuncMountedWeapon::Spawn( void ) {
-
-	// Get projectile info
-	projectile = gameLocal.FindEntityDefDict( spawnArgs.GetString( "def_projectile" ), false );
-	if ( !projectile ) {
-		gameLocal.Warning( "Invalid projectile on func_mountedweapon." );
-	}
-
-	float firerate;
-	spawnArgs.GetFloat( "firerate", "3", firerate );
-	weaponFireDelay = 1000.f / firerate;
-
-	// Get the firing sound
-	idStr fireSound;
-	spawnArgs.GetString( "snd_fire", "", fireSound );
-	soundFireWeapon = declManager->FindSound( fireSound );
-
-	PostEventMS( &EV_PostSpawn, 0 );
-}
-
-void idFuncMountedWeapon::Think( void ) {
-
-	if ( isMounted && turret ) {
-		idVec3		vec = mountedPlayer->viewAngles.ToForward();
-		idAngles	ang = mountedPlayer->GetLocalVector( vec ).ToAngles();
-
-		turret->GetPhysics()->SetAxis( ang.ToMat3() );
-		turret->UpdateVisuals();
-
-		// Check for firing
-		if ( mountedPlayer->usercmd.buttons & BUTTON_ATTACK && ( gameLocal.time > weaponLastFireTime + weaponFireDelay ) ) {
-			// FIRE!
-			idEntity		*ent;
-			idProjectile	*proj;
-			idBounds		projBounds;
-			idVec3			dir;
-
-			gameLocal.SpawnEntityDef( *projectile, &ent );
-			if ( !ent || !ent->IsType( idProjectile::Type ) ) {
-				const char *projectileName = spawnArgs.GetString( "def_projectile" );
-				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
-			}
-
-			mountedPlayer->GetViewPos( muzzleOrigin, muzzleAxis );
-
-			muzzleOrigin += ( muzzleAxis[0] * 128 );
-			muzzleOrigin -= ( muzzleAxis[2] * 20 );
-
-			dir = muzzleAxis[0];
-
-			proj = static_cast<idProjectile *>(ent);
-			proj->Create( this, muzzleOrigin, dir );
-
-			projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
-
-			proj->Launch( muzzleOrigin, dir, vec3_origin );
-			StartSoundShader( soundFireWeapon, SND_CHANNEL_WEAPON, SSF_GLOBAL, false, NULL );
-
-			weaponLastFireTime = gameLocal.time;
-		}
-	}
-
-	idFuncMountedObject::Think();
-}
-
-void idFuncMountedWeapon::Event_PostSpawn( void ) {
-
-	if ( targets.Num() >= 1 ) {
-		for ( int i=0; i < targets.Num(); i++ ) {
-			if ( targets[i].GetEntity()->IsType( idStaticEntity::Type ) ) {
-				turret = targets[i].GetEntity();
-				break;
-			}
-		}
-	} else {
-		gameLocal.Warning( "idFuncMountedWeapon::Spawn:  Please target one model for a turret\n" );
-	}
-}
-
-
-
-
-
-
-/*
-===============================================================================
-
-idPortalSky
-
-===============================================================================
-*/
-
-CLASS_DECLARATION( idEntity, idPortalSky )
-	EVENT( EV_PostSpawn,			idPortalSky::Event_PostSpawn )
-	EVENT( EV_Activate,				idPortalSky::Event_Activate )
-END_CLASS
-
-/*
-===============
-idPortalSky::idPortalSky
-===============
-*/
-idPortalSky::idPortalSky( void ) {
-
-}
-
-/*
-===============
-idPortalSky::~idPortalSky
-===============
-*/
-idPortalSky::~idPortalSky( void ) {
-
-}
-
-/*
-===============
-idPortalSky::Spawn
-===============
-*/
-void idPortalSky::Spawn( void ) {
-	if ( !spawnArgs.GetBool( "triggered" ) ) {
-		PostEventMS( &EV_PostSpawn, 1 );
-	}
-}
-
-/*
-================
-idPortalSky::Event_PostSpawn
-================
-*/
-void idPortalSky::Event_PostSpawn() {
-	gameLocal.SetPortalSkyEnt( this );
-}
-
-/*
-================
-idPortalSky::Event_Activate
-================
-*/
-void idPortalSky::Event_Activate( idEntity *activator ) {
-	gameLocal.SetPortalSkyEnt( this );
-}
-#endif /* _D3XP */

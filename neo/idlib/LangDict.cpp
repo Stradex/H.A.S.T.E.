@@ -304,7 +304,10 @@ idLangDict::GetHashKey
 int idLangDict::GetHashKey( const char *str ) const {
 	int hashKey = 0;
 	for ( str += STRTABLE_ID_LENGTH; str[0] != '\0'; str++ ) {
-		assert( str[0] >= '0' && str[0] <= '9' );
+		//assert( str[0] >= '0' && str[0] <= '9' );
+		if (!(str[0] >= '0' && str[0] <= '9')) {
+			common->Warning("FATAL!: idLangDict::GetHashKey: assert( str[0] >= '0' && str[0] <= '9' )\n"); //too avoid crash in coop
+		}
 		hashKey = hashKey * 10 + str[0] - '0';
 	}
 	return hashKey;

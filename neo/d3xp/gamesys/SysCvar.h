@@ -37,6 +37,8 @@ extern idCVar	g_cinematic;
 extern idCVar	g_cinematicMaxSkipTime;
 
 extern idCVar	r_aspectRatio;
+extern idCVar	r_simpleLight; //added by Stradex
+extern idCVar	r_simpleLightIntensity; //added by Stradex
 
 extern idCVar	g_monsters;
 extern idCVar	g_decals;
@@ -62,7 +64,6 @@ extern idCVar	g_debugTriggers;
 extern idCVar	g_debugCinematic;
 extern idCVar	g_stopTime;
 extern idCVar	g_armorProtection;
-extern idCVar	g_armorProtectionMP;
 extern idCVar	g_damageScale;
 extern idCVar	g_useDynamicProtection;
 extern idCVar	g_healthTakeTime;
@@ -94,9 +95,6 @@ extern idCVar	ai_showCombatNodes;
 extern idCVar	ai_showPaths;
 extern idCVar	ai_showObstacleAvoidance;
 extern idCVar	ai_blockedFailSafe;
-#ifdef _D3XP
-extern idCVar	ai_showHealth;
-#endif
 
 extern idCVar	g_dvTime;
 extern idCVar	g_dvAmplitude;
@@ -121,11 +119,6 @@ extern idCVar	g_vehicleSuspensionDown;
 extern idCVar	g_vehicleSuspensionKCompress;
 extern idCVar	g_vehicleSuspensionDamping;
 extern idCVar	g_vehicleTireFriction;
-#ifdef _D3XP
-extern idCVar	g_vehicleDebug;
-extern idCVar	g_debugShockwave;
-extern idCVar	g_enablePortalSky;
-#endif
 
 extern idCVar	ik_enable;
 extern idCVar	ik_debug;
@@ -206,6 +199,7 @@ extern idCVar	pm_thirdPerson;
 extern idCVar	pm_thirdPersonDeath;
 extern idCVar	pm_modelView;
 extern idCVar	pm_airTics;
+extern idCVar	pm_useBobDamage; //Added by Stradex (pm_useBobDamage)
 
 extern idCVar	g_showPlayerShadow;
 extern idCVar	g_showHud;
@@ -232,31 +226,6 @@ extern idCVar	g_testModelBlend;
 extern idCVar	g_exportMask;
 extern idCVar	g_flushSave;
 
-#ifdef _D3XP
-extern idCVar	g_enableSlowmo;
-extern idCVar	g_slowmoStepRate;
-extern idCVar	g_testFullscreenFX;
-extern idCVar	g_testHelltimeFX;
-extern idCVar	g_testMultiplayerFX;
-extern idCVar	g_lowresFullscreenFX;
-extern idCVar	g_moveableDamageScale;
-extern idCVar	g_testBloomSpeed;
-extern idCVar	g_testBloomIntensity;
-extern idCVar	g_testBloomNumPasses;
-#endif
-
-#ifdef _D3XP
-extern idCVar	g_grabberHoldSeconds;
-extern idCVar	g_grabberEnableShake;
-extern idCVar	g_grabberRandomMotion;
-extern idCVar	g_grabberHardStop;
-extern idCVar	g_grabberDamping;
-#endif
-
-#ifdef _D3XP
-extern idCVar	g_xp_bind_run_once;
-#endif
-
 extern idCVar	aas_test;
 extern idCVar	aas_showAreas;
 extern idCVar	aas_showPath;
@@ -279,8 +248,9 @@ extern idCVar	si_fragLimit;
 extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
+extern idCVar	si_alwaysPickup;
 
-#ifdef CTF
+//added by Stradex for D3XP CTF
 extern idCVar si_flagDropTimeLimit;
 extern idCVar si_midnight;
 
@@ -294,10 +264,27 @@ extern idCVar g_flagAttachAngleZ;
 
 extern idCVar g_CTFArrows;
 
-#endif
+//end by Stradex for D3XP CTF
 
 extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
+extern idCVar	net_clientUnlagged; //added by Stradex
+
+//COOP START
+//fluff start (Thanks fluff :3)
+extern idCVar	si_shootDoors; 
+extern idCVar	si_itemRespawn;
+//fluff end
+
+//stradex start
+extern idCVar	g_unblockPlayers; //if players are solid between them or not
+extern idCVar	si_onePickupPerPlayer;
+extern idCVar	net_clientCoopDebug; //added for debug stuff only
+extern idCVar	net_serverSnapshotLimit; //how many entities are we able to send per snapshot as server (avoid snapshot overflow, something common in big coop maps)
+extern idCVar	g_freezeUntilClientJoins; //If entities can start thinking and scripts executing before or after a first clients join (used only in dedicated servers)
+extern idCVar	si_lives; //survival lives
+//stradex end
+//COOP ENDS
 
 extern const char *si_gameTypeArgs[];
 

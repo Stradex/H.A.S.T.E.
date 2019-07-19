@@ -302,6 +302,14 @@ idCameraAnim::Spawn
 =====================
 */
 void idCameraAnim::Spawn( void ) {
+
+	//COOP START
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient) {
+		//No cameras in coop for clients
+		return;
+	}
+	//COOP END
+
 	if ( spawnArgs.GetVector( "old_origin", "0 0 0", offset ) ) {
 		offset = GetPhysics()->GetOrigin() - offset;
 	} else {
@@ -320,6 +328,14 @@ idCameraAnim::Load
 ================
 */
 void idCameraAnim::LoadAnim( void ) {
+
+	//COOP START
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient) {
+		//No cameras in coop for clients
+		return;
+	}
+	//COOP END
+
 	int			version;
 	idLexer		parser( LEXFL_ALLOWPATHNAMES | LEXFL_NOSTRINGESCAPECHARS | LEXFL_NOSTRINGCONCAT );
 	idToken		token;
@@ -465,6 +481,13 @@ void idCameraAnim::Start( void ) {
 
 	starttime = gameLocal.time;
 	gameLocal.SetCamera( this );
+
+	//COOP START
+	if (gameLocal.mpGame.IsGametypeCoopBased()) {
+		return; //Disabled cinematics in COOP
+	}
+	//COOP END
+
 	BecomeActive( TH_THINK );
 
 	// if the player has already created the renderview for this frame, have him update it again so that the camera starts this frame
@@ -514,7 +537,7 @@ void idCameraAnim::Think( void ) {
 			return;
 		}
 
-		if ( frameRate == com_gameHz.GetInteger() ) {
+		if ( frameRate == gameLocal.gameFps ) {
 			frameTime	= gameLocal.time - starttime;
 			frame		= frameTime / gameLocal.msec;
 		} else {
@@ -564,11 +587,7 @@ void idCameraAnim::GetViewParms( renderView_t *view ) {
 		return;
 	}
 
-#ifdef _D3XP
-	SetTimeState ts( timeGroup );
-#endif
-
-	if ( frameRate == com_gameHz.GetInteger() ) {
+	if ( frameRate == gameLocal.gameFps ) {
 		frameTime	= gameLocal.time - starttime;
 		frame		= frameTime / gameLocal.msec;
 		lerp		= 0.0f;

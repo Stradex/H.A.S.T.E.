@@ -57,20 +57,21 @@ public:
 	virtual void			Think( void );
 	virtual void			Present();
 
+	//SPECIFIC COOP STUFF
+	virtual bool			CS_GiveToPlayer( idPlayer *player ); //Client-side give to player
+
 	enum {
 		EVENT_PICKUP = idEntity::EVENT_MAXEVENTS,
 		EVENT_RESPAWN,
 		EVENT_RESPAWNFX,
-#ifdef CTF
-		EVENT_TAKEFLAG,
-		EVENT_DROPFLAG,
-		EVENT_FLAGRETURN,
-		EVENT_FLAGCAPTURE,
-#endif
+		EVENT_TAKEFLAG, //ADDED FOR CTF
+		EVENT_DROPFLAG,  //ADDED FOR CTF
+		EVENT_FLAGRETURN,  //ADDED FOR CTF
+		EVENT_FLAGCAPTURE,  //ADDED FOR CTF
 		EVENT_MAXEVENTS
 	};
 
-	virtual void			ClientPredictionThink( void );
+	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
 	// networking
@@ -82,6 +83,10 @@ private:
 	bool					spin;
 	bool					pulse;
 	bool					canPickUp;
+	//COOP START
+	bool					clientPickedItem[MAX_CLIENTS]; //added by Stradex for when si_onePickupPerPlayer is enabled
+	bool					firstTimePicked; //to avoid activate targets multiple times
+	//COOP END
 
 	// for item pulse effect
 	int						itemShellHandle;
@@ -167,9 +172,6 @@ public:
 
 	void					Spawn( void );
 	virtual void			Think( void );
-#ifdef _D3XP
-	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
-#endif
 	virtual bool			Pickup( idPlayer *player );
 
 	static void				DropItems( idAnimatedEntity *ent, const char *type, idList<idEntity *> *list );
@@ -178,22 +180,16 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
-#ifdef CTF
-protected:
-#else
-private:
-#endif
+//private: //commented for CTF
+protected: 
 	idPhysics_RigidBody		physicsObj;
 	idClipModel *			trigger;
 	const idDeclParticle *	smoke;
 	int						smokeTime;
-
-#ifdef _D3XP
-	int						nextSoundTime;
-#endif
-#ifdef CTF
-	bool					repeatSmoke;	// never stop updating the particles
-#endif
+	
+	
+	int						nextSoundTime; //Added for CTF
+	bool					repeatSmoke;	// never stop updating the particles (Added for CTF)
 
 	void					Gib( const idVec3 &dir, const char *damageDefName );
 
@@ -201,7 +197,7 @@ private:
 	void					Event_Gib( const char *damageDefName );
 };
 
-#ifdef CTF
+//CLASS FOR CTF
 
 class idItemTeam : public idMoveableItem {
 public:
@@ -265,8 +261,7 @@ private:
 	void                    UpdateGuis( void );
 };
 
-#endif
-
+//END CLASS FOR CTF
 
 class idMoveablePDAItem : public idMoveableItem {
 public:

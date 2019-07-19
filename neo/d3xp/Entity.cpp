@@ -43,6 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "Mover.h"
 #include "WorldSpawn.h"
 #include "SmokeParticles.h"
+#include "Misc.h"//added for coop
 
 #include "Entity.h"
 
@@ -120,15 +121,6 @@ const idEventDef EV_StartFx( "startFx", "s" );
 const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
-#ifdef _D3XP
-const idEventDef EV_SetGui ( "setGui", "ds" );
-const idEventDef EV_PrecacheGui ( "precacheGui", "s" );
-const idEventDef EV_GetGuiParm ( "getGuiParm", "ds", 's' );
-const idEventDef EV_GetGuiParmFloat ( "getGuiParmFloat", "ds", 'f' );
-const idEventDef EV_MotionBlurOn( "motionBlurOn" );
-const idEventDef EV_MotionBlurOff( "motionBlurOff" );
-const idEventDef EV_GuiNamedEvent ( "guiNamedEvent", "ds" );
-#endif
 
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetName,				idEntity::Event_GetName )
@@ -194,13 +186,6 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_HasFunction,			idEntity::Event_HasFunction )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
-#ifdef _D3XP
-	EVENT( EV_SetGui,				idEntity::Event_SetGui )
-	EVENT( EV_PrecacheGui,			idEntity::Event_PrecacheGui )
-	EVENT( EV_GetGuiParm,			idEntity::Event_GetGuiParm )
-	EVENT( EV_GetGuiParmFloat,		idEntity::Event_GetGuiParmFloat )
-	EVENT( EV_GuiNamedEvent,		idEntity::Event_GuiNamedEvent )
-#endif
 END_CLASS
 
 /*
@@ -371,6 +356,10 @@ void idGameEdit::ParseSpawnArgsToRefSound( const idDict *args, refSound_t *refSo
 	if ( args->GetBool( "s_unclamped" ) ) {
 		refSound->parms.soundShaderFlags |= SSF_UNCLAMPED;
 	}
+
+	if ( args->GetBool( "s_music" ) ) { //Added by Stradex
+		refSound->parms.soundShaderFlags |= SSF_IS_MUSIC;
+	}
 	refSound->parms.soundClass = args->GetInt( "s_soundClass" );
 
 	temp = args->GetString( "s_shader" );
@@ -416,10 +405,12 @@ idEntity::idEntity
 idEntity::idEntity() {
 
 	entityNumber	= ENTITYNUM_NONE;
+	entityCoopNumber = ENTITYNUM_NONE; //COOP
 	entityDefNumber = -1;
 
 	spawnNode.SetOwner( this );
 	activeNode.SetOwner( this );
+	coopNode.SetOwner( this ); //COOP
 
 	snapshotNode.SetOwner( this );
 	snapshotSequence = -1;
@@ -452,15 +443,20 @@ idEntity::idEntity() {
 
 	mpGUIState = -1;
 
-#ifdef _D3XP
-	memset( &xrayEntity, 0, sizeof( xrayEntity ) );
+	//COOP START
+	spawnedByServer = false;
+	clientSideEntity = false;
+	forceNetworkSync = false;
+	readByServer = false;
+	snapshotPriority = DEFAULT_SNAPSHOT_PRIORITY;
+	fl.useOldNetcode = false;
 
-	timeGroup = TIME_GROUP1;
-	xrayEntityHandle = -1;
-	xraySkin = NULL;
-
-	noGrab = false;
-#endif
+	for (int i=0; i < MAX_CLIENTS; i++) {
+		firstTimeInClientPVS[i] = true;
+		inSnapshotQueue[i] = false;
+		snapshotMissingCount[i] = 0;
+	}
+	//COOP END
 }
 
 /*
@@ -487,11 +483,23 @@ void idEntity::Spawn( void ) {
 	const char			*temp;
 	idVec3				origin;
 	idMat3				axis;
-	const idKeyValue	*networkSync;
+	const idKeyValue	*networkSync, *coopNetworkSync;
 	const char			*classname;
 	const char			*scriptObjectName;
 
-	gameLocal.RegisterEntity( this );
+	networkSync = spawnArgs.FindKey( "networkSync" );
+	if ( networkSync ) {
+		fl.networkSync = ( atoi( networkSync->GetValue() ) != 0 );
+		fl.coopNetworkSync = ( atoi( networkSync->GetValue() ) != 0 ); //COOP: FIXME LATER: not good idea, we should read the coopNetworkSync key
+	}
+
+	//COOP START
+	coopNetworkSync = spawnArgs.FindKey( "coopNetworkSync" ); //new KEY for specific coop entities
+	if ( coopNetworkSync ) {
+		fl.coopNetworkSync = ( atoi( networkSync->GetValue() ) != 0 );
+	}
+	//COOP END
+	gameLocal.RegisterEntity( this ); //afer networkSync so coopentities can get updated correctly..
 
 	spawnArgs.GetString( "classname", NULL, &classname );
 	const idDeclEntityDef *def = gameLocal.FindEntityDef( classname, false );
@@ -505,18 +513,6 @@ void idEntity::Spawn( void ) {
 	gameEdit->ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
 
 	renderEntity.entityNum = entityNumber;
-
-#ifdef _D3XP
-	noGrab = spawnArgs.GetBool( "noGrab", "0" );
-
-	xraySkin = NULL;
-	renderEntity.xrayIndex = 1;
-
-	idStr str;
-	if ( spawnArgs.GetString( "skin_xray", "", str ) ) {
-		xraySkin = declManager->FindSkin( str.c_str() );
-	}
-#endif
 
 	// go dormant within 5 frames so that when the map starts most monsters are dormant
 	dormantStart = gameLocal.time - DELAY_DORMANT_TIME + gameLocal.msec * 5;
@@ -550,11 +546,6 @@ void idEntity::Spawn( void ) {
 		PostEventMS( &EV_Hide, 0 );
 	}
 	cinematic = spawnArgs.GetBool( "cinematic", "0" );
-
-	networkSync = spawnArgs.FindKey( "networkSync" );
-	if ( networkSync ) {
-		fl.networkSync = ( atoi( networkSync->GetValue() ) != 0 );
-	}
 
 #if 0
 	if ( !gameLocal.isClient ) {
@@ -608,11 +599,6 @@ void idEntity::Spawn( void ) {
 
 		ConstructScriptObject();
 	}
-
-#ifdef _D3XP
-	// determine time group
-	DetermineTimeGroup( spawnArgs.GetBool( "slowmo", "1" ) );
-#endif
 }
 
 /*
@@ -622,13 +608,20 @@ idEntity::~idEntity
 */
 idEntity::~idEntity( void ) {
 
-	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS ) {
+	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && ((fl.networkSync && !gameLocal.mpGame.IsGametypeCoopBased()) || (fl.coopNetworkSync && gameLocal.mpGame.IsGametypeCoopBased()))  && entityNumber >= MAX_CLIENTS ) {
 		idBitMsg	msg;
 		byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
 
 		msg.Init( msgBuf, sizeof( msgBuf ) );
 		msg.WriteByte( GAME_RELIABLE_MESSAGE_DELETE_ENT );
-		msg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
+
+		if (gameLocal.mpGame.IsGametypeCoopBased()) { //COOP
+			msg.WriteBits( gameLocal.GetCoopId( this ), 32 );  //COOP
+			msg.WriteBits( gameLocal.GetSpawnId( this ), 32 );  //COOP
+		} else {
+			msg.WriteBits( gameLocal.GetSpawnId( this ), 32 ); //ORIGINAL
+		}
+
 		networkSystem->ServerSendReliableMessage( -1, msg );
 	}
 
@@ -663,13 +656,6 @@ idEntity::~idEntity( void ) {
 
 	FreeModelDef();
 	FreeSoundEmitter( false );
-
-#ifdef _D3XP
-	if ( xrayEntityHandle != -1) {
-		gameRenderWorld->FreeEntityDef( xrayEntityHandle );
-		xrayEntityHandle = -1;
-	}
-#endif
 
 	gameLocal.UnregisterEntity( this );
 }
@@ -710,14 +696,6 @@ void idEntity::Save( idSaveGame *savefile ) const {
 	entityFlags_s flags = fl;
 	LittleBitField( &flags, sizeof( flags ) );
 	savefile->Write( &flags, sizeof( flags ) );
-
-#ifdef _D3XP
-	savefile->WriteInt( timeGroup );
-	savefile->WriteBool( noGrab );
-	savefile->WriteRenderEntity( xrayEntity );
-	savefile->WriteInt( xrayEntityHandle );
-	savefile->WriteSkin( xraySkin );
-#endif
 
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
@@ -793,17 +771,6 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
-
-#ifdef _D3XP
-	savefile->ReadInt( timeGroup );
-	savefile->ReadBool( noGrab );
-	savefile->ReadRenderEntity( xrayEntity );
-	savefile->ReadInt( xrayEntityHandle );
-	if ( xrayEntityHandle != -1 ) {
-		xrayEntityHandle =  gameRenderWorld->AddEntityDef( &xrayEntity );
-	}
-	savefile->ReadSkin( xraySkin );
-#endif
 
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
@@ -1024,6 +991,13 @@ void idEntity::BecomeActive( int flags ) {
 	if ( thinkFlags ) {
 		if ( !IsActive() ) {
 			activeNode.AddToEnd( gameLocal.activeEntities );
+
+			//COOP START
+			for (int i=0; i < MAX_CLIENTS; i++) {
+				firstTimeInClientPVS[i] = true; //reset this so players who weren't present while this entity was active are forced to receive the changes.
+			}
+			//COOP END
+
 		} else if ( !oldFlags ) {
 			// we became inactive this frame, so we have to decrease the count of entities to deactivate
 			gameLocal.numEntitiesToDeactivate--;
@@ -1281,10 +1255,6 @@ idEntity::UpdateModel
 ================
 */
 void idEntity::UpdateModel( void ) {
-#ifdef _D3XP
-	renderEntity.timeGroup = timeGroup;
-#endif
-
 	UpdateModelTransform();
 
 	// check if the entity has an MD5 model
@@ -1299,21 +1269,6 @@ void idEntity::UpdateModel( void ) {
 
 	// ensure that we call Present this frame
 	BecomeActive( TH_UPDATEVISUALS );
-
-#ifdef _D3XP
-	// If the entity has an xray skin, go ahead and add it
-	if ( xraySkin != NULL ) {
-		xrayEntity = renderEntity;
-		xrayEntity.xrayIndex = 2;
-		xrayEntity.customSkin = xraySkin;
-
-		if ( xrayEntityHandle == -1 ) {
-			xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
-		} else {
-			gameRenderWorld->UpdateEntityDef( xrayEntityHandle, &xrayEntity );
-		}
-	}
-#endif
 }
 
 /*
@@ -1342,7 +1297,7 @@ void idEntity::UpdatePVSAreas( void ) {
 	// FIXME: some particle systems may have huge bounds and end up in many PVS areas
 	// the first MAX_PVS_AREAS may not be visible to a network client and as a result the particle system may not show up when it should
 	if ( localNumPVSAreas > MAX_PVS_AREAS ) {
-		localNumPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( renderEntity.origin ).Expand( 64.0f ), localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
+		localNumPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( modelAbsBounds.GetCenter() ).Expand( 64.0f ), localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
 	}
 
 	for ( numPVSAreas = 0; numPVSAreas < MAX_PVS_AREAS && numPVSAreas < localNumPVSAreas; numPVSAreas++ ) {
@@ -1542,10 +1497,6 @@ bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderVie
 
 	idAnimator *animator = GetAnimator();
 	if ( animator ) {
-#ifdef _D3XP
-		SetTimeState ts( timeGroup );
-#endif
-
 		return animator->CreateFrame( gameLocal.time, false );
 	}
 
@@ -1708,7 +1659,7 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 
 	UpdateSound();
 
-	len = refSound.referenceSound->StartSound( shader, channel, diversity, soundShaderFlags, !timeGroup /*_D3XP*/ );
+	len = refSound.referenceSound->StartSound( shader, channel, diversity, soundShaderFlags );
 	if ( length ) {
 		*length = len;
 	}
@@ -1851,7 +1802,11 @@ idEntity::InitBind
 bool idEntity::InitBind( idEntity *master ) {
 
 	if ( master == this ) {
-		gameLocal.Error( "Tried to bind an object to itself." );
+		if (gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased()) { //COOP
+			gameLocal.Warning( "[COOP] Fatal! Tried to bind an object to itself." ); //COOP
+		} else {
+			gameLocal.Error( "Tried to bind an object to itself." ); //ORIGINAL
+		}
 		return false;
 	}
 
@@ -2056,8 +2011,17 @@ void idEntity::Unbind( void ) {
 	for( ent = teamMaster->teamChain; ent && ( ent != this ); ent = ent->teamChain ) {
 		prev = ent;
 	}
-
-	assert( ent == this ); // If ent is not pointing to this, then something is very wrong.
+	
+	//COOP START
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient) {
+		if (ent != this) {
+			common->Warning("[COOP] Fatal! Unable to unbind entity! %s\n ", this->GetName());
+			return;
+		}
+	} else {
+	//COOP END
+		assert( ent == this ); //ORIGINAL: If ent is not pointing to this, then something is very wrong.
+	}
 
 	// Find the last node in my team that is bound to me.
 	// Also find the first node not bound to me, if one exists.
@@ -2120,7 +2084,15 @@ void idEntity::RemoveBinds( void ) {
 		next = ent->teamChain;
 		if ( ent->bindMaster == this ) {
 			ent->Unbind();
-			ent->PostEventMS( &EV_Remove, 0 );
+			//COOP START
+			if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient && !ent->fl.coopNetworkSync) {
+				//get ride manually of nonsync bind entities to avoid duplicated entities in snapshot
+				//common->Printf("[COOP] Getting ride of %s\n", ent->GetName()); 
+				ent->CS_PostEventMS( &EV_Remove, 0 );
+			} else {
+			//COOP END
+				ent->PostEventMS( &EV_Remove, 0 ); //ORIGINAL
+			}
 			next = teamChain;
 		}
 	}
@@ -2158,6 +2130,46 @@ bool idEntity::IsBoundTo( idEntity *master ) const {
 
 	return false;
 }
+
+//COOP START
+
+/*
+================
+idEntity::IsMasterActive
+Coop stuff
+================
+*/
+bool idEntity::IsMasterActive( void ) const {
+	if ( !bindMaster ) {
+		return false;
+	}
+	if (bindMaster->entityNumber == this->entityNumber) { //this shouldn't never happen but weird shit can happen in this Coop tech demo
+		return IsActive();
+	}
+	if (!bindMaster->IsActive()) {
+		return bindMaster->IsMasterActive(); //may the master of our master is active... or the master of the master of the master of the master .... :P
+	}
+	return true;
+}
+
+/*
+================
+idEntity::MasterUseOldNetcode
+Coop stuff
+================
+*/
+bool idEntity::MasterUseOldNetcode( void ) const {
+	if ( !bindMaster ) {
+		return this->fl.useOldNetcode; //FIXME: Probably not a good idea but now it works by returning the current entity value when there's no master
+	}
+	if ((bindMaster->entityNumber == this->entityNumber) || this->fl.useOldNetcode) { //this shouldn't never happen but weird shit can happen in this Coop tech demo
+		return this->fl.useOldNetcode;
+	}
+
+	return bindMaster->MasterUseOldNetcode();
+}
+
+//COOP END
 
 /*
 ================
@@ -3077,10 +3089,6 @@ void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		return;
 	}
 
-#ifdef _D3XP
-	SetTimeState ts( timeGroup );
-#endif
-
 	if ( !inflictor ) {
 		inflictor = gameLocal.world;
 	}
@@ -3204,7 +3212,7 @@ Can be overridden by subclasses when a thread doesn't need to be allocated.
 ================
 */
 idThread *idEntity::ConstructScriptObject( void ) {
-	idThread		*thread;
+	idThread *thread;
 	const function_t *constructor;
 
 	// init the script object's data
@@ -3546,15 +3554,6 @@ bool idEntity::HandleGuiCommands( idEntity *entityGui, const char *cmds ) {
 				continue;
 			}
 
-#ifdef _D3XP
-
-			if ( !token.Icmp( "martianbuddycomplete" ) ) {
-				gameLocal.GetLocalPlayer()->GiveEmail( "MartianBuddyGameComplete" );
-				continue;
-			}
-
-#endif
-
 
 			// handy for debugging GUI stuff
 			if ( !token.Icmp( "print" ) ) {
@@ -3635,6 +3634,20 @@ void idEntity::FindTargets( void ) {
 		if ( targets[ i ].GetEntity() == this ) {
 			gameLocal.Error( "Entity '%s' is targeting itself", name.c_str() );
 		}
+
+		//COOP START
+		//extra for coop: FIXME Search for a clientside workaround for this better
+		if (gameLocal.mpGame.IsGametypeCoopBased() && targets[ i ].GetEntity() && !targets[ i ].GetEntity()->fl.coopNetworkSync && (targets[ i ].GetEntity()->IsType(idAnimated::Type) || targets[ i ].GetEntity()->IsType(idFuncEmitter::Type) )){
+			//causing pvs areas crash
+
+			targets[ i ].GetEntity()->forceNetworkSync = false;
+			targets[ i ].GetEntity()->fl.coopNetworkSync = true;
+			gameLocal.RegisterCoopEntity(targets[ i ].GetEntity()); //just lol
+			targets[ i ].SetCoopId(gameLocal.GetCoopId(targets[ i ].GetEntity())); //Dirty dirty hack
+			common->Printf("[COOP] Adding %s to the coopentities array\n", targets[ i ].GetEntity()->GetName());
+
+		}
+		//COOP END
 	}
 }
 
@@ -3738,10 +3751,6 @@ bool idEntity::TouchTriggers( void ) const {
 			continue;
 		}
 
-#ifdef _D3XP
-		SetTimeState ts( ent->timeGroup );
-#endif
-
 		numEntities++;
 
 		trace.c.contents = cm->GetContents();
@@ -3759,6 +3768,74 @@ bool idEntity::TouchTriggers( void ) const {
 
 	return ( numEntities != 0 );
 }
+
+//COOP START
+
+/*
+============
+idEntity::ClientTouchTriggers
+  Activate all trigger entities touched at the current position. (Clientside for coop)
+============
+*/
+bool idEntity::ClientTouchTriggers( void ) const {
+	int				i, numClipModels, numEntities;
+	idClipModel *	cm;
+	idClipModel *	clipModels[ MAX_GENTITIES ];
+	idEntity *		ent;
+	trace_t			trace;
+
+	memset( &trace, 0, sizeof( trace ) );
+	trace.endpos = GetPhysics()->GetOrigin();
+	trace.endAxis = GetPhysics()->GetAxis();
+
+	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( GetPhysics()->GetAbsBounds(), CONTENTS_TRIGGER, clipModels, MAX_GENTITIES );
+	numEntities = 0;
+
+	for ( i = 0; i < numClipModels; i++ ) {
+		cm = clipModels[ i ];
+
+		// don't touch it if we're the owner
+		if ( cm->GetOwner() == this ) {
+			continue;
+		}
+
+		ent = cm->GetEntity();
+
+		if ( !ent->RespondsTo( EV_Touch ) && !ent->HasSignal( SIG_TOUCH ) ) {
+			continue;
+		}
+
+		if ( !GetPhysics()->ClipContents( cm ) ) {
+			continue;
+		}
+
+		if (!ent->IsType(idDoor::Type) && !ent->IsType(idItem::Type)) {
+			continue; //only touch doors and items clientside
+		}
+		if (!ent->clientSideEntity) { //don't dare to touch snapshot entities
+			continue;
+		}
+
+		numEntities++;
+
+		trace.c.contents = cm->GetContents();
+		trace.c.entityNum = cm->GetEntity()->entityNumber;
+		trace.c.id = cm->GetId();
+
+		ent->Signal( SIG_TOUCH ); //oh god
+		ent->ProcessEvent( &EV_Touch, this, &trace );  //oh god
+		//gameLocal.Printf("Client touching trigger: %s\n", ent->GetName());
+
+		if ( !gameLocal.entities[ entityNumber ] ) {
+			gameLocal.Printf( "entity was removed while touching triggers\n" );
+			return true;
+		}
+	}
+
+	return ( numEntities != 0 );
+}
+
+//COOP END
 
 /*
 ================
@@ -4418,9 +4495,6 @@ idEntity::Event_SetKey
 */
 void idEntity::Event_SetKey( const char *key, const char *value ) {
 	spawnArgs.Set( key, value );
-#ifdef _D3XP
-	UpdateChangeableSpawnArgs( NULL );
-#endif
 }
 
 /*
@@ -4595,6 +4669,11 @@ idEntity::Event_StartFx
 ================
 */
 void idEntity::Event_StartFx( const char *fx ) {
+	//COOP START
+	if (gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased()) {
+		return; //Avoid FX spawn when via scripting for clients in coop, test
+	}
+	//COOP END
 	idEntityFx::StartFx( fx, NULL, NULL, this, true );
 }
 
@@ -4683,68 +4762,6 @@ void idEntity::Event_SetNeverDormant( int enable ) {
 	dormantStart = 0;
 }
 
-#ifdef _D3XP
-/*
-================
-idEntity::Event_SetGui
-================
-* BSM Nerve: Allows guis to be changed at runtime. Guis that are
-* loaded after the level loads should be precahced using PrecacheGui.
-*/
-void idEntity::Event_SetGui( int guiNum, const char *guiName) {
-	idUserInterface** gui = NULL;
-
-	if ( guiNum >= 1 && guiNum <= MAX_RENDERENTITY_GUI ) {
-		gui = &renderEntity.gui[ guiNum-1 ];
-	}
-
-	if( gui ) {
-		*gui = uiManager->FindGui( guiName, true, false );
-		UpdateGuiParms( *gui, &spawnArgs );
-		UpdateChangeableSpawnArgs( NULL );
-		gameRenderWorld->UpdateEntityDef(modelDefHandle, &renderEntity);
-
-	} else {
-		gameLocal.Error( "Entity '%s' doesn't have a GUI %d", name.c_str(), guiNum );
-	}
-
-}
-
-/*
-================
-idEntity::Event_PrecacheGui
-================
-* BSM Nerve: Forces the engine to initialize a gui even if it is not specified as used in a level.
-* This is useful for preventing load hitches when switching guis during the game using "setGui"
-*/
-void idEntity::Event_PrecacheGui( const char *guiName ) {
-	uiManager->FindGui( guiName, true, true );
-}
-
-void idEntity::Event_GetGuiParm(int guiNum, const char *key) {
-	if(renderEntity.gui[guiNum-1]) {
-		idThread::ReturnString(renderEntity.gui[guiNum-1]->GetStateString(key));
-		return;
-	}
-	idThread::ReturnString("");
-}
-
-void idEntity::Event_GetGuiParmFloat(int guiNum, const char *key) {
-	if(renderEntity.gui[guiNum-1]) {
-		idThread::ReturnFloat(renderEntity.gui[guiNum-1]->GetStateFloat(key));
-		return;
-	}
-	idThread::ReturnFloat(0.0f);
-}
-
-void idEntity::Event_GuiNamedEvent(int guiNum, const char *event) {
-	if(renderEntity.gui[guiNum-1]) {
-		renderEntity.gui[guiNum-1]->HandleNamedEvent(event);
-	}
-}
-
-#endif
-
 /***********************************************************************
 
    Network
@@ -4756,7 +4773,7 @@ void idEntity::Event_GuiNamedEvent(int guiNum, const char *event) {
 idEntity::ClientPredictionThink
 ================
 */
-void idEntity::ClientPredictionThink( void ) {
+void idEntity::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	RunPhysics();
 	Present();
 }
@@ -4770,7 +4787,17 @@ void idEntity::WriteBindToSnapshot( idBitMsgDelta &msg ) const {
 	int bindInfo;
 
 	if ( bindMaster ) {
-		bindInfo = bindMaster->entityNumber;
+		//COOP START
+		if (gameLocal.mpGame.IsGametypeCoopBased()) {
+			if (bindMaster->fl.coopNetworkSync) {
+				bindInfo = bindMaster->entityCoopNumber;
+			} else {
+				bindInfo = bindMaster->entityNumber;
+			}
+		} else {
+		//COOP END
+			bindInfo = bindMaster->entityNumber; //ORIGINAL
+		}
 		bindInfo |= ( fl.bindOrientated & 1 ) << GENTITYNUM_BITS;
 		if ( bindJoint != INVALID_JOINT ) {
 			bindInfo |= 1 << ( GENTITYNUM_BITS + 1 );
@@ -4799,7 +4826,13 @@ void idEntity::ReadBindFromSnapshot( const idBitMsgDelta &msg ) {
 	bindEntityNum = bindInfo & ( ( 1 << GENTITYNUM_BITS ) - 1 );
 
 	if ( bindEntityNum != ENTITYNUM_NONE ) {
-		master = gameLocal.entities[ bindEntityNum ];
+		//COOP START
+		if (gameLocal.mpGame.IsGametypeCoopBased()) {
+			master = (gameLocal.coopentities[ bindEntityNum ] != NULL) ? gameLocal.coopentities[ bindEntityNum ] : gameLocal.entities[ bindEntityNum ];
+		} else {
+		//COOP END
+			master = gameLocal.entities[ bindEntityNum ]; //ORIGINAL
+		}
 
 		bindOrientated = ( bindInfo >> GENTITYNUM_BITS ) & 1;
 		bindPos = ( bindInfo >> ( GENTITYNUM_BITS + 3 ) );
@@ -4907,7 +4940,7 @@ idEntity::ServerSendEvent
    always receive the events nomatter what time they join the game.
 ================
 */
-void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent, int excludeClient ) const {
+void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent, int excludeClient , bool saveLastOnly) {
 	idBitMsg	outMsg;
 	byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
 
@@ -4920,10 +4953,25 @@ void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent
 		return;
 	}
 
+	//COOP START
+	if ((gameLocal.serverEventsCount >= MAX_SERVER_EVENTS_PER_FRAME) && gameLocal.mpGame.IsGametypeCoopBased()) {
+		gameLocal.addToServerEventOverFlowList(eventId, msg, saveEvent, excludeClient, gameLocal.time, this, saveLastOnly); //Avoid serverSendEvent overflow in coop
+		return;
+	}
+	//COOP END
+
 	outMsg.Init( msgBuf, sizeof( msgBuf ) );
 	outMsg.BeginWriting();
 	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );
-	outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
+	//COOP START
+	if (gameLocal.mpGame.IsGametypeCoopBased()) {
+		outMsg.WriteBits( gameLocal.GetCoopId( this ), 32 );
+		outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 ); //added for coop
+		//common->Printf("idEntity::ServerSendEvent entity %s with coopid %d\n", GetName(), gameLocal.GetCoopId( this ));
+	} else {
+	//COOP END
+		outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 ); //ORIGINAL
+	}
 	outMsg.WriteByte( eventId );
 	outMsg.WriteInt( gameLocal.time );
 	if ( msg ) {
@@ -4940,8 +4988,11 @@ void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent
 	}
 
 	if ( saveEvent ) {
-		gameLocal.SaveEntityNetworkEvent( this, eventId, msg );
+		//gameLocal.SaveEntityNetworkEvent( this, eventId, msg ); //ORIGINAL
+		gameLocal.SaveEntityNetworkEvent( this, eventId, msg , saveLastOnly);
 	}
+
+	gameLocal.serverEventsCount++; //COOP
 }
 
 /*
@@ -4965,7 +5016,14 @@ void idEntity::ClientSendEvent( int eventId, const idBitMsg *msg ) const {
 	outMsg.Init( msgBuf, sizeof( msgBuf ) );
 	outMsg.BeginWriting();
 	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );
-	outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
+	//COOP START
+	if (gameLocal.mpGame.IsGametypeCoopBased()) {
+		outMsg.WriteBits( gameLocal.GetCoopId( this ), 32 );
+		outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 ); //added for coop
+	} else {
+	//COOP END
+		outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
+	}
 	outMsg.WriteByte( eventId );
 	outMsg.WriteInt( gameLocal.time );
 	if ( msg ) {
@@ -4976,6 +5034,8 @@ void idEntity::ClientSendEvent( int eventId, const idBitMsg *msg ) const {
 	}
 
 	networkSystem->ClientSendReliableMessage( outMsg );
+
+	gameLocal.clientEventsCount++; //COOP
 }
 
 /*
@@ -5033,40 +5093,6 @@ bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 
 	return false;
 }
-
-#ifdef _D3XP
-/*
-================
-idEntity::DetermineTimeGroup
-================
-*/
-void idEntity::DetermineTimeGroup( bool slowmo ) {
-	if ( slowmo || gameLocal.isMultiplayer ) {
-		timeGroup = TIME_GROUP1;
-	}
-	else {
-		timeGroup = TIME_GROUP2;
-	}
-}
-
-/*
-================
-idEntity::SetGrabbedState
-================
-*/
-void idEntity::SetGrabbedState( bool grabbed ) {
-	fl.grabbed = grabbed;
-}
-
-/*
-================
-idEntity::IsGrabbed
-================
-*/
-bool idEntity::IsGrabbed() {
-	return fl.grabbed;
-}
-#endif
 
 /*
 ===============================================================================
@@ -5159,7 +5185,7 @@ void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
 idAnimatedEntity::ClientPredictionThink
 ================
 */
-void idAnimatedEntity::ClientPredictionThink( void ) {
+void idAnimatedEntity::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	RunPhysics();
 	UpdateAnimation();
 	Present();
@@ -5374,10 +5400,6 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	idVec3 origin, dir;
 	idMat3 axis;
 
-#ifdef _D3XP
-	SetTimeState ts( timeGroup );
-#endif
-
 	axis = renderEntity.joints[jointNum].ToMat3() * renderEntity.axis;
 	origin = renderEntity.origin + renderEntity.joints[jointNum].ToVec3() * renderEntity.axis;
 
@@ -5476,7 +5498,7 @@ void idAnimatedEntity::UpdateDamageEffects( void ) {
 		axis *= renderEntity.axis;
 		origin = renderEntity.origin + origin * renderEntity.axis;
 		start = origin + de->localOrigin * axis;
-		if ( !gameLocal.smokeParticles->EmitSmoke( de->type, de->time, gameLocal.random.CRandomFloat(), start, axis, timeGroup /*_D3XP*/ ) ) {
+		if ( !gameLocal.smokeParticles->EmitSmoke( de->type, de->time, gameLocal.random.CRandomFloat(), start, axis ) ) {
 			de->time = 0;
 		}
 	}
@@ -5503,6 +5525,14 @@ bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &
 			localDir = msg.ReadDir( 24 );
 			damageDefIndex = gameLocal.ClientRemapDecl( DECL_ENTITYDEF, msg.ReadInt() );
 			materialIndex = gameLocal.ClientRemapDecl( DECL_MATERIAL, msg.ReadInt() );
+
+			//COOP START
+			//TRY WIT THE OTHER CRASH FIX. Search at player.cpp to 'ugly crash fix' (update this to librecoop too)
+			if ((damageDefIndex == -1 || materialIndex  == -1 ) && gameLocal.mpGame.IsGametypeCoopBased()){ //ugly avoid crash in coop
+				return true;
+			}
+			//COOP END
+
 			const idDeclEntityDef *damageDef = static_cast<const idDeclEntityDef *>( declManager->DeclByIndex( DECL_ENTITYDEF, damageDefIndex ) );
 			const idMaterial *collisionMaterial = static_cast<const idMaterial *>( declManager->DeclByIndex( DECL_MATERIAL, materialIndex ) );
 			AddLocalDamageEffect( jointNum, localOrigin, localNormal, localDir, damageDef, collisionMaterial );

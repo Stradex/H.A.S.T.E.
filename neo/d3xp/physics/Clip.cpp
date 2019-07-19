@@ -546,7 +546,10 @@ idClipModel::Link
 */
 void idClipModel::Link( idClip &clp ) {
 
-	assert( idClipModel::entity );
+	if (!gameLocal.mpGame.IsGametypeCoopBased()) { //avoid very strange and uncommon crash in coop
+		assert( idClipModel::entity );
+	}
+
 	if ( !idClipModel::entity ) {
 		return;
 	}
@@ -965,19 +968,22 @@ idClip::TestHugeTranslation
 */
 ID_INLINE bool TestHugeTranslation( trace_t &results, const idClipModel *mdl, const idVec3 &start, const idVec3 &end, const idMat3 &trmAxis ) {
 	if ( mdl != NULL && ( end - start ).LengthSqr() > Square( CM_MAX_TRACE_DIST ) ) {
-#ifndef CTF
-		// May be important: This occurs in CTF when a player connects and spawns
-		// in the PVS of a player that has a flag that is spawning the idMoveableItem
-		// "nuggets".  The error seems benign and the assert was getting in the way
-		// of testing.
+
+		//Disable this for Doom 3 builds :)
+/*
+#if BUILD_HASTE > 0
 		assert( 0 );
 #endif
+*/
+		//Disabled to avoid crash in CTF
+		//assert( 0 );
 
 		results.fraction = 0.0f;
 		results.endpos = start;
 		results.endAxis = trmAxis;
 		memset( &results.c, 0, sizeof( results.c ) );
 		results.c.point = start;
+		results.c.entityNum = ENTITYNUM_WORLD;
 
 		if ( mdl->GetEntity() ) {
 			gameLocal.Printf( "huge translation for clip model %d on entity %d '%s'\n", mdl->GetId(), mdl->GetEntity()->entityNumber, mdl->GetEntity()->GetName() );
@@ -1206,6 +1212,11 @@ bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, c
 	trace_t translationalTrace, rotationalTrace, trace;
 	idRotation endRotation;
 	const idTraceModel *trm;
+
+	if (gameLocal.mpGame.IsGametypeCoopBased() && (rotation.GetOrigin() != start)) {
+		common->Printf("[COOP FATAL] assert( rotation.GetOrigin() == start ) at idClip::Motion\n");
+		return true; //should return true or false?
+	}
 
 	assert( rotation.GetOrigin() == start );
 

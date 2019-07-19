@@ -327,12 +327,16 @@ void idEntityFx::ApplyFade( const idFXSingleAction& fxaction, idFXLocalAction& l
 
 			gameRenderWorld->UpdateEntityDef( laction.modelDefHandle, &laction.renderEntity );
 		}
+
 		if ( laction.lightDefHandle != -1 ) {
 			laction.renderLight.shaderParms[SHADERPARM_RED] = fxaction.lightColor.x * ( (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct );
 			laction.renderLight.shaderParms[SHADERPARM_GREEN] = fxaction.lightColor.y * ( (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct );
 			laction.renderLight.shaderParms[SHADERPARM_BLUE] = fxaction.lightColor.z * ( (fxaction.fadeInTime) ? fadePct : 1.0f - fadePct );
-
-			gameRenderWorld->UpdateLightDef( laction.lightDefHandle, &laction.renderLight );
+		
+			//Improve simplelight
+			if (!r_simpleLight.GetBool()) {
+				gameRenderWorld->UpdateLightDef( laction.lightDefHandle, &laction.renderLight );
+			}
 		}
 	}
 }
@@ -453,7 +457,9 @@ void idEntityFx::Run( int time ) {
 						idFXLocalAction& laction2 = actions[j];
 						if ( laction2.lightDefHandle != -1 ) {
 							laction2.renderLight.referenceSound = refSound.referenceSound;
-							gameRenderWorld->UpdateLightDef( laction2.lightDefHandle, &laction2.renderLight );
+							if (!r_simpleLight.GetBool()) {
+								gameRenderWorld->UpdateLightDef( laction2.lightDefHandle, &laction2.renderLight );
+							}
 						}
 					}
 				}
@@ -516,9 +522,6 @@ void idEntityFx::Run( int time ) {
 				} else if ( fxaction.trackOrigin ) {
 					useAction->renderEntity.origin = GetPhysics()->GetOrigin() + fxaction.offset;
 					useAction->renderEntity.axis = fxaction.explicitAxis ? fxaction.axis : GetPhysics()->GetAxis();
-#ifdef _D3XP
-					gameRenderWorld->UpdateEntityDef( useAction->modelDefHandle, &useAction->renderEntity );
-#endif
 				}
 				ApplyFade( fxaction, *useAction, time, actualStart );
 				break;
@@ -547,33 +550,6 @@ void idEntityFx::Run( int time ) {
 				}
 				break;
 			}
-#ifdef _D3XP
-			case FX_SHOCKWAVE: {
-				if ( gameLocal.isClient ) {
-					useAction->shakeStarted = true;
-					break;
-				}
-				if ( !useAction->shakeStarted ) {
-					idStr	shockDefName;
-					useAction->shakeStarted = true;
-
-					shockDefName = fxaction.data;
-					if ( !shockDefName.Length() ) {
-						shockDefName = "func_shockwave";
-					}
-
-					projectileDef = gameLocal.FindEntityDefDict( shockDefName, false );
-					if ( !projectileDef ) {
-						gameLocal.Warning( "shockwave \'%s\' not found", shockDefName.c_str() );
-					} else {
-						gameLocal.SpawnEntityDef( *projectileDef, &ent );
-						ent->SetOrigin( GetPhysics()->GetOrigin() + fxaction.offset );
-						ent->PostEventMS( &EV_Remove, ent->spawnArgs.GetInt( "duration" ) );
-					}
-				}
-				break;
-			}
-#endif
 		}
 	}
 }
@@ -588,6 +564,11 @@ idEntityFx::idEntityFx() {
 	started = -1;
 	nextTriggerTime = -1;
 	fl.networkSync = true;
+
+	//COOP START
+	fl.coopNetworkSync = true; //coop: Should this really be a networksync entity?
+	snapshotPriority = 6; //coop: really low priority (in case of snapshot overflow)
+	//COOP END
 }
 
 /*
@@ -720,7 +701,7 @@ idEntityFx::StartFx
 */
 idEntityFx *idEntityFx::StartFx( const char *fx, const idVec3 *useOrigin, const idMat3 *useAxis, idEntity *ent, bool bind ) {
 
-	if ( g_skipFX.GetBool() || !fx || !*fx ) {
+	if ( g_skipFX.GetBool() || !fx || !*fx || (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient)) { //COOP EDITED: FIXME: this point should never be reached in Multiplayer at all by clients
 		return NULL;
 	}
 
@@ -778,9 +759,32 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 			started = 0;
 			return;
 		}
-		const idDeclFX *fx = static_cast<const idDeclFX *>( declManager->DeclByIndex( DECL_FX, fx_index ) );
+
+		//const idDeclFX *fx = static_cast<const idDeclFX *>( declManager->DeclByIndex( DECL_FX, fx_index ) ); //ORIGINAL
+
+		//COOP START
+		const idDeclFX *fx;
+		//ugly avoid crash in coop
+
+		int declTypeCount = declManager->GetNumDecls(DECL_ENTITYDEF);
+		if (fx_index < 0 || fx_index >= declTypeCount) {
+			fx = NULL;
+		} else {
+			fx = static_cast<const idDeclFX *>( declManager->DeclByIndex( DECL_FX, fx_index ) );
+		}
+
+		//end avoid crash in coop
+		//COOP END
+
 		if ( !fx ) {
-			gameLocal.Error( "FX at index %d not found", fx_index );
+			//COOP START
+			if (gameLocal.mpGame.IsGametypeCoopBased()) {
+				common->Warning("[COOP] FX at index %d not found", fx_index);
+			} else {
+			//COOP END
+				gameLocal.Error( "FX at index %d not found", fx_index ); //ORIGINAL
+			}
+
 		}
 		fxEffect = fx;
 		Setup( fx->GetName() );
@@ -793,7 +797,7 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 idEntityFx::ClientPredictionThink
 =================
 */
-void idEntityFx::ClientPredictionThink( void ) {
+void idEntityFx::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	if ( gameLocal.isNewFrame ) {
 		Run( gameLocal.time );
 	}

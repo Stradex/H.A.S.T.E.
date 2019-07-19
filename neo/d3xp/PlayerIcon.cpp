@@ -29,18 +29,16 @@ If you have questions concerning this license or the applicable additional terms
 #include "sys/platform.h"
 #include "renderer/ModelManager.h"
 
-#include "gamesys/SysCvar.h"
+#include "gamesys/SysCvar.h" //added for CTF by Stradex
 #include "Player.h"
 
 #include "PlayerIcon.h"
 
 static const char * iconKeys[ ICON_NONE ] = {
 	"mtr_icon_lag",
-	"mtr_icon_chat"
-#ifdef CTF
-	,"mtr_icon_redteam",
-	"mtr_icon_blueteam"
-#endif
+	"mtr_icon_chat",
+	"mtr_icon_redteam", //added by Stradex for CTF
+	"mtr_icon_blueteam" //added by Stradex for CTF
 };
 
 /*
@@ -105,7 +103,7 @@ void idPlayerIcon::Draw( idPlayer *player, const idVec3 &origin ) {
 		if ( !CreateIcon( player, ICON_CHAT, origin, axis ) ) {
 			UpdateIcon( player, origin, axis );
 		}
-#ifdef CTF
+	//added by Stradex for CTF
 	} else if ( g_CTFArrows.GetBool() && gameLocal.mpGame.IsGametypeFlagBased() && gameLocal.GetLocalPlayer() && player->team == gameLocal.GetLocalPlayer()->team && !player->IsHidden() && !player->AI_DEAD ) {
 		int icon = ICON_TEAM_RED + player->team;
 
@@ -115,7 +113,7 @@ void idPlayerIcon::Draw( idPlayer *player, const idVec3 &origin ) {
 		if ( !CreateIcon( player, ( playerIconType_t )icon, origin, axis ) ) {
 			UpdateIcon( player, origin, axis );
 		}
-#endif
+	//end by Stradex for CTF
 	} else {
 		FreeIcon();
 	}

@@ -2672,6 +2672,24 @@ void idCommonLocal::LoadGameDLLbyName( const char *dll, idStr& s ) {
 	#endif
 }
 
+const char* GetLastErrorAsString() //DELETE THIS FOR LINUX USERS, MAY THEY CANT COMPILE  CAUSE STRDUP!
+{
+    //Get the error message, if any.
+    DWORD errorMessageID = ::GetLastError();
+    if(errorMessageID == 0)
+        return "Unkwown"; //No error message has been recorded
+
+    LPSTR messageBuffer = nullptr;
+    size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                 NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+	char * returnMsg = strdup(messageBuffer);
+
+    //Free the buffer.
+    LocalFree(messageBuffer);
+
+    return returnMsg;
+}
+
 /*
 =================
 idCommonLocal::LoadGameDLL
@@ -2704,7 +2722,7 @@ void idCommonLocal::LoadGameDLL( void ) {
 	}
 
 	if ( !gameDLL ) {
-		common->FatalError( "couldn't load game dynamic library" );
+		common->FatalError( "couldn't load game dynamic library: %s\n", GetLastErrorAsString());
 		return;
 	}
 

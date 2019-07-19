@@ -76,6 +76,15 @@ idItem::idItem() {
 	orgOrigin.Zero();
 	canPickUp = true;
 	fl.networkSync = true;
+
+	//COOP START
+	fl.coopNetworkSync = false; //don't sync items in coop
+
+	for (int i=0; i < MAX_CLIENTS; i++) {
+		clientPickedItem[i] = false;
+	}
+	firstTimePicked = true;
+	//COOP END
 }
 
 /*
@@ -301,18 +310,18 @@ void idItem::Spawn( void ) {
 		PostEventMS( &EV_Touch, 0, ent, 0 );
 	}
 
-#ifdef CTF
+	//added by Stradex for ROE CTF
 	// idItemTeam does not rotate and bob
-	if ( spawnArgs.GetBool( "spin" ) || (gameLocal.isMultiplayer && !this->IsType( idItemTeam::Type ) ) ) {
+	if ( spawnArgs.GetBool( "spin" ) || (gameLocal.isMultiplayer && !gameLocal.mpGame.IsGametypeCoopBased()  && !this->IsType( idItemTeam::Type ) ) ) {
 		spin = true;
 		BecomeActive( TH_THINK );
 	}
-#else
-	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer ) {
+	//end by Stradex for ROE CTF
+
+	/*if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer ) {
 		spin = true;
 		BecomeActive( TH_THINK );
-	}
-#endif
+	*/
 
 	//pulse = !spawnArgs.GetBool( "nopulse" );
 	//temp hack for tim
@@ -361,6 +370,23 @@ bool idItem::GiveToPlayer( idPlayer *player ) {
 	return player->GiveItem( this );
 }
 
+//COOP START
+
+/*
+================
+idItem::CS_GiveToPlayer
+================
+*/
+bool idItem::CS_GiveToPlayer( idPlayer *player ) {
+	if ( player == NULL ) {
+		return false;
+	}
+
+	return player->CS_GiveItem( this );
+}
+
+//COOP END
+
 /*
 ================
 idItem::Pickup
@@ -368,11 +394,63 @@ idItem::Pickup
 */
 bool idItem::Pickup( idPlayer *player ) {
 
+	float respawn = spawnArgs.GetFloat( "respawn" );
+	bool dropped = spawnArgs.GetBool( "dropped" );
+	bool no_respawn = spawnArgs.GetBool( "no_respawn" );
+
+	if ( (!gameLocal.mpGame.IsGametypeCoopBased() || si_itemRespawn.GetBool() ) && gameLocal.isMultiplayer && respawn == 0.0f ) {
+		respawn = 20.0f;
+	}
+
+	//COOP STARRT
+
+	if ( gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased() ) { //client-side pickup for coop
+		if (player && si_onePickupPerPlayer.GetBool() && (player->entityNumber != gameLocal.localClientNum)) { //One Pickup per player clientside behaviour
+			return false;
+		}
+		if ( !CS_GiveToPlayer( player ) ) {
+			return false;
+		}
+
+		StartSound( "snd_acquire", SND_CHANNEL_ITEM, 0, false, NULL );
+
+		// clear our contents so the object isn't picked up twice
+		GetPhysics()->SetContents( 0 );
+
+		// hide the model
+		Hide();
+		// add the highlight shell
+		if ( itemShellHandle != -1 ) {
+			gameRenderWorld->FreeEntityDef( itemShellHandle );
+			itemShellHandle = -1;
+		}
+
+		if ( respawn && !dropped && !no_respawn ) {
+			//common->Printf("Item should respawn in %f seconds\n", respawn);
+			const char *sfx = spawnArgs.GetString( "fxRespawn" );
+			//if ( sfx && *sfx ) {
+			//	PostEventSec( &EV_RespawnFx, respawn - 0.5f );
+			//}
+			CS_PostEventSec( &EV_RespawnItem, respawn );
+		}
+		BecomeInactive( TH_THINK );
+		return true;
+	}
+	//server-side - Singleplayer pickup
+
+	if (player && si_onePickupPerPlayer.GetBool() && clientPickedItem[player->entityNumber] && gameLocal.mpGame.IsGametypeCoopBased()) { //COOP
+		return false; //this player already picked this item
+	}
+
+	//COOP END
+
 	if ( !GiveToPlayer( player ) ) {
 		return false;
 	}
 
-	if ( gameLocal.isServer ) {
+	clientPickedItem[player->entityNumber] = true; //COOP
+
+	if ( gameLocal.isServer && !gameLocal.mpGame.IsGametypeCoopBased() ) { //not sending events in coop
 		ServerSendEvent( EVENT_PICKUP, NULL, false, -1 );
 	}
 
@@ -380,10 +458,20 @@ bool idItem::Pickup( idPlayer *player ) {
 	StartSound( "snd_acquire", SND_CHANNEL_ITEM, 0, false, NULL );
 
 	// trigger our targets
-	ActivateTargets( player );
+	if (firstTimePicked || !si_onePickupPerPlayer.GetBool() || !gameLocal.mpGame.IsGametypeCoopBased()) {
+		firstTimePicked = false; //COOP: used only when si_onePickupPerPlayer enabled
+		ActivateTargets( player );
+	}
 
 	// clear our contents so the object isn't picked up twice
-	GetPhysics()->SetContents( 0 );
+	if (!si_onePickupPerPlayer.GetBool() || !gameLocal.mpGame.IsGametypeCoopBased()) { //COOP: enable multiple pickups with si_onePickupPerPlayer enabled
+		// clear our contents so the object isn't picked up twice
+		GetPhysics()->SetContents( 0 );
+	}
+
+	//COOP: if si_onePickupPerPlayer enabled, then only hide the model when the local player pick it.
+	if (!si_onePickupPerPlayer.GetBool() || (player->entityNumber == gameLocal.localClientNum) || !gameLocal.mpGame.IsGametypeCoopBased()) 
+	{
 
 	// hide the model
 	Hide();
@@ -392,14 +480,6 @@ bool idItem::Pickup( idPlayer *player ) {
 	if ( itemShellHandle != -1 ) {
 		gameRenderWorld->FreeEntityDef( itemShellHandle );
 		itemShellHandle = -1;
-	}
-
-	float respawn = spawnArgs.GetFloat( "respawn" );
-	bool dropped = spawnArgs.GetBool( "dropped" );
-	bool no_respawn = spawnArgs.GetBool( "no_respawn" );
-
-	if ( gameLocal.isMultiplayer && respawn == 0.0f ) {
-		respawn = 20.0f;
 	}
 
 	if ( respawn && !dropped && !no_respawn ) {
@@ -411,13 +491,19 @@ bool idItem::Pickup( idPlayer *player ) {
 	} else if ( !spawnArgs.GetBool( "inv_objective" ) && !no_respawn ) {
 		// give some time for the pickup sound to play
 		// FIXME: Play on the owner
-		if ( !spawnArgs.GetBool( "inv_carry" ) ) {
+		if ( !spawnArgs.GetBool( "inv_carry" ) && !si_onePickupPerPlayer.GetBool() ) {
 			PostEventMS( &EV_Remove, 5000 );
 		}
 	}
 
 	BecomeInactive( TH_THINK );
 	return true;
+
+	} else {
+
+	return false; //should this return false?
+
+	}
 }
 
 /*
@@ -425,7 +511,7 @@ bool idItem::Pickup( idPlayer *player ) {
 idItem::ClientPredictionThink
 ================
 */
-void idItem::ClientPredictionThink( void ) {
+void idItem::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	// only think forward because the state is not synced through snapshots
 	if ( !gameLocal.isNewFrame ) {
 		return;
@@ -550,7 +636,7 @@ idItem::Event_Respawn
 ================
 */
 void idItem::Event_Respawn( void ) {
-	if ( gameLocal.isServer ) {
+	if ( gameLocal.isServer && !gameLocal.mpGame.IsGametypeCoopBased() ) {  //not sending events in coop
 		ServerSendEvent( EVENT_RESPAWN, NULL, false, -1 );
 	}
 	BecomeActive( TH_THINK );
@@ -569,7 +655,7 @@ idItem::Event_RespawnFx
 ================
 */
 void idItem::Event_RespawnFx( void ) {
-	if ( gameLocal.isServer ) {
+	if ( gameLocal.isServer && !gameLocal.mpGame.IsGametypeCoopBased() ) { //not sending events in coop
 		ServerSendEvent( EVENT_RESPAWNFX, NULL, false, -1 );
 	}
 	const char *sfx = spawnArgs.GetString( "fxRespawn" );
@@ -644,20 +730,18 @@ bool idItemPowerup::GiveToPlayer( idPlayer *player ) {
 	if ( player->spectating ) {
 		return false;
 	}
+	if (gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased()){ //how the fuck this point is reached?
+		return false;
+	}
 	player->GivePowerUp( type, time * 1000 );
 	return true;
 }
 
-#ifdef CTF
-
 
 /*
 ===============================================================================
-
   idItemTeam
-
-  Used for flags in Capture the Flag
-
+  Used for flags in Capture the Flag (Aded by Stradex for CTF from D3XP)
 ===============================================================================
 */
 
@@ -743,7 +827,6 @@ void idItemTeam::Spawn( void ) {
 	/*
 	idDict args;
 	idVec3 lightOffset( 0.0f, 20.0f, 0.0f );
-
 	// Set up the flag's dynamic light
 	memset( &itemGlow, 0, sizeof( itemGlow ) );
 	itemGlow.axis = mat3_identity;
@@ -755,7 +838,6 @@ void idItemTeam::Spawn( void ) {
 	itemGlow.shaderParms[ SHADERPARM_GREEN ] = 0.0f;
 	itemGlow.shaderParms[ SHADERPARM_BLUE ] = 0.0f;
 	itemGlow.shaderParms[ SHADERPARM_ALPHA ] = 0.0f;
-
 	// Select a shader based on the team
 	if ( team == 0 )
 		itemGlow.shader = declManager->FindMaterial( "lights/redflag" );
@@ -985,7 +1067,6 @@ void idItemTeam::PrivateReturn( void )
 	itemGlow.shaderParms[ SHADERPARM_GREEN ] = 0.0f;
 	itemGlow.shaderParms[ SHADERPARM_BLUE ] = 0.0f;
 	itemGlow.shaderParms[ SHADERPARM_ALPHA ] = 0.0f;
-
 	if ( itemGlowHandle != -1 )
 		gameRenderWorld->UpdateLightDef( itemGlowHandle, &itemGlow );*/
 
@@ -1031,7 +1112,6 @@ void idItemTeam::Event_TakeFlag( idPlayer * player ) {
 	itemGlow.shaderParms[ SHADERPARM_GREEN ] = 1.0f;
 	itemGlow.shaderParms[ SHADERPARM_BLUE ] = 1.0f;
 	itemGlow.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
-
 	if ( itemGlowHandle != -1 )
 		gameRenderWorld->UpdateLightDef( itemGlowHandle, &itemGlow );*/
 
@@ -1307,7 +1387,6 @@ void idItemTeam::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 /*
 ================
 idItemTeam::UpdateGuis
-
 Update all client's huds wrt the flag status.
 ================
 */
@@ -1349,8 +1428,6 @@ void idItemTeam::Present( void ) {
 	idEntity::Present();
 }
 
-#endif
-
 /*
 ===============================================================================
 
@@ -1391,6 +1468,7 @@ idObjective::Restore
 */
 void idObjective::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( playerPos );
+	PostEventMS( &EV_CamShot, 250 );
 }
 
 /*
@@ -1400,9 +1478,7 @@ idObjective::Spawn
 */
 void idObjective::Spawn( void ) {
 	Hide();
-	if ( cvarSystem->GetCVarBool( "com_makingBuild") ) {
-		PostEventMS( &EV_CamShot, 250 );
-	}
+	PostEventMS( &EV_CamShot, 250 );
 }
 
 /*
@@ -1424,44 +1500,6 @@ void idObjective::Event_CamShot( ) {
 			renderView_t fullView = *view;
 			fullView.width = SCREEN_WIDTH;
 			fullView.height = SCREEN_HEIGHT;
-
-#ifdef _D3XP
-			// HACK : always draw sky-portal view if there is one in the map, this isn't real-time
-			if ( gameLocal.portalSkyEnt.GetEntity() && g_enablePortalSky.GetBool() ) {
-				renderView_t	portalView = fullView;
-				portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
-
-				// setup global fixup projection vars
-				if ( 1 ) {
-					int vidWidth, vidHeight;
-					idVec2 shiftScale;
-
-					renderSystem->GetGLSettings( vidWidth, vidHeight );
-
-					float pot;
-					int temp;
-
-					int	 w = vidWidth;
-					for (temp = 1 ; temp < w ; temp<<=1) {
-					}
-					pot = (float)temp;
-					shiftScale.x = (float)w / pot;
-
-					int	 h = vidHeight;
-					for (temp = 1 ; temp < h ; temp<<=1) {
-					}
-					pot = (float)temp;
-					shiftScale.y = (float)h / pot;
-
-					fullView.shaderParms[4] = shiftScale.x;
-					fullView.shaderParms[5] = shiftScale.y;
-				}
-
-				gameRenderWorld->RenderScene( &portalView );
-				renderSystem->CaptureRenderToImage( "_currentRender" );
-			}
-#endif
-
 			// draw a view to a texture
 			renderSystem->CropRenderSize( 256, 256, true );
 			gameRenderWorld->RenderScene( &fullView );
@@ -1477,6 +1515,11 @@ idObjective::Event_Trigger
 ================
 */
 void idObjective::Event_Trigger( idEntity *activator ) {
+
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient) {
+		return; //clients can't touch this
+	}
+
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player ) {
 
@@ -1567,6 +1610,11 @@ idVideoCDItem::GiveToPlayer
 ================
 */
 bool idVideoCDItem::GiveToPlayer( idPlayer *player ) {
+
+	if (gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased()){ //how the fuck this point is reached?
+		return false;
+	}
+
 	idStr str = spawnArgs.GetString( "video" );
 	if ( player && str.Length() ) {
 		player->GiveVideo( str, &spawnArgs );
@@ -1591,6 +1639,11 @@ idPDAItem::GiveToPlayer
 ================
 */
 bool idPDAItem::GiveToPlayer(idPlayer *player) {
+
+	if (gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased()) { //disable pda pickup in COOP for clients to avoid crash
+		return true;
+	}
+
 	const char *str = spawnArgs.GetString( "pda_name" );
 	if ( player ) {
 		player->GivePDA( str, &spawnArgs );
@@ -1620,12 +1673,10 @@ idMoveableItem::idMoveableItem() {
 	trigger = NULL;
 	smoke = NULL;
 	smokeTime = 0;
-#ifdef _D3XP
-	nextSoundTime = 0;
-#endif
-#ifdef CTF
+	//added for CTF
 	repeatSmoke = false;
-#endif
+	nextSoundTime = 0;
+	//end CTF
 }
 
 /*
@@ -1651,9 +1702,6 @@ void idMoveableItem::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteParticle( smoke );
 	savefile->WriteInt( smokeTime );
-#ifdef _D3XP
-	savefile->WriteInt( nextSoundTime );
-#endif
 }
 
 /*
@@ -1669,9 +1717,6 @@ void idMoveableItem::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadParticle( smoke );
 	savefile->ReadInt( smokeTime );
-#ifdef _D3XP
-	savefile->ReadInt( nextSoundTime );
-#endif
 }
 
 /*
@@ -1684,9 +1729,6 @@ void idMoveableItem::Spawn( void ) {
 	float density, friction, bouncyness, tsize;
 	idStr clipModelName;
 	idBounds bounds;
-#ifdef _D3XP
-	SetTimeState ts( timeGroup );
-#endif
 
 	// create a trigger for item pickup
 	spawnArgs.GetFloat( "triggersize", "16.0", tsize );
@@ -1733,9 +1775,6 @@ void idMoveableItem::Spawn( void ) {
 
 	smoke = NULL;
 	smokeTime = 0;
-#ifdef _D3XP
-	nextSoundTime = 0;
-#endif
 	const char *smokeName = spawnArgs.GetString( "smoke_trail" );
 	if ( *smokeName != '\0' ) {
 		smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
@@ -1743,9 +1782,7 @@ void idMoveableItem::Spawn( void ) {
 		BecomeActive( TH_UPDATEPARTICLES );
 	}
 
-#ifdef CTF
-	repeatSmoke = spawnArgs.GetBool( "repeatSmoke", "0" );
-#endif
+	repeatSmoke = spawnArgs.GetBool( "repeatSmoke", "0" ); //added by Stradex for CTF
 }
 
 /*
@@ -1763,47 +1800,23 @@ void idMoveableItem::Think( void ) {
 	}
 
 	if ( thinkFlags & TH_UPDATEPARTICLES ) {
-		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis(), timeGroup /*_D3XP*/ ) ) {
-#ifdef CTF
+		if ( !gameLocal.smokeParticles->EmitSmoke( smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() ) ) {
+			//added by Stradex for CTF
 			if ( !repeatSmoke ) {
 				smokeTime = 0;
 				BecomeInactive( TH_UPDATEPARTICLES );
 			} else {
 				smokeTime = gameLocal.time;
 			}
-#else
-			smokeTime = 0;
-			BecomeInactive( TH_UPDATEPARTICLES );
-#endif
+			//end by Stradex for CTF
+
+			//smokeTime = 0;
+			//BecomeInactive( TH_UPDATEPARTICLES );
 		}
 	}
 
 	Present();
 }
-
-#ifdef _D3XP
-/*
-=================
-idMoveableItem::Collide
-=================
-*/
-bool idMoveableItem::Collide( const trace_t &collision, const idVec3 &velocity ) {
-	float v, f;
-
-	v = -( velocity * collision.c.normal );
-	if ( v > 80 && gameLocal.time > nextSoundTime ) {
-		f = v > 200 ? 1.0f : idMath::Sqrt( v - 80 ) * 0.091f;
-		if ( StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, false, NULL ) ) {
-			// don't set the volume unless there is a bounce sound as it overrides the entire channel
-			// which causes footsteps on ai's to not honor their shader parms
-			SetSoundVolume( f );
-		}
-		nextSoundTime = gameLocal.time + 500;
-	}
-
-	return false;
-}
-#endif
 
 /*
 ================
@@ -1963,7 +1976,7 @@ void idMoveableItem::Gib( const idVec3 &dir, const char *damageDefName ) {
 	const char *smokeName = spawnArgs.GetString( "smoke_gib" );
 	if ( *smokeName != '\0' ) {
 		const idDeclParticle *smoke = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, smokeName ) );
-		gameLocal.smokeParticles->EmitSmoke( smoke, gameLocal.time, gameLocal.random.CRandomFloat(), renderEntity.origin, renderEntity.axis, timeGroup /*_D3XP*/ );
+		gameLocal.smokeParticles->EmitSmoke( smoke, gameLocal.time, gameLocal.random.CRandomFloat(), renderEntity.origin, renderEntity.axis );
 	}
 	// remove the entity
 	PostEventMS( &EV_Remove, 0 );
@@ -2004,6 +2017,11 @@ idMoveablePDAItem::GiveToPlayer
 ================
 */
 bool idMoveablePDAItem::GiveToPlayer(idPlayer *player) {
+
+	if (gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased()) { //disable pda pickup in COOP to avoid crash
+		return true;
+	}
+
 	const char *str = spawnArgs.GetString( "pda_name" );
 	if ( player ) {
 		player->GivePDA( str, &spawnArgs );
@@ -2049,6 +2067,11 @@ idItemRemover::Event_Trigger
 ================
 */
 void idItemRemover::Event_Trigger( idEntity *activator ) {
+
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient) {
+		return; //clients can't touch this
+	}
+
 	if ( activator->IsType( idPlayer::Type ) ) {
 		RemoveItem( static_cast<idPlayer *>(activator) );
 	}
@@ -2111,6 +2134,11 @@ idObjectiveComplete::Event_Trigger
 ================
 */
 void idObjectiveComplete::Event_Trigger( idEntity *activator ) {
+
+	if (gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isClient) {
+		return; //clients can't touch this
+	}
+
 	if ( !spawnArgs.GetBool( "objEnabled" ) ) {
 		return;
 	}
@@ -2120,14 +2148,9 @@ void idObjectiveComplete::Event_Trigger( idEntity *activator ) {
 
 		if ( spawnArgs.GetString( "inv_objective", NULL ) ) {
 			if ( player->hud ) {
-				player->hud->SetStateString( "objective", "2");
-
+				player->hud->SetStateString( "objective", "2" );
 				player->hud->SetStateString( "objectivetext", spawnArgs.GetString( "objectivetext" ) );
-#ifdef _D3XP
-				player->hud->SetStateString( "objectivecompletetitle", spawnArgs.GetString( "objectivetitle" ) );
-#else
 				player->hud->SetStateString( "objectivetitle", spawnArgs.GetString( "objectivetitle" ) );
-#endif
 				player->CompleteObjective( spawnArgs.GetString( "objectivetitle" ) );
 				PostEventMS( &EV_GetPlayerPos, 2000 );
 			}

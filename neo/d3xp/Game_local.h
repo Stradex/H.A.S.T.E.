@@ -51,6 +51,15 @@ If you have questions concerning this license or the applicable additional terms
 #define protected	public
 #endif
 
+//COOP START
+const int MAX_SORT_ITERATIONS	= 7500; //COOP: added by stradex. Iterations per player by the server
+const int MAX_SERVER_EVENTS_PER_FRAME = 15; //COOP: May the limit could be higher but shouldn't be necessary, I prefer a bit of desync over events overflow.
+const int SERVER_EVENTS_QUEUE_SIZE = 256; //Added to avoid events overflow by server
+const int SERVER_EVENT_NONE = -999; //Added to avoid events overflow by server
+const int SERVER_EVENT_OVERFLOW_WAIT = 7; //How many frames to wait in case of server event overflow
+//COOP ENDS
+
+
 /*
 ===============================================================================
 
@@ -98,6 +107,7 @@ extern const int NUM_RENDER_PORTAL_BITS;
 */
 typedef struct entityState_s {
 	int						entityNumber;
+	int						entityCoopNumber; //COOP
 	idBitMsg				state;
 	byte					stateBuf[MAX_ENTITY_STATE_SIZE];
 	struct entityState_s *	next;
@@ -114,6 +124,7 @@ const int MAX_EVENT_PARAM_SIZE		= 128;
 
 typedef struct entityNetEvent_s {
 	int						spawnId;
+	int						coopId; //COOP
 	int						event;
 	int						time;
 	int						paramsSize;
@@ -121,6 +132,20 @@ typedef struct entityNetEvent_s {
 	struct entityNetEvent_s	*next;
 	struct entityNetEvent_s *prev;
 } entityNetEvent_t;
+
+//COOP START
+typedef struct serverEvent_s { //added for coop to avoid events overflow 
+	int							eventId;
+	idBitMsg					msg;
+	bool						saveEvent;
+	int							excludeClient;
+	int							eventTime;
+	idEntity*					eventEnt;
+	bool						isEventType;
+	bool						saveLastOnly; //added by stradex for coop
+	struct entityNetEvent_s		*event;
+}serverEvent_t;
+//COOP ENDS
 
 enum {
 	GAME_RELIABLE_MESSAGE_INIT_DECL_REMAP,
@@ -147,7 +172,13 @@ enum {
 	GAME_RELIABLE_MESSAGE_STARTSTATE,
 	GAME_RELIABLE_MESSAGE_MENU,
 	GAME_RELIABLE_MESSAGE_WARMUPTIME,
-	GAME_RELIABLE_MESSAGE_EVENT
+	GAME_RELIABLE_MESSAGE_EVENT,
+	//COOP START
+	GAME_RELIABLE_MESSAGE_ADDCHECKPOINT,
+	GAME_RELIABLE_MESSAGE_GOTOCHECKPOINT,
+	GAME_RELIABLE_MESSAGE_GLOBALCHECKPOINT,
+	GAME_RELIABLE_MESSAGE_NOCLIP
+	//COOP ENDS
 };
 
 typedef enum {
@@ -161,9 +192,7 @@ typedef enum {
 typedef struct {
 	idEntity	*ent;
 	int			dist;
-#ifdef CTF
-	int			team;
-#endif
+	int			team;				//added by Stradex for D3XP CTF
 } spawnSpot_t;
 
 //============================================================================
@@ -217,32 +246,19 @@ public:
 	type *					GetEntity( void ) const;
 	int						GetEntityNum( void ) const;
 
+	//COOP START
+	int						GetCoopId( void ) const { return coopId; }
+	bool					SetCoopId( int id );
+	bool					UpdateCoopId( void );
+	type *					GetCoopEntity( void ) const;
+	int						GetCoopEntityNum( void ) const;
+	bool					forceCoopEntity; //EVIL HACK
+	//COOP END
+
 private:
 	int						spawnId;
+	int						coopId; 	//COOP
 };
-
-#ifdef _D3XP
-struct timeState_t {
-	int					time;
-	int					previousTime;
-	int					msec;
-	int					framenum;
-	int					realClientTime;
-
-	void				Set( int t, int pt, int ms, int f, int rct )		{ time = t; previousTime = pt; msec = ms; framenum = f; realClientTime = rct; };
-	void				Get( int& t, int& pt, int& ms, int& f, int& rct )	{ t = time; pt = previousTime; ms = msec; f = framenum; rct = realClientTime; };
-	void				Save( idSaveGame *savefile ) const	{ savefile->WriteInt( time ); savefile->WriteInt( previousTime ); savefile->WriteInt( msec ); savefile->WriteInt( framenum ); savefile->WriteInt( realClientTime ); }
-	void				Restore( idRestoreGame *savefile )	{ savefile->ReadInt( time ); savefile->ReadInt( previousTime ); savefile->ReadInt( msec ); savefile->ReadInt( framenum ); savefile->ReadInt( realClientTime ); }
-	void				Increment()											{ framenum++; previousTime = time; time += msec; realClientTime = time; };
-};
-
-enum slowmoState_t {
-	SLOWMO_STATE_OFF,
-	SLOWMO_STATE_RAMPUP,
-	SLOWMO_STATE_ON,
-	SLOWMO_STATE_RAMPDOWN
-};
-#endif
 
 //============================================================================
 
@@ -265,6 +281,23 @@ public:
 	bool					sortPushers;			// true if active lists needs to be reordered to place pushers at the front
 	bool					sortTeamMasters;		// true if active lists needs to be reordered to place physics team masters before their slaves
 	idDict					persistentLevelInfo;	// contains args that are kept around between levels
+
+	//COOP START
+	int						firstFreeCoopIndex;			// first free index in the entities array for coop
+	idEntity *				coopentities[MAX_GENTITIES];	//For coop netcode only by Stradex
+	idEntity *				sortsnapshotentities[MAX_GENTITIES]; //for coop only to sort the priority of snapshot
+	int						coopIds[MAX_GENTITIES];			// for use in idEntityPtr in coop
+	int						num_coopentities;				//for coop netcode only by stradex 
+	idLinkList<idEntity>	coopSyncEntities;				// all net-synced (used by Coop only)
+	//idLinkList<idEntity>	serverPriorityEntities;			// coopSyncEnities but sort by snapshotPriority (used by Coop only)
+	int						serverEventsCount;				//just to debug delete later
+	int						clientEventsCount;				//just to debug, delete later
+	serverEvent_t			serverOverflowEvents[SERVER_EVENTS_QUEUE_SIZE]; //To avoid server reliabe messages overflow
+	void					addToServerEventOverFlowList(int eventId, const idBitMsg *msg, bool saveEvent, int excludeClient, int eventTime, idEntity* ent, bool saveLastOnly=false); //To avoid server reliabe messages overflow
+	void					addToServerEventOverFlowList(entityNetEvent_t* event, int clientNum); //To avoid server reliabe messages overflow
+	void					sendServerOverflowEvents( void ); //to send the overflow events that are in queue to avoid event overflow
+	int						overflowEventCountdown; //FIXME: Not pretty way I I think
+	//COOP END
 
 	// can be used to automatically effect every material in the world that references globalParms
 	float					globalShaderParms[ MAX_GLOBAL_SHADER_PARMS ];
@@ -299,6 +332,7 @@ public:
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
 	int						msec;					// time since last update in milliseconds
+	int						gameFps;				//added by Stradex to make com_gameHz works fine
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
@@ -319,37 +353,6 @@ public:
 
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
-
-#ifdef _D3XP
-	idEntityPtr<idEntity>	portalSkyEnt;
-	bool					portalSkyActive;
-
-	void					SetPortalSkyEnt( idEntity *ent );
-	bool					IsPortalSkyAcive();
-
-	timeState_t				fast;
-	timeState_t				slow;
-
-	slowmoState_t			slowmoState;
-	float					slowmoMsec;
-
-	bool					quickSlowmoReset;
-
-	virtual void			SelectTimeGroup( int timeGroup );
-	virtual int				GetTimeGroupTime( int timeGroup );
-
-	virtual void			GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] );
-
-	void					ComputeSlowMsec();
-	void					RunTimeGroup2();
-
-	void					ResetSlowTimeVars();
-	void					QuickSlowmoReset();
-
-	bool					NeedRestart();
-#endif
-
-	void					Tokenize( idStrList &out, const char *in );
 
 	// ---------------------- Public idGame Interface -------------------
 
@@ -388,14 +391,12 @@ public:
 	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg );
 	virtual bool			ClientApplySnapshot( int clientNum, int sequence );
 	virtual void			ClientProcessReliableMessage( int clientNum, const idBitMsg &msg );
-	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame );
+	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame, bool firstCallThisFrame );
 
 	virtual void			GetClientStats( int clientNum, char *data, const int len );
 	virtual void			SwitchTeam( int clientNum, int team );
 
 	virtual bool			DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] );
-
-	virtual void				GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
 
 	// ---------------------- Public idGameLocal Interface -------------------
 
@@ -429,13 +430,15 @@ public:
 	void					SetSkill( int value );
 	gameState_t				GameState( void ) const;
 	idEntity *				SpawnEntityType( const idTypeInfo &classdef, const idDict *args = NULL, bool bIsClientReadSnapshot = false );
-	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );
+	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true , bool bIsClientReadSnapshot = false ); //bIsClientReadSnapshot added by Stradex for DEBUG COOP
 	int						GetSpawnId( const idEntity *ent ) const;
+	int						GetCoopId( const idEntity *ent ) const; //COOP
 
 	const idDeclEntityDef *	FindEntityDef( const char *name, bool makeDefault = true ) const;
 	const idDict *			FindEntityDefDict( const char *name, bool makeDefault = true ) const;
 
 	void					RegisterEntity( idEntity *ent );
+	void					RegisterCoopEntity( idEntity *ent ); //COOP
 	void					UnregisterEntity( idEntity *ent );
 
 	bool					RequirementMet( idEntity *activator, const idStr &requires, int removeItem );
@@ -443,11 +446,9 @@ public:
 	void					AlertAI( idEntity *ent );
 	idActor *				GetAlertEntity( void );
 
+	bool					InCoopPlayersPVS( idEntity *ent ) const; //COOP
 	bool					InPlayerPVS( idEntity *ent ) const;
 	bool					InPlayerConnectedArea( idEntity *ent ) const;
-#ifdef _D3XP
-	pvsHandle_t				GetPlayerPVS()			{ return playerPVS; };
-#endif
 
 	void					SetCamera( idCamera *cam );
 	idCamera *				GetCamera( void ) const;
@@ -491,13 +492,14 @@ public:
 	idPlayer *				GetClientByCmdArgs( const idCmdArgs &args ) const;
 
 	idPlayer *				GetLocalPlayer() const;
+	idPlayer *				GetCoopPlayer() const; //COOP
 
 	void					SpreadLocations();
 	idLocationEntity *		LocationForPoint( const idVec3 &point );	// May return NULL
 	idEntity *				SelectInitialSpawnPoint( idPlayer *player );
 
 	void					SetPortalState( qhandle_t portal, int blockingBits );
-	void					SaveEntityNetworkEvent( const idEntity *ent, int event, const idBitMsg *msg );
+	void					SaveEntityNetworkEvent( const idEntity *ent, int event, const idBitMsg *msg , bool saveLastOnly=false); //COOP: added saveLastOnly
 	void					ServerSendChatMessage( int to, const char *name, const char *text );
 	int						ServerRemapDecl( int clientNum, declType_t type, int index );
 	int						ClientRemapDecl( declType_t type, int index );
@@ -508,8 +510,20 @@ public:
 	void					SetGibTime( int _time ) { nextGibTime = _time; };
 	int						GetGibTime() { return nextGibTime; };
 
+	bool					NeedRestart();
 
+	//added by Stradex
+	virtual void			CheckSingleLightChange( void );
 
+	//COOP START
+	gameReturn_t			RunClientSideFrame(idPlayer	*clientPlayer, const usercmd_t *clientCmds );
+	void					ServerWriteSnapshotCoop( int clientNum, int sequence, idBitMsg &msg, byte *clientInPVS, int numPVSClients );
+	void					ClientReadSnapshotCoop( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg );
+
+	bool					firstClientToSpawn; //used in coop for dedicated server not starting scripts until a player joins
+	bool					coopMapScriptLoad; //used in coop for dedicated server not starting scripts until a player joins
+	spawnSpot_t				spPlayerStartSpot; //added for COOP
+	//COOP END
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
@@ -520,10 +534,15 @@ private:
 	int						spawnCount;
 	int						mapSpawnCount;			// it's handy to know which entities are part of the map
 
+	//COOP START
+	int						coopCount;				//added by Stradex for coop entities
+	int						mapCoopCount;			//added by Stradex for coop entities
+	//COOP END
+
 	idLocationEntity **		locationEntities;		// for location names, etc
 
 	idCamera *				camera;
-	const idMaterial *		globalMaterial;		// for overriding everything
+	const idMaterial *		globalMaterial;			// for overriding everything
 
 	idList<idAAS *>			aasList;				// area system
 	idStrList				aasNames;
@@ -556,17 +575,21 @@ private:
 	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
 	int						currentInitialSpot;
 
-#ifdef CTF
+	//added by Stradex for D3XP CTF
 	idStaticList<spawnSpot_t, MAX_GENTITIES> teamSpawnSpots[2];
 	idStaticList<idEntity *, MAX_GENTITIES> teamInitialSpots[2];
 	int						teamCurrentInitialSpot[2];
-#endif
+	//end by Stradex for D3XP CTF
 
 	idDict					newInfo;
 
 	idStrList				shakeSounds;
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
+
+	//added by Stradex
+	bool					org_simpleLightVal;
+	float					org_simpleLightIntensity;
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
@@ -586,6 +609,7 @@ private:
 	void					RunDebugInfo( void );
 
 	void					InitScriptForMap( void );
+	void					SetScriptFPS( const float tCom_gameHz );
 
 	void					InitConsoleCommands( void );
 	void					ShutdownConsoleCommands( void );
@@ -611,7 +635,21 @@ private:
 	void					DumpOggSounds( void );
 	void					GetShakeSounds( const idDict *dict );
 
+	virtual void			SelectTimeGroup( int timeGroup );
+	virtual int				GetTimeGroupTime( int timeGroup );
+	virtual void			GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] );
+
+	void					Tokenize( idStrList &out, const char *in );
+
 	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
+
+	//COOP START
+	bool					isSnapshotEntity(idEntity* ent); 
+	idEntity*				getEntityBySpawnId(int spawnId);
+	idEntity*				getEntityByEntityNumber(int entityNum);
+	//COOP END
+
+	virtual void			GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
 };
 
 //============================================================================
@@ -631,6 +669,10 @@ public:
 template< class type >
 ID_INLINE idEntityPtr<type>::idEntityPtr() {
 	spawnId = 0;
+	//COOP START
+	coopId = 0;
+	forceCoopEntity = false;
+	//COOP END
 }
 
 template< class type >
@@ -647,8 +689,10 @@ template< class type >
 ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
 	if ( ent == NULL ) {
 		spawnId = 0;
+		coopId = 0; //COOP
 	} else {
 		spawnId = ( gameLocal.spawnIds[ent->entityNumber] << GENTITYNUM_BITS ) | ent->entityNumber;
+		coopId = ( gameLocal.coopIds[ent->entityCoopNumber] << GENTITYNUM_BITS ) | ent->entityCoopNumber; //COOP
 	}
 	return *this;
 }
@@ -674,6 +718,13 @@ ID_INLINE bool idEntityPtr<type>::IsValid( void ) const {
 
 template< class type >
 ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
+
+	//COOP START
+	if (forceCoopEntity) {
+		return GetCoopEntity(); //evil stuff, forgive me god
+	}
+	//COOP END
+
 	int entityNum = spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 );
 	if ( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS ) ) {
 		return static_cast<type *>( gameLocal.entities[ entityNum ] );
@@ -686,7 +737,43 @@ ID_INLINE int idEntityPtr<type>::GetEntityNum( void ) const {
 	return ( spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) );
 }
 
-//  ===========================================================================
+/***************
+COOP START
+***************/
+
+template< class type >
+ID_INLINE bool idEntityPtr<type>::SetCoopId( int id ) {
+	// the reason for this first check is unclear:
+	// the function returning false may mean the spawnId is already set right, or the entity is missing
+	if ( id == coopId ) {
+		return false;
+	}
+	if ( ( id >> GENTITYNUM_BITS ) == gameLocal.coopIds[ id & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] ) {
+		coopId = id;
+		return true;
+	}
+	return false;
+}
+
+template< class type >
+ID_INLINE type *idEntityPtr<type>::GetCoopEntity( void ) const {
+	int entityNum = coopId & ( ( 1 << GENTITYNUM_BITS ) - 1 );
+	if ( gameLocal.coopIds[ entityNum ] == ( coopId >> GENTITYNUM_BITS ) ) {
+		return static_cast<type *>( gameLocal.coopentities[ entityNum ] );
+	}
+	return NULL;
+}
+
+template< class type >
+ID_INLINE int idEntityPtr<type>::GetCoopEntityNum( void ) const {
+	return ( coopId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) );
+}
+
+/***************
+COOP END
+***************/
+
+//============================================================================
 
 //
 // these defines work for all startsounds from all entity types
