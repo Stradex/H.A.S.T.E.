@@ -1597,6 +1597,8 @@ idElevator::idElevator( void ) {
 	lastTouchTime = 0;
 	returnFloor = 0;
 	returnTime = 0;
+
+	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*
@@ -3135,6 +3137,8 @@ idDoor::idDoor( void ) {
 	syncLock.Clear();
 	companionDoor = NULL;
 	normalAxisIndex = 0;
+
+	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*

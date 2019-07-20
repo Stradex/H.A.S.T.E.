@@ -51,6 +51,8 @@ If you have questions concerning this license or the applicable additional terms
 #define protected	public
 #endif
 
+const int LIMIT_OF_TURNON_LIGHTS_PERFRAME = 1;
+
 //COOP START
 const int MAX_SORT_ITERATIONS	= 7500; //COOP: added by stradex. Iterations per player by the server
 const int MAX_SERVER_EVENTS_PER_FRAME = 15; //COOP: May the limit could be higher but shouldn't be necessary, I prefer a bit of desync over events overflow.
@@ -514,6 +516,7 @@ public:
 
 	//added by Stradex
 	virtual void			CheckSingleLightChange( void );
+	void					UpdateLevelOfDetail ( idPlayer* currentPlayer );
 
 	//COOP START
 	gameReturn_t			RunClientSideFrame(idPlayer	*clientPlayer, const usercmd_t *clientCmds );

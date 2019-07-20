@@ -91,6 +91,8 @@ idProjectile::idProjectile( void ) {
 	fl.coopNetworkSync = true; //COOP
 
 	netSyncPhysics		= false;
+
+	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*

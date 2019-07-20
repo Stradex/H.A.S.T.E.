@@ -255,7 +255,7 @@ idItem::Present
 void idItem::Present( void ) {
 	idEntity::Present();
 
-	if ( !fl.hidden && pulse ) {
+	if ( !fakeHidden && !fl.hidden && pulse ) {
 		// also add a highlight shell model
 		renderEntity_t	shell;
 
@@ -782,6 +782,8 @@ idItemTeam::idItemTeam() {
 
 	lastNuggetDrop	= 0;
 	nuggetName		= 0;
+
+	neverFakeHide	= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*

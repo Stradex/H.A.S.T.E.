@@ -150,6 +150,9 @@ public:
 
 	int						health;					// FIXME: do all objects really need health?
 
+	bool					fakeHidden;				// Added by Stradex for r_useLevelOfDetail
+	bool					neverFakeHide;			// important entities that must be always visible
+
 	//COOP START
 	bool					spawnedByServer;		// When entity is spawned by the server, added by stradex for COOP
 	bool					clientSideEntity;		// FIXME: I think there's no need of this but well... for COOP
@@ -227,6 +230,9 @@ public:
 	virtual void			FreeLightDef( void );
 	virtual void			Hide( void );
 	virtual void			Show( void );
+	virtual void			FakeHide( void ); //added by Stradex
+	virtual void			FakeShow( void ); //added by Stradex
+	virtual bool			intersectWithBounds( idBounds &tBounds ); //added by Stradex
 	bool					IsHidden( void ) const;
 	void					UpdateVisuals( void );
 	void					UpdateModel( void );

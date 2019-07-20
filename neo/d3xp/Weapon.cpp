@@ -163,6 +163,8 @@ idWeapon::idWeapon() {
 
 	fl.networkSync = true;
 	fl.coopNetworkSync = true;
+
+	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*
@@ -411,12 +413,16 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	// Re-link script fields
 	WEAPON_ATTACK.LinkTo(		scriptObject, "WEAPON_ATTACK" );
+#if BUILD_HASTE > 0
 	WEAPON_SECATTACK.LinkTo(	scriptObject, "WEAPON_SECATTACK" ); //added by Stradex
+#endif
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
 	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
+#if BUILD_HASTE > 0
 	WEAPON_NETALTFIRING.LinkTo(	scriptObject, "WEAPON_NETALTFIRING" );
+#endif
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
 
@@ -579,12 +585,16 @@ void idWeapon::Clear( void ) {
 	scriptObject.Free();
 
 	WEAPON_ATTACK.Unlink();
+#if BUILD_HASTE > 0
 	WEAPON_SECATTACK.Unlink(); //Added by Stradex
+#endif
 	WEAPON_RELOAD.Unlink();
 	WEAPON_NETRELOAD.Unlink();
 	WEAPON_NETENDRELOAD.Unlink();
 	WEAPON_NETFIRING.Unlink();
+#if BUILD_HASTE > 0
 	WEAPON_NETALTFIRING.Unlink(); //Added by Stradex
+#endif
 	WEAPON_RAISEWEAPON.Unlink();
 	WEAPON_LOWERWEAPON.Unlink();
 
@@ -1048,12 +1058,16 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	}
 
 	WEAPON_ATTACK.LinkTo(		scriptObject, "WEAPON_ATTACK" );
+#if BUILD_HASTE > 0
 	WEAPON_SECATTACK.LinkTo(	scriptObject, "WEAPON_SECATTACK" );
+#endif
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
 	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
+#if BUILD_HASTE > 0
 	WEAPON_NETALTFIRING.LinkTo(	scriptObject, "WEAPON_NETALTFIRING" );
+#endif
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
 
@@ -1470,7 +1484,7 @@ void idWeapon::BeginAttack( bool isSecAttack ) {
 	if ( !isLinked ) {
 		return;
 	}
-
+#if BUILD_HASTE > 0
 	if ( (!WEAPON_ATTACK && !isSecAttack) || (!WEAPON_SECATTACK && isSecAttack) ) { //edited by Stradex
 		if ( sndHum ) {
 			StopSound( SND_CHANNEL_BODY, false );
@@ -1483,7 +1497,14 @@ void idWeapon::BeginAttack( bool isSecAttack ) {
 		WEAPON_ATTACK = true;
 		WEAPON_SECATTACK = false; //disable sec attack
 	}
-
+#else
+	if ( !WEAPON_ATTACK ) {
+		if ( sndHum ) {	// _D3XP :: don't stop grabber hum
+			StopSound( SND_CHANNEL_BODY, false );
+		}
+	}
+	WEAPON_ATTACK = true;
+#endif
 }
 
 /*
@@ -1506,6 +1527,7 @@ void idWeapon::EndAttack( void ) {
 	}
 
 	//added to end SECATTACK by Stradex
+#if BUILD_HASTE > 0
 	if ( !WEAPON_SECATTACK.IsLinked() ) {
 		return;
 	}
@@ -1517,6 +1539,7 @@ void idWeapon::EndAttack( void ) {
 			StartSoundShader( sndHum, SND_CHANNEL_BODY, 0, false, NULL );
 		}
 	}
+#endif
 }
 
 /*
@@ -2105,12 +2128,16 @@ void idWeapon::EnterCinematic( void ) {
 		thread->Execute();
 
 		WEAPON_ATTACK		= false;
+#if BUILD_HASTE > 0
 		WEAPON_SECATTACK	= false; //added by Stradex
+#endif
 		WEAPON_RELOAD		= false;
 		WEAPON_NETRELOAD	= false;
 		WEAPON_NETENDRELOAD	= false;
 		WEAPON_NETFIRING	= false;
-		WEAPON_NETALTFIRING	= false;
+#if BUILD_HASTE > 0
+		WEAPON_NETALTFIRING	= false; //added by Stradex
+#endif
 		WEAPON_RAISEWEAPON	= false;
 		WEAPON_LOWERWEAPON	= false;
 	}
@@ -2396,31 +2423,19 @@ void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	isFiring = msg.ReadBits( 1 ) != 0;
 	isAltFiring = msg.ReadBits( 1 ) != 0; //added by Stradex
 
+#if BUILD_HASTE > 0
+
 	// WEAPON_NETFIRING is only turned on for other clients we're predicting. not for local client
 	if ( owner && gameLocal.localClientNum != owner->entityNumber && WEAPON_NETFIRING.IsLinked() ) {
 
 		// immediately go to the firing state so we don't skip fire animations
 		if ( !WEAPON_NETFIRING && isFiring ) {
 
-			#if BUILD_HASTE > 0
-
 			idealState = "Attack";
-			#else
-
-			idealState = "Fire";
-
-			#endif
 
 		} else if  ( !WEAPON_NETALTFIRING && isAltFiring ) {
 
-			#if BUILD_HASTE > 0
-
 			idealState = "AltAttack";
-			#else
-
-			idealState = "Fire";
-
-			#endif
 
 		}
 		
@@ -2435,6 +2450,24 @@ void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		WEAPON_NETFIRING = isFiring;
 		WEAPON_NETALTFIRING = isAltFiring;
 	}
+
+#else
+	// WEAPON_NETFIRING is only turned on for other clients we're predicting. not for local client
+	if ( owner && gameLocal.localClientNum != owner->entityNumber && WEAPON_NETFIRING.IsLinked() ) {
+
+		// immediately go to the firing state so we don't skip fire animations
+		if ( !WEAPON_NETFIRING && isFiring ) {
+			idealState = "Fire";
+		}
+
+		// immediately switch back to idle
+		if ( WEAPON_NETFIRING && !isFiring ) {
+			idealState = "Idle";
+		}
+
+		WEAPON_NETFIRING = isFiring;
+	}
+#endif
 
 	if ( snapLight != lightOn ) {
 		Reload();

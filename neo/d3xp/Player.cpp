@@ -1010,6 +1010,7 @@ idPlayer::idPlayer() {
 	wantSpectate			= false;
 
 	carryingFlag			= false; //added by Stradex for CTF
+	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 
 	lastHitToggle			= false;
 

@@ -179,16 +179,109 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 
 }
 
+
+/*
+================
+idLight::intersectWithBounds
+================
+*/
+
+bool idLight::intersectWithBounds(idBounds &tBounds) {
+	const idVec3 &lightOrigin = renderEntity.origin + renderEntity.bounds.GetCenter() * renderEntity.axis;
+	idBounds lightBounds( lightOrigin );
+	float midRadius = renderLight.lightRadius.Length(); //may LengthSqr would be better cause it's fast as fuck
+	lightBounds.Expand(midRadius);
+
+	return lightBounds.IntersectsBounds( static_cast<const idBounds &>(tBounds) );
+}
+
+/*
+================
+idLight::isOff
+================
+*/
+bool idLight::isOff( void ) {
+	return !org_isOn;
+}
+
+
+/*
+================
+idLight::restoreQualityLight
+================
+*/
+void idLight::restoreQualityLight(void){
+	copyRenderLight(&bakRenderLight, &renderLight); //renderLight = bakRenderLight
+
+	if ( lightDefHandle != -1 ) {
+		gameRenderWorld->FreeLightDef( lightDefHandle );
+	}
+}
+
+/*
+================
+idLight::setLowQualityLight
+================
+*/
+void idLight::setLowQualityLight(void){
+	renderLight_t	tmpLight;
+	copyRenderLight(&renderLight, &tmpLight); //tmpLight = renderLight, copy
+
+	renderLight.noShadows = true;
+	renderLight.noSpecular = true;
+	renderLight.parallel = true;
+	renderLight.shader = declManager->FindMaterial( "lights/ambientlight2", false );
+
+	copyRenderLight(&tmpLight, &bakRenderLight); //bakRenderLight = tmpLight, copy
+
+	if ( lightDefHandle != -1 ) {
+		gameRenderWorld->FreeLightDef( lightDefHandle );
+	}
+}
+
+
+/*
+================
+idLight::copyRenderLight
+================
+*/
+void idLight::copyRenderLight(renderLight_t *origin, renderLight_t *dest){
+	memset( dest, 0, sizeof( *dest ) );
+
+	dest->axis = origin->axis;
+	dest->origin = origin->origin;
+	dest->suppressLightInViewID = origin->suppressLightInViewID;
+	dest->allowLightInViewID = origin->allowLightInViewID;
+	dest->noShadows = origin->noShadows;
+	dest->noSpecular = origin->noSpecular;
+	dest->pointLight = origin->pointLight;
+	dest->parallel = origin->parallel;
+	dest->lightRadius = origin->lightRadius;
+	dest->lightCenter = origin->lightCenter;
+	dest->target = origin->target;
+	dest->right = origin->right;
+	dest->up = origin->up;
+	dest->start = origin->start;
+	dest->end = origin->end;
+	dest->prelightModel = origin->prelightModel;
+	dest->lightId = origin->lightId;
+	dest->shader = origin->shader;
+	for(int  i = 0; i < MAX_ENTITY_SHADER_PARMS; i++ ) {
+		dest->shaderParms[ i ]  = origin->shaderParms[ i ];
+	}
+	dest->referenceSound = origin->referenceSound;
+}
+
 /*
 ================
 idLight::UpdateChangeableSpawnArgs
 ================
 */
-void idLight::UpdateChangeableSpawnArgs( const idDict *source ) {
+void idLight::UpdateChangeableSpawnArgs( const idDict *source, bool useLevelOfDetail) {
 
 	idEntity::UpdateChangeableSpawnArgs( source );
 
-	if ( source ) {
+	if ( source && !useLevelOfDetail ) {
 		source->Print();
 	}
 	FreeSoundEmitter( true );
@@ -197,7 +290,7 @@ void idLight::UpdateChangeableSpawnArgs( const idDict *source ) {
 		StartSoundShader( refSound.shader, SND_CHANNEL_ANY, 0, false, NULL );
 	}
 
-	gameEdit->ParseSpawnArgsToRenderLight( source ? source : &spawnArgs, &renderLight );
+	gameEdit->ParseSpawnArgsToRenderLight( source ? source : &spawnArgs, &renderLight, useLevelOfDetail );
 
 	UpdateVisuals();
 }
@@ -987,6 +1080,41 @@ idLight::Event_SetRadius
 */
 void idLight::Event_SetRadius( float radius ) {
 	SetRadius( radius );
+}
+
+/*
+================
+idLight::FakeHide
+================
+*/
+void idLight::FakeHide( void ) {
+	//added by Stradex
+
+	bool wasFakeHidden = fakeHidden;
+	idEntity::FakeHide();
+	if (!wasFakeHidden) {
+		PresentModelDefChange();
+		Off();
+	}
+}
+
+/*
+================
+idLight::FakeShow
+================
+*/
+void idLight::FakeShow ( void ) {
+	//added by Stradex
+	if (r_simpleLight.GetBool()) {
+		return;
+	}
+
+	bool wasFakeHidden = fakeHidden;
+	idEntity::FakeShow();
+	if (wasFakeHidden) {
+		PresentModelDefChange();
+		On();
+	}
 }
 
 /*

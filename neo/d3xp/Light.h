@@ -56,7 +56,7 @@ public:
 	void			Save( idSaveGame *savefile ) const;					// archives object for save game file
 	void			Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
-	virtual void	UpdateChangeableSpawnArgs( const idDict *source );
+	virtual void	UpdateChangeableSpawnArgs( const idDict *source , bool useLevelOfDetail=false); //not print added
 	virtual void	Think( void );
 	virtual void	FreeLightDef( void );
 	virtual bool	GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
@@ -101,9 +101,18 @@ public:
 
 	//added by Stradex
 	bool			isGiantSimpleLight;
+	bool			isDistant; //for beign used with levelOfDetail per distance
+	void			copyRenderLight(renderLight_t *origin, renderLight_t *dest);
+	void			setLowQualityLight( void );
+	void			restoreQualityLight( void );
+	bool			isOff( void );
+	virtual bool	intersectWithBounds( idBounds &tBounds );
+	virtual void	FakeHide( void ); //added by Stradex
+	virtual void	FakeShow( void ); //added by Stradex
 
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
+	renderLight_t	bakRenderLight;				// just a backup used of r_useLevelOfDistance
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
 	idMat3			localLightAxis;				// light axis relative to physics axis
 	qhandle_t		lightDefHandle;				// handle to renderer light def

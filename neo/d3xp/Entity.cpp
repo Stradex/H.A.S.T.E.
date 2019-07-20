@@ -431,6 +431,9 @@ idEntity::idEntity() {
 	teamChain		= NULL;
 	signals			= NULL;
 
+	fakeHidden		= false;
+	neverFakeHide	= false;
+
 	memset( PVSAreas, 0, sizeof( PVSAreas ) );
 	numPVSAreas		= -1;
 
@@ -1208,6 +1211,47 @@ bool idEntity::IsHidden( void ) const {
 
 /*
 ================
+idEntity::intersectWithBounds
+================
+*/
+
+bool idEntity::intersectWithBounds(idBounds &tBounds) {
+	const idVec3 &entityOrigin = renderEntity.origin + renderEntity.bounds.GetCenter() * renderEntity.axis;
+	idBounds entityBounds( entityOrigin );
+	entityBounds.Expand(renderEntity.bounds.GetRadius());
+
+	return entityBounds.IntersectsBounds( static_cast<const idBounds &>(tBounds) );
+}
+
+/*
+================
+idEntity::FakeHide
+================
+*/
+void idEntity::FakeHide( void ) {
+	if ( !fakeHidden ) {
+		fakeHidden = true;
+		if (!IsHidden()) { //maybe it's already hidden
+			FreeModelDef();
+			UpdateVisuals();
+		}
+	}
+}
+
+/*
+================
+idEntity::FakeShow
+================
+*/
+void idEntity::FakeShow( void ) {
+	if ( fakeHidden ) {
+		fakeHidden = false;
+		UpdateVisuals();
+	}
+}
+
+/*
+================
 idEntity::Hide
 ================
 */
@@ -1455,7 +1499,7 @@ void idEntity::Present( void ) {
 	}
 
 	// if set to invisible, skip
-	if ( !renderEntity.hModel || IsHidden() ) {
+	if ( !renderEntity.hModel || IsHidden() || fakeHidden ) {
 		return;
 	}
 

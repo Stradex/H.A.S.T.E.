@@ -40,6 +40,7 @@ extern idCVar	r_aspectRatio;
 extern idCVar	r_simpleLight; //added by Stradex
 extern idCVar	r_simpleLightIntensity; //added by Stradex
 extern idCVar	r_useLevelOfDetail; //added by Stradex
+extern idCVar	r_levelOfDetailDistance; //added by Stradex
 
 extern idCVar	g_monsters;
 extern idCVar	g_decals;

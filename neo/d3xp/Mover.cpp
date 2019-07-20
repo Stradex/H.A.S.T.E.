@@ -1608,6 +1608,8 @@ idElevator::idElevator( void ) {
 	fl.coopNetworkSync = true;
 	fl.useOldNetcode = true;
 	//COOP END
+
+	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*
@@ -3171,6 +3173,8 @@ idDoor::idDoor( void ) {
 	fl.coopNetworkSync = true;
 	fl.useOldNetcode = false;
 	//COOP END
+
+	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*

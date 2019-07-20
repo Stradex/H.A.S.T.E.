@@ -401,6 +401,8 @@ idAI::idAI() {
 	snapshotPriority = 2; //added by Stradex for coop. High priority for this
 	thereWasEnemy = true;
 	//coop end
+
+	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*

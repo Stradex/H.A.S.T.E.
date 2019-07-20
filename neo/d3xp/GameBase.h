@@ -51,6 +51,7 @@ If you have questions concerning this license or the applicable additional terms
 #define	PLAYER_SPAWN_CLASS		"player_doommarine"
 #define PLAYER_SPAWN_CLASS_MP	"player_doommarine_mp"
 #define PLAYER_SPAWN_CLASS_CTF	"player_doommarine_ctf"
+#define	PLAYER_SPAWN_CLASS_COOP	"player_doommarine_coop" //Coop
 
 #endif
 
