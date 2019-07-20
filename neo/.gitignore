@@ -6,15 +6,15 @@
 .project
 .settings/
 
-/base.dir
-/d3xp.dir
-/coop.dir
-/Debug
-/Release
-/Win32
-/dhewm3ded.dir
-/dhewm3.dir
-/idlib.dir
+/base.dir/*
+/d3xp.dir/*
+/coop.dir/*
+/Debug/*
+/Release/*
+/Win32/*
+/dhewm3ded.dir/*
+/dhewm3.dir/*
+/idlib.dir/*
 *.sdf
 *.vcxproj
 *.sln
