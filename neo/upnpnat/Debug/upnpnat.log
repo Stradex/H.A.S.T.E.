@@ -1,0 +1,79 @@
+﻿Compilación iniciada a las 19/07/2019 2:01:19.
+     1>Proyecto "D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\upnpnat\upnpnat.vcxproj" en el nodo 3 (build destinos).
+     1>InitializeBuildStatus:
+         Se creará "Debug\upnpnat.unsuccessfulbuild" porque se especificó "AlwaysCreate".
+       ClCompile:
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _VC80_UPGRADE=0x0710 /D _MBCS /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt upnpnat.cpp xmlParser.cpp
+         xmlParser.cpp
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(97): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(98): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(99): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(100): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(101): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1233): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(234) : vea la declaración de 'fopen'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1394): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1412): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1509): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1515): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1524): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1532): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1572): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1574): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1579): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1583): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1600): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1605): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\xmlparser.cpp(1736): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : vea la declaración de 'strcpy'
+         upnpnat.cpp
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(182): warning C4996: '_sleep': This function or variable has been superceded by newer library or operating system functionality. Consider using Sleep instead. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdlib.h(843) : vea la declaración de '_sleep'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(194): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : vea la declaración de 'sprintf'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(226): warning C4996: '_sleep': This function or variable has been superceded by newer library or operating system functionality. Consider using Sleep instead. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdlib.h(843) : vea la declaración de '_sleep'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(245): warning C4996: '_sleep': This function or variable has been superceded by newer library or operating system functionality. Consider using Sleep instead. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdlib.h(843) : vea la declaración de '_sleep'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(250): warning C4996: '_sleep': This function or variable has been superceded by newer library or operating system functionality. Consider using Sleep instead. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdlib.h(843) : vea la declaración de '_sleep'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(284): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : vea la declaración de 'sprintf'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(474): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : vea la declaración de 'sprintf'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(477): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : vea la declaración de 'sprintf'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(481): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : vea la declaración de 'sprintf'
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\upnpnat\upnpnat.cpp(502): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : vea la declaración de 'sprintf'
+         Generando código...
+       Lib:
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\Debug\upnpnat.lib" /NOLOGO Debug\upnpnat.obj
+         Debug\xmlParser.obj
+         upnpnat.vcxproj -> D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\Debug\upnpnat.lib
+       FinalizeBuildStatus:
+         Se eliminará el archivo "Debug\upnpnat.unsuccessfulbuild".
+         Aplicando tarea Touch a "Debug\upnpnat.lastbuildstate".
+     1>Compilación del proyecto terminada "D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\upnpnat\upnpnat.vcxproj" (build destinos).
+
+Compilación correcta.
+
+Tiempo transcurrido 00:00:01.70

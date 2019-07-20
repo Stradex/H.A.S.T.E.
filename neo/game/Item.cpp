@@ -693,6 +693,8 @@ idItemTeam::idItemTeam() {
 
 	lastNuggetDrop	= 0;
 	nuggetName		= 0;
+
+	neverFakeHide	= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
 /*

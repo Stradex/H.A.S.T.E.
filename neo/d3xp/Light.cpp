@@ -81,7 +81,7 @@ this is the canonical renderLight parm parsing,
 which should be used by dmap and the editor
 ================
 */
-void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t *renderLight ) {
+void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t *renderLight, bool levelOfDetail) {
 	bool	gotTarget, gotUp, gotRight;
 	const char	*texture;
 	idVec3	color;

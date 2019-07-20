@@ -2032,6 +2032,8 @@ bool idMultiplayerGame::Draw( int clientNum ) {
 		}
 	}
 
+	gameLocal.UpdateLevelOfDetail(viewPlayer); //for SP
+
 	UpdatePlayerRanks();
 	UpdateHud( viewPlayer, player->hud );
 	// use the hud of the local player

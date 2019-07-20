@@ -51,6 +51,8 @@ If you have questions concerning this license or the applicable additional terms
 #define protected	public
 #endif
 
+const int LIMIT_OF_TURNON_LIGHTS_PERFRAME = 1;
+
 /*
 ===============================================================================
 
@@ -452,6 +454,7 @@ public:
 
 	//added by Stradex
 	virtual void			CheckSingleLightChange( void );
+	void					UpdateLevelOfDetail ( idPlayer* currentPlayer );
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;

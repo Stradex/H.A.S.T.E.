@@ -2510,6 +2510,97 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 
 /*
 ================
+idGameLocal::UpdateLevelOfDetail
+
+To boost performance
+================
+*/
+
+void idGameLocal::UpdateLevelOfDetail ( idPlayer* currentPlayer ) //MAKE THIS TO WORK WITH PVS ENTITIES AND NOT ALL SPAWNNODE YOU STUPID SHIT
+{
+	idEntity* ent;
+	idLight* lightEnt;
+	
+	if (r_useLevelOfDetail.IsModified()) {
+		r_useLevelOfDetail.ClearModified();
+		if (!r_useLevelOfDetail.GetBool()) {
+			for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+				
+				if (ent->neverFakeHide) {
+					continue; //IGNORE these kind of entities
+				}
+
+				if (ent->IsType(idLight::Type)) {
+					lightEnt = static_cast<idLight*>(ent);
+					if (!lightEnt || lightEnt->isGiantSimpleLight) {
+						continue;
+					}
+				}
+				
+				ent->FakeShow();
+			}
+			common->Printf("Reseting light values...\n");
+			return;
+		}
+	}
+
+	if (!r_useLevelOfDetail.GetBool()) {
+		return;
+	}
+	float		dist;
+	idVec3		delta;
+
+	bool showFirstOnly=true;
+
+	const idVec3 &playerOrigin = currentPlayer->GetPhysics()->GetOrigin();
+	idBounds playerRadius(playerOrigin);
+	playerRadius.ExpandSelf((static_cast<float>(r_levelOfDetailDistance.GetInteger())*35.0));
+
+	int turningOnCount=0;
+
+	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+
+		if (ent->neverFakeHide) {
+			continue; //IGNORE these kind of entities
+		}
+
+		if (turningOnCount > LIMIT_OF_TURNON_LIGHTS_PERFRAME) {
+			break; //limit reached
+		}
+
+		if (ent->IsType(idLight::Type)) {
+			lightEnt = static_cast<idLight*>(ent);
+			if (!lightEnt) {
+				continue;
+			}
+
+			if (lightEnt->isGiantSimpleLight  && !r_simpleLight.GetBool()) {
+				if (lightEnt->IsHidden() || lightEnt->isOff()) {
+					lightEnt->UpdateSingleLightColor(0.075);
+					lightEnt->Show();
+					lightEnt->On();
+					turningOnCount++;
+				}
+				continue;
+			}
+		}
+
+		if (!ent->intersectWithBounds(playerRadius)) { //all entities
+			ent->FakeHide();
+		} else {
+			ent->FakeShow();
+			if (ent->IsType(idLight::Type) && !r_simpleLight.GetBool()) {
+				if (ent->fakeHidden) {
+					turningOnCount++;
+				}
+			}
+		}
+	}
+
+}
+
+/*
+================
 idGameLocal::Draw
 
 makes rendering and sound system calls
@@ -2528,6 +2619,8 @@ bool idGameLocal::Draw( int clientNum) {
 	if ( !player ) {
 		return false;
 	}
+
+	UpdateLevelOfDetail(player); //for SP: SP in HASTE LOL WTF
 
 	// render the scene
 	player->playerView.RenderPlayerView( player->hud );
@@ -4624,18 +4717,18 @@ void idGameLocal::CheckSingleLightChange( void ) {
 			if (r_simpleLight.GetBool()) {
 				if (entLight->isGiantSimpleLight) {
 					entLight->Show();
-					entLight->On();
+					//entLight->On();
 				} else {
-					entLight->Hide();
-					entLight->Off();
+					entLight->FakeHide();
+					//entLight->Off();
 				}
 			} else {
 				if (entLight->isGiantSimpleLight) {
 					entLight->Hide();
-					entLight->Off();
+					//entLight->Off();
 				} else {
-					entLight->Show();
-					entLight->On();
+					entLight->FakeShow();
+					//entLight->On();
 				}
 			}
 			//To work with r_useStaticLighting
@@ -4655,10 +4748,10 @@ void idGameLocal::CheckSingleLightChange( void ) {
 			}
 
 			entLight->UpdateSingleLightColor(r_simpleLightIntensity.GetFloat());
-			entLight->Hide();
-			entLight->Off();
-			entLight->Show();
-			entLight->On();
+			entLight->FakeHide();
+			//entLight->Off();
+			entLight->FakeShow();
+			//entLight->On();
 		}
 		org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 	}

@@ -142,6 +142,8 @@ public:
 	idList< idEntityPtr<idEntity> >	targets;		// when this entity is activated these entities entity are activated
 
 	int						health;					// FIXME: do all objects really need health?
+	bool					fakeHidden;				// Added by Stradex for r_useLevelOfDetail
+	bool					neverFakeHide;			// important entities that must be always visible
 
 	struct entityFlags_s {
 		bool				notarget			:1;	// if true never attack or target this entity
@@ -205,6 +207,9 @@ public:
 	virtual void			FreeLightDef( void );
 	virtual void			Hide( void );
 	virtual void			Show( void );
+	virtual void			FakeHide( void ); //added by Stradex
+	virtual void			FakeShow( void ); //added by Stradex
+	virtual bool			intersectWithBounds( idBounds &tBounds ); //added by Stradex
 	bool					IsHidden( void ) const;
 	void					UpdateVisuals( void );
 	void					UpdateModel( void );

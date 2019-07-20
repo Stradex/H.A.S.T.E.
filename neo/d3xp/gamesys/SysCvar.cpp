@@ -119,6 +119,7 @@ idCVar r_aspectRatio(				"r_aspectRatio",			"-1",			CVAR_RENDERER | CVAR_INTEGER
 //added by Stradex
 idCVar r_simpleLight(				"r_simpleLight",			"0",			CVAR_GAME | CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE | CVAR_BOOL, "Enable-Disable Simple lighting system.");
 idCVar r_simpleLightIntensity(		"r_simpleLightIntensity",	"1",			CVAR_GAME | CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Intensity of the simple light.\nValues between 0.0 and 1.0" );
+idCVar r_useLevelOfDetail(			"r_useLevelOfDetail",		"0",			CVAR_GAME | CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE | CVAR_BOOL , "Enable level of  detail per distance" );
 
 idCVar g_cinematic(					"g_cinematic",				"1",			CVAR_GAME | CVAR_BOOL, "skips updating entities that aren't marked 'cinematic' '1' during cinematics" );
 idCVar g_cinematicMaxSkipTime(		"g_cinematicMaxSkipTime",	"600",			CVAR_GAME | CVAR_FLOAT, "# of seconds to allow game to run when skipping cinematic.  prevents lock-up when cinematic doesn't end.", 0, 3600 );
