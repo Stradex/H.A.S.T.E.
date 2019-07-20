@@ -1,0 +1,13 @@
+/Debug
+/Release
+*.sdf
+*.vcxproj
+*.sln
+*.exe
+*.bin
+*.dll
+*.obj
+*.lib
+*.pdb
+*.idb
+*.ipch
