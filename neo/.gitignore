@@ -21,3 +21,8 @@
 *.exe
 *.bin
 *.dll
+*.obj
+*.lib
+*.pdb
+*.idb
+*.ipch
