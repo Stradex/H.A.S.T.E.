@@ -278,8 +278,6 @@ void idGameLocal::Clear( void ) {
 	memset( lagometer, 0, sizeof( lagometer ) );
 
 	//added by Stradex
-	org_simpleLightVal = r_simpleLight.GetBool();
-    org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 }
 
 /*
@@ -367,9 +365,6 @@ void idGameLocal::Init( void ) {
 
 	Printf( "...%d aas types\n", aasList.Num() );
 
-	//added by Stradex
-	org_simpleLightVal = r_simpleLight.GetBool();
-    org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 }
 
 /*
@@ -1288,10 +1283,6 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	}
 
 	Printf( "----- Game Map Init -----\n" );
-
-	//added by Stradex
-	org_simpleLightVal = r_simpleLight.GetBool();
-    org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 
 	gamestate = GAMESTATE_STARTUP;
 
@@ -5121,7 +5112,8 @@ void idGameLocal::CheckSingleLightChange( void ) {
 	idEntity *	ent;
 	idLight  *	entLight;
 
-	if (org_simpleLightVal != r_simpleLight.GetBool()) {
+	if (r_simpleLight.IsModified()) {
+		r_simpleLight.ClearModified();
 		common->Printf("CheckSingleLightChange()...\n");
 		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 			if (!ent->IsType( idLight::Type )) {
@@ -5148,9 +5140,8 @@ void idGameLocal::CheckSingleLightChange( void ) {
 			entLight->Think();
 		}
 		
-		org_simpleLightVal = r_simpleLight.GetBool();
-
-	} else if ((org_simpleLightIntensity != r_simpleLightIntensity.GetFloat()) && r_simpleLight.GetBool()) {
+	} else if (r_simpleLightIntensity.IsModified() && r_simpleLight.GetBool()) {
+		r_simpleLightIntensity.ClearModified();
 		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 			if (!ent->IsType( idLight::Type )) {
 				continue;
@@ -5166,7 +5157,6 @@ void idGameLocal::CheckSingleLightChange( void ) {
 			entLight->Show();
 			entLight->On();
 		}
-		org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 	}
 }
 
