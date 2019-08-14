@@ -53,6 +53,7 @@ extern idCVar	g_bloodEffects;
 extern idCVar	g_projectileLights;
 extern idCVar	g_doubleVision;
 extern idCVar	g_muzzleFlash;
+extern idCVar	g_skipItemsModel; //added by Stradex for fake sprite for items
 
 extern idCVar	g_disasm;
 extern idCVar	g_debugBounds;
@@ -250,7 +251,7 @@ extern idCVar	si_fragLimit;
 extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
-extern idCVar	si_alwaysPickup;
+extern idCVar	si_alwaysPickup; //added for by Stradex
 
 //added by Stradex for D3XP CTF
 extern idCVar si_flagDropTimeLimit;
@@ -270,7 +271,7 @@ extern idCVar g_CTFArrows;
 
 extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
-extern idCVar	net_clientUnlagged; //added by Stradex
+extern idCVar	net_clientUnlagged;  //added for by Stradex
 
 extern const char *si_gameTypeArgs[];
 

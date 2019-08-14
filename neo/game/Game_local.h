@@ -454,6 +454,7 @@ public:
 
 	//added by Stradex
 	virtual void			CheckSingleLightChange( void );
+	virtual void			CheckDrawChanges( void );
 	void					UpdateLevelOfDetail ( idPlayer* currentPlayer );
 
 private:
@@ -515,8 +516,6 @@ private:
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
 
 	//added by Stradex
-	bool					org_simpleLightVal;
-	float					org_simpleLightIntensity;
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level

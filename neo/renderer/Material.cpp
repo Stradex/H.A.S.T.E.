@@ -263,6 +263,7 @@ static const infoParm_t	infoParms[] = {
 	{"collision",	0,	SURF_COLLISION,	0 },
 	{"noimpact",	0,	SURF_NOIMPACT,	0 },		// don't make impact explosions or marks
 	{"nodamage",	0,	SURF_NODAMAGE,	0 },		// no falling damage when hitting
+	{"nofatal",		0,	SURF_NOFATAL,	0 },		// NEW by Stradex: falling damage but not fatal
 	{"ladder",		0,	SURF_LADDER,	0 },		// climbable
 	{"nosteps",		0,	SURF_NOSTEPS,	0 },		// no footsteps
 

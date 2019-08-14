@@ -80,6 +80,7 @@ idCVar si_spectators(				"si_spectators",			"1",			CVAR_GAME | CVAR_SERVERINFO |
 idCVar si_serverURL(				"si_serverURL",				"",				CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE, "where to reach the server admins and get information about the server" );
 //Added by Stradex
 idCVar si_alwaysPickup(				"si_alwaysPickup",			"0",			CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_BOOL, "allow clients to pickup weapons even when they're full of ammo" );
+idCVar g_skipItemsModel(			"g_skipItemsModel",			"0",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE | CVAR_NOCHEAT, "Disable models for items and use 2D sprites instead." );
 
 //added for ctf
 idCVar si_flagDropTimeLimit(		"si_flagDropTimeLimit",		"30",			CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_INTEGER, "seconds before a dropped CTF flag is returned" );

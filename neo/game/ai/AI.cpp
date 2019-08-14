@@ -384,6 +384,8 @@ idAI::idAI() {
 	eyeFocusRate		= 0.0f;
 	headFocusRate		= 0.0f;
 	focusAlignTime		= 0;
+
+	alwaysTryToReachEnemy = false; //added by Stradex
 }
 
 /*
@@ -736,6 +738,8 @@ void idAI::Spawn( void ) {
 	spawnArgs.GetFloat( "projectile_height_to_distance_ratio",	"1", projectile_height_to_distance_ratio );
 
 	spawnArgs.GetFloat( "turn_rate",			"360",		turnRate );
+
+	spawnArgs.GetBool( "always_reach_enemy",	"0",		alwaysTryToReachEnemy); //added by Stradex
 
 	spawnArgs.GetBool( "talks",					"0",		talks );
 	if ( spawnArgs.GetString( "npc_name", NULL ) != NULL ) {
@@ -1658,10 +1662,15 @@ bool idAI::MoveToEnemy( void ) {
 		move.toAreaNum = PointReachableAreaNum( pos );
 		aas->PushPointIntoAreaNum( move.toAreaNum, pos );
 
-		areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
-		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, pos ) ) {
-			AI_DEST_UNREACHABLE = true;
-			return false;
+		if (!alwaysTryToReachEnemy) { //added by Stradex for stupid but fast performance AI with AAS
+
+			areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
+
+			if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, pos ) ) {
+				AI_DEST_UNREACHABLE = true;
+				return false;
+			}
+
 		}
 	}
 
@@ -3164,6 +3173,10 @@ idAI::ReactionTo
 */
 int idAI::ReactionTo( const idEntity *ent ) {
 
+	if (!ent) { //Stradex: this stupid point should not be reached but ok wtf.
+		return ATTACK_IGNORE; 
+	}
+
 	if ( ent->fl.hidden ) {
 		// ignore hidden entities
 		return ATTACK_IGNORE;
@@ -3710,7 +3723,7 @@ void idAI::SetEnemyPosition( void ) {
 		} else {
 			const idVec3 &org = physicsObj.GetOrigin();
 			areaNum = PointReachableAreaNum( org );
-			if ( PathToGoal( path, areaNum, org, enemyAreaNum, pos ) ) {
+			if ( alwaysTryToReachEnemy || PathToGoal( path, areaNum, org, enemyAreaNum, pos ) ) { //alwaysTryToReachEnemy to improve performance but stupid AI
 				lastVisibleReachableEnemyPos = pos;
 				lastVisibleReachableEnemyAreaNum = enemyAreaNum;
 				if ( move.moveCommand == MOVE_TO_ENEMY ) {
@@ -3774,7 +3787,7 @@ void idAI::UpdateEnemyPosition( void ) {
 	if ( onGround ) {
 		// when we don't have an AAS, we can't tell if an enemy is reachable or not,
 		// so just assume that he is.
-		if ( !aas ) {
+		if ( !aas || alwaysTryToReachEnemy ) { //alwaysTryToReachEnemy added by Stradex
 			enemyAreaNum = 0;
 			lastReachableEnemyPos = enemyPos;
 		} else {

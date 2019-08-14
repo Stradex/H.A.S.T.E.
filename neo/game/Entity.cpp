@@ -466,6 +466,7 @@ idEntity::Spawn
 void idEntity::Spawn( void ) {
 	int					i;
 	const char			*temp;
+	const char			*spriteTemp; //added by Stradex
 	idVec3				origin;
 	idMat3				axis;
 	const idKeyValue	*networkSync;
@@ -548,6 +549,8 @@ void idEntity::Spawn( void ) {
 		}
 	}
 
+	neverFakeHide = spawnArgs.GetBool("disable_lod", "0"); //added by Stradex for level of detail
+
 	health = spawnArgs.GetInt( "health" );
 
 	InitDefaultPhysics( origin, axis );
@@ -555,8 +558,17 @@ void idEntity::Spawn( void ) {
 	SetOrigin( origin );
 	SetAxis( axis );
 
+	if (g_skipItemsModel.GetBool()) { //added by Stradex
+		spriteTemp = spawnArgs.GetString( "spritemodel" );
+	} else {
+		spriteTemp = NULL;
+	}
+
 	temp = spawnArgs.GetString( "model" );
-	if ( temp && *temp ) {
+
+	if (spriteTemp && *spriteTemp) { //added by Stradex
+		SetModel( spriteTemp );
+	} else  if ( temp && *temp ) {
 		SetModel( temp );
 	}
 
@@ -1092,6 +1104,32 @@ idEntity::UpdateAnimationControllers
 bool idEntity::UpdateAnimationControllers( void ) {
 	// any ragdoll and IK animation controllers should be updated here
 	return false;
+}
+
+
+/*
+================
+idEntity::CheckModelChange
+
+ADDED by stradex for items sprite (but in future for Level of detail per distance)
+================
+*/
+void idEntity::CheckModelChange(bool useSprite) {
+
+	const char* tmp;
+	if (useSprite) {
+		tmp = spawnArgs.GetString( "spritemodel" );
+	} else {
+		tmp = spawnArgs.GetString( "model" );
+	}
+
+	if ( tmp && *tmp ) {
+		SetModel( tmp );
+		if (IsHidden()) {
+			FreeModelDef();
+			UpdateVisuals();
+		}
+	}
 }
 
 /*

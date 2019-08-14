@@ -399,6 +399,9 @@ protected:
 	idVec3					lastReachableEnemyPos;
 	bool					wakeOnFlashlight;
 
+	//added by Stradex
+	bool					alwaysTryToReachEnemy; //to improve performance with multiple enemies
+
 	// script variables
 	idScriptBool			AI_TALK;
 	idScriptBool			AI_DAMAGE;

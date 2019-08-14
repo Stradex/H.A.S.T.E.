@@ -255,8 +255,11 @@ void idGameLocal::Clear( void ) {
 	memset( lagometer, 0, sizeof( lagometer ) );
 
 	//added by Stradex
+	/*
+	//FUCK YOU, YOU TOOK 10HS OF MY LIFE! UNCOMMENT THIS SHIT IF YOU DON'T WANT TO BE ABLE TO LOAD THE DEBUG BUILD USING LOADLIBRARY
 	org_simpleLightVal = r_simpleLight.GetBool();
     org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
+	*/
 }
 
 /*
@@ -343,10 +346,6 @@ void idGameLocal::Init( void ) {
 	gamestate = GAMESTATE_NOMAP;
 
 	Printf( "...%d aas types\n", aasList.Num() );
-
-	//added by Stradex
-	org_simpleLightVal = r_simpleLight.GetBool();
-    org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 }
 
 /*
@@ -1220,10 +1219,6 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	}
 
 	Printf( "----- Game Map Init -----\n" );
-
-	//added by Stradex
-	org_simpleLightVal = r_simpleLight.GetBool();
-    org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 
 	gamestate = GAMESTATE_STARTUP;
 
@@ -2532,7 +2527,17 @@ void idGameLocal::UpdateLevelOfDetail ( idPlayer* currentPlayer ) //MAKE THIS TO
 
 				if (ent->IsType(idLight::Type)) {
 					lightEnt = static_cast<idLight*>(ent);
-					if (!lightEnt || lightEnt->isGiantSimpleLight) {
+					if (!lightEnt) {
+						continue;
+					}
+					if (lightEnt->isGiantSimpleLight) {
+						if  (r_simpleLight.GetBool()) {
+							lightEnt->Show();
+							lightEnt->On();
+						} else {
+							lightEnt->Hide();
+							lightEnt->Off();
+						}
 						continue;
 					}
 				}
@@ -2608,7 +2613,7 @@ makes rendering and sound system calls
 */
 bool idGameLocal::Draw( int clientNum) {
 
-	CheckSingleLightChange();
+	CheckDrawChanges();
 
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
@@ -4706,7 +4711,9 @@ void idGameLocal::CheckSingleLightChange( void ) {
 	idEntity *	ent;
 	idLight  *	entLight;
 
-	if (org_simpleLightVal != r_simpleLight.GetBool()) {
+	//if (org_simpleLightVal != r_simpleLight.GetBool()) {
+	if (r_simpleLight.IsModified()) {
+		r_simpleLight.ClearModified();
 		common->Printf("CheckSingleLightChange()...\n");
 		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 			if (!ent->IsType( idLight::Type )) {
@@ -4717,7 +4724,7 @@ void idGameLocal::CheckSingleLightChange( void ) {
 			if (r_simpleLight.GetBool()) {
 				if (entLight->isGiantSimpleLight) {
 					entLight->Show();
-					//entLight->On();
+					entLight->On();
 				} else {
 					entLight->FakeHide();
 					//entLight->Off();
@@ -4725,7 +4732,7 @@ void idGameLocal::CheckSingleLightChange( void ) {
 			} else {
 				if (entLight->isGiantSimpleLight) {
 					entLight->Hide();
-					//entLight->Off();
+					entLight->Off();
 				} else {
 					entLight->FakeShow();
 					//entLight->On();
@@ -4734,10 +4741,8 @@ void idGameLocal::CheckSingleLightChange( void ) {
 			//To work with r_useStaticLighting
 			entLight->Think();
 		}
-		
-		org_simpleLightVal = r_simpleLight.GetBool();
-
-	} else if ((org_simpleLightIntensity != r_simpleLightIntensity.GetFloat()) && r_simpleLight.GetBool()) {
+	} else if (r_simpleLightIntensity.IsModified() && r_simpleLight.GetBool()) {
+		r_simpleLightIntensity.ClearModified();
 		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 			if (!ent->IsType( idLight::Type )) {
 				continue;
@@ -4748,12 +4753,11 @@ void idGameLocal::CheckSingleLightChange( void ) {
 			}
 
 			entLight->UpdateSingleLightColor(r_simpleLightIntensity.GetFloat());
-			entLight->FakeHide();
-			//entLight->Off();
-			entLight->FakeShow();
-			//entLight->On();
+			entLight->Hide();
+			entLight->Off();
+			entLight->Show();
+			entLight->On();
 		}
-		org_simpleLightIntensity = r_simpleLightIntensity.GetFloat();
 	}
 }
 
@@ -4786,4 +4790,25 @@ void idGameLocal::SetScriptFPS( const float tCom_gameHz )
 	} else {
 		common->Printf("Unable to find GAME_FRAMETIME def\n");
 	}
+}
+
+
+void idGameLocal::CheckDrawChanges( void ) {
+	idEntity *	ent;
+
+	if (g_skipItemsModel.IsModified()) {
+		g_skipItemsModel.ClearModified();
+
+		common->Printf("g_skipItemsModel changed\n");
+
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			if (!ent->IsType( idItem::Type )) {
+				continue;
+			}
+
+			ent->CheckModelChange(g_skipItemsModel.GetBool());
+		}
+	}
+
+	CheckSingleLightChange(); //simple light
 }

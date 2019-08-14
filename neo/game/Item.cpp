@@ -303,7 +303,8 @@ void idItem::Spawn( void ) {
 
 	//added by Stradex for ROE CTF
 	// idItemTeam does not rotate and bob
-	if ( spawnArgs.GetBool( "spin" ) || (gameLocal.isMultiplayer && !this->IsType( idItemTeam::Type ) ) ) {
+	//if ( spawnArgs.GetBool( "spin" ) || (gameLocal.isMultiplayer && !this->IsType( idItemTeam::Type ) ) ) {
+	if (!this->IsType(idItemTeam::Type)) { //stradex: Spin forced in SP too
 		spin = true;
 		BecomeActive( TH_THINK );
 	}
@@ -398,7 +399,8 @@ bool idItem::Pickup( idPlayer *player ) {
 	bool dropped = spawnArgs.GetBool( "dropped" );
 	bool no_respawn = spawnArgs.GetBool( "no_respawn" );
 
-	if ( gameLocal.isMultiplayer && respawn == 0.0f ) {
+	//if ( gameLocal.isMultiplayer && respawn == 0.0f ) {
+	if ( respawn == 0.0f ) { //force respawn items in SP too
 		respawn = 20.0f;
 	}
 

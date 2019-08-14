@@ -613,9 +613,9 @@ const char *idMultiplayerGame::GameTime() {
 	} else {
 		int timeLimit = gameLocal.serverInfo.GetInt( "si_timeLimit" );
 		if ( timeLimit ) {
-			ms = ( timeLimit * 60000 ) - ( gameLocal.time - matchStartedTime );
+			ms = ( timeLimit * 60000 ) - ( gameLocal.time - matchStartedTime ); //Time remaining
 		} else {
-			ms = gameLocal.time - matchStartedTime;
+			ms = gameLocal.time - matchStartedTime; //Time played
 		}
 		if ( ms < 0 ) {
 			ms = 0;
@@ -2148,7 +2148,7 @@ bool idMultiplayerGame::Draw( int clientNum ) {
 		}
 	}
 
-	gameLocal.UpdateLevelOfDetail(viewPlayer); //for SP
+	gameLocal.UpdateLevelOfDetail(viewPlayer); //for MP
 
 	UpdatePlayerRanks();
 	UpdateHud( viewPlayer, player->hud );

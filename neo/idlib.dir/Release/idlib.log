@@ -1,26 +1,40 @@
-﻿Compilación iniciada a las 19/07/2019 7:53:19.
+﻿Compilación iniciada a las 11/08/2019 3:05:36.
      1>Proyecto "D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\idlib.vcxproj" en el nodo 2 (build destinos).
      1>InitializeBuildStatus:
          Se creará "idlib.dir\Release\idlib.unsuccessfulbuild" porque se especificó "AlwaysCreate".
        CustomBuild:
          Todas las salidas están actualizadas.
        ClCompile:
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl" /ID:\Maxi\Hobbies\HASTE\SourceCode\repository\neo /W4 /WX- /Ox /Oy /D WIN32 /D _WINDOWS /D _ALLOW_KEYWORD_MACROS /D WINVER=0x0501 /D _WIN32_WINNT=0x0501 /D "CMAKE_INTDIR=\"Release\"" /D _MBCS /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"idlib.dir\Release\\" /Fd"idlib.dir\Release\vc100.pdb" /Gd /TP /wd4100 /wd4127 /wd4244 /wd4245 /wd4267 /wd4714 /wd4996 /wd4068 /analyze- /errorReport:prompt idlib\LangDict.cpp
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl" /ID:\Maxi\Hobbies\HASTE\SourceCode\repository\neo /W4 /WX- /Ox /Oy /D WIN32 /D _WINDOWS /D _ALLOW_KEYWORD_MACROS /D WINVER=0x0501 /D _WIN32_WINNT=0x0501 /D "CMAKE_INTDIR=\"Release\"" /D _MBCS /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"idlib.dir\Release\\" /Fd"idlib.dir\Release\vc100.pdb" /Gd /TP /wd4100 /wd4127 /wd4244 /wd4245 /wd4267 /wd4714 /wd4996 /wd4068 /analyze- /errorReport:prompt idlib\math\Simd.cpp idlib\math\Simd_Generic.cpp idlib\math\Simd_SSE.cpp
          Compilador de optimización de C/C++ de 32 bits de Microsoft (R) versión 16.00.40219.01 para 80x86
          (C) Microsoft Corporation. Reservados todos los derechos.
          
-         cl /c /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl" /ID:\Maxi\Hobbies\HASTE\SourceCode\repository\neo /W4 /WX- /Ox /Oy /D WIN32 /D _WINDOWS /D _ALLOW_KEYWORD_MACROS /D WINVER=0x0501 /D _WIN32_WINNT=0x0501 /D "CMAKE_INTDIR=\"Release\"" /D _MBCS /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"idlib.dir\Release\\" /Fd"idlib.dir\Release\vc100.pdb" /Gd /TP /wd4100 /wd4127 /wd4244 /wd4245 /wd4267 /wd4714 /wd4996 /wd4068 /analyze- /errorReport:prompt idlib\LangDict.cpp
+         cl /c /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\ogg" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\vorbis" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\AL" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\SDL2" /I"D:\Maxi\Hobbies\HASTE\SourceCode\dhewm3-libs\i686-w64-mingw32\include\curl" /ID:\Maxi\Hobbies\HASTE\SourceCode\repository\neo /W4 /WX- /Ox /Oy /D WIN32 /D _WINDOWS /D _ALLOW_KEYWORD_MACROS /D WINVER=0x0501 /D _WIN32_WINNT=0x0501 /D "CMAKE_INTDIR=\"Release\"" /D _MBCS /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"idlib.dir\Release\\" /Fd"idlib.dir\Release\vc100.pdb" /Gd /TP /wd4100 /wd4127 /wd4244 /wd4245 /wd4267 /wd4714 /wd4996 /wd4068 /analyze- /errorReport:prompt idlib\math\Simd.cpp idlib\math\Simd_Generic.cpp idlib\math\Simd_SSE.cpp
          
-         LangDict.cpp
+         Simd.cpp
      1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
                  argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_Generic.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Simd_SSE.cpp
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\yvals.h(12): warning C4005: '_ALLOW_KEYWORD_MACROS' : redefinición de macro
+                 argumentos de la línea de comandos :  vea la definición anterior de '_ALLOW_KEYWORD_MACROS'
+         Generando código...
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3467): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3478): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3489): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3500): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3511): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3522): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3533): warning C4740: flow in o flow out del código inline asm suprime la optimización global
+     1>d:\maxi\hobbies\haste\sourcecode\repository\neo\idlib\math\simd_sse.cpp(3544): warning C4740: flow in o flow out del código inline asm suprime la optimización global
        Lib:
          c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\Release\idlib.lib" /NOLOGO idlib.dir\Release\Bounds.obj
          idlib.dir\Release\Frustum.obj
          idlib.dir\Release\Sphere.obj
          idlib.dir\Release\Box.obj
          idlib.dir\Release\DrawVert.obj
-         idlib.dir\Release\RenderMatrix.obj
          idlib.dir\Release\Winding2D.obj
          idlib.dir\Release\Surface_SweptSpline.obj
          idlib.dir\Release\Winding.obj
@@ -72,4 +86,4 @@
 
 Compilación correcta.
 
-Tiempo transcurrido 00:00:05.14
+Tiempo transcurrido 00:00:32.90

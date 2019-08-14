@@ -337,8 +337,9 @@ typedef enum {
 	SURF_NOSTEPS				= BIT(9),	// no footstep sounds
 	SURF_DISCRETE				= BIT(10),	// not clipped or merged by utilities
 	SURF_NOFRAGMENT				= BIT(11),	// dmap won't cut surface at each bsp boundary
-	SURF_NULLNORMAL				= BIT(12)	// renderbump will draw this surface as 0x80 0x80 0x80, which
+	SURF_NULLNORMAL				= BIT(12),	// renderbump will draw this surface as 0x80 0x80 0x80, which
 											// won't collect light from any angle
+	SURF_NOFATAL				= BIT(13)	// NEW by stradex: Produces fall damage but not fatal damage to player
 } surfaceFlags_t;
 
 class idSoundEmitter;
