@@ -4810,5 +4810,19 @@ void idGameLocal::CheckDrawChanges( void ) {
 		}
 	}
 
+	if (g_modelsQuality.IsModified()) {
+		g_modelsQuality.ClearModified();
+
+		common->Printf("g_modelsQuality changed\n");
+
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			if (!ent->IsType( idAI::Type )) { //for idAI only now...
+				continue;
+			}
+
+			ent->CheckModelChange(false, g_modelsQuality.GetInteger());
+		}
+	}
+
 	CheckSingleLightChange(); //simple light
 }

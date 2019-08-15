@@ -195,7 +195,7 @@ public:
 	virtual renderEntity_t *GetRenderEntity( void );
 	virtual int				GetModelDefHandle( void );
 	virtual void			SetModel( const char *modelname );
-	virtual void			CheckModelChange( bool useSprite ); //added by Stradex
+	virtual bool			CheckModelChange( bool useSprite , int quality=2); //added by Stradex. Quality: 2 = normal, 1 = low, 0 = ultra low
 	void					SetSkin( const idDeclSkin *skin );
 	const idDeclSkin *		GetSkin( void ) const;
 	void					SetShaderParm( int parmnum, float value );

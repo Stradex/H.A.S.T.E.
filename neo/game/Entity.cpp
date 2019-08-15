@@ -569,7 +569,9 @@ void idEntity::Spawn( void ) {
 	if (spriteTemp && *spriteTemp) { //added by Stradex
 		SetModel( spriteTemp );
 	} else  if ( temp && *temp ) {
-		SetModel( temp );
+		if (!CheckModelChange(0, g_modelsQuality.GetInteger())) {
+			SetModel( temp );
+		}
 	}
 
 	if ( spawnArgs.GetString( "bind", "", &temp ) ) {
@@ -1114,13 +1116,25 @@ idEntity::CheckModelChange
 ADDED by stradex for items sprite (but in future for Level of detail per distance)
 ================
 */
-void idEntity::CheckModelChange(bool useSprite) {
+bool idEntity::CheckModelChange(bool useSprite, int quality) {
 
 	const char* tmp;
 	if (useSprite) {
 		tmp = spawnArgs.GetString( "spritemodel" );
 	} else {
-		tmp = spawnArgs.GetString( "model" );
+		switch (quality) {
+			case 0:
+				tmp = spawnArgs.GetString( "ultralow_model" );
+			break;
+			case 1:
+				tmp = spawnArgs.GetString( "low_model" );
+			break;
+			case 2:
+			default: 
+				tmp = spawnArgs.GetString( "model" );
+			break;
+
+		}
 	}
 
 	if ( tmp && *tmp ) {
@@ -1129,7 +1143,9 @@ void idEntity::CheckModelChange(bool useSprite) {
 			FreeModelDef();
 			UpdateVisuals();
 		}
+		return true;
 	}
+	return false;
 }
 
 /*
