@@ -4717,6 +4717,7 @@ void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 	float		a, b, c, den;
 	waterLevel_t waterLevel;
 	bool		noDamage;
+	bool		noFatalDamage=false; //new by Stradex
 
 	AI_SOFTLANDING = false;
 	AI_HARDLANDING = false;
@@ -4747,6 +4748,9 @@ void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE ) {
 			noDamage = true;
 			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
+			break;
+		} else if (contact.material->GetSurfaceFlags() & SURF_NOFATAL ) {
+			noFatalDamage = true;
 			break;
 		}
 	}
@@ -4793,6 +4797,10 @@ void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 		hardDelta	= 75.0f; //edit by stradex
 	}
 
+	if (noFatalDamage && delta > fatalDelta) { //Added by stradex for new non_fatal surface
+		delta = hardDelta + 0.1f;
+	}
+
 	if ( delta > fatalDelta ) {
 		AI_HARDLANDING = true;
 		landChange = -32;
@@ -4808,6 +4816,7 @@ void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 		if ( !noDamage ) {
 			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
 			Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_hardfall", 1.0f, 0 );
+			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
 		}
 	} else if ( delta > 30 ) {
 		AI_HARDLANDING = true;
@@ -4816,6 +4825,7 @@ void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 		if ( !noDamage ) {
 			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
 			Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", 1.0f, 0 );
+			StartSound( "snd_land_soft", SND_CHANNEL_ANY, 0, false, NULL );
 		}
 	} else if ( delta > 7 ) {
 		AI_SOFTLANDING = true;

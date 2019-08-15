@@ -3283,3 +3283,46 @@ idActor::Event_GetHead
 void idActor::Event_GetHead( void ) {
 	idThread::ReturnEntity( head.GetEntity() );
 }
+
+
+/*
+================
+idEntity::CheckModelChange
+ADDED by stradex for items sprite (but in future for Level of detail per distance)
+================
+*/
+bool idActor::CheckModelChange(bool useSprite, int quality) {
+
+	const char* tmp;
+	if (useSprite) {
+		tmp = spawnArgs.GetString( "spritemodel" );
+	} else {
+		switch (quality) {
+			case 0:
+				tmp = spawnArgs.GetString( "ultralow_model" );
+			break;
+			case 1:
+				tmp = spawnArgs.GetString( "low_model" );
+			break;
+			case 2:
+			default: 
+				tmp = spawnArgs.GetString( "model" );
+			break;
+
+		}
+	}
+
+	if ( tmp && *tmp ) {
+		int tmpCurrentTorsoAnim = animator.CurrentAnim( ANIMCHANNEL_TORSO )->AnimNum(); //added by Stradex
+		int tmpCurrentLegsAnim = animator.CurrentAnim( ANIMCHANNEL_LEGS )->AnimNum(); //added by Stradex
+		SetModel( tmp );
+		animator.CycleAnim(ANIMCHANNEL_TORSO, tmpCurrentTorsoAnim, gameLocal.time, 0);
+		animator.CycleAnim(ANIMCHANNEL_LEGS, tmpCurrentLegsAnim, gameLocal.time, 2);
+		if (IsHidden()) {
+			FreeModelDef();
+			UpdateVisuals();
+		}
+		return true;
+	}
+	return false;
+}

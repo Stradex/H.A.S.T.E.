@@ -81,7 +81,7 @@ idCVar si_serverURL(				"si_serverURL",				"",				CVAR_GAME | CVAR_SERVERINFO | 
 //Added by Stradex
 idCVar si_alwaysPickup(				"si_alwaysPickup",			"0",			CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_BOOL, "allow clients to pickup weapons even when they're full of ammo" );
 idCVar g_skipItemsModel(			"g_skipItemsModel",			"0",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE | CVAR_NOCHEAT, "Disable models for items and use 2D sprites instead." );
-idCVar g_modelsQuality(             "g_modelsQuality",          "2",            CVAR_GAME | CVAR_INTEGER | CVAR_NOCHEAT, "Quality of the models (from 0 to 2)", 0, 2 );
+idCVar g_modelsQuality(             "g_modelsQuality",          "2",            CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE | CVAR_NOCHEAT, "Quality of the models (from 0 to 2)", 0, 2 );
 
 
 //added for ctf

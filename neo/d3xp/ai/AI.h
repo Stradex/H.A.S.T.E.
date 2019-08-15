@@ -417,6 +417,9 @@ protected:
 	idVec3					lastReachableEnemyPos;
 	bool					wakeOnFlashlight;
 
+	//added by Stradex
+	bool					alwaysTryToReachEnemy; //to improve performance with multiple enemies
+
 	//COOP START
 	int						lastDamageDef;
 	idVec3					lastDamageDir;

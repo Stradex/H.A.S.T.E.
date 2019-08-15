@@ -53,6 +53,8 @@ extern idCVar	g_bloodEffects;
 extern idCVar	g_projectileLights;
 extern idCVar	g_doubleVision;
 extern idCVar	g_muzzleFlash;
+extern idCVar	g_skipItemsModel; //added by Stradex for fake sprite for items
+extern idCVar	g_modelsQuality;
 
 extern idCVar	g_disasm;
 extern idCVar	g_debugBounds;

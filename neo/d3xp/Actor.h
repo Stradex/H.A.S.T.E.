@@ -151,6 +151,8 @@ public:
 	void					SetState( const function_t *newState );
 	void					SetState( const char *statename );
 
+	virtual bool			CheckModelChange( bool useSprite , int quality=2); //added by Stradex. Quality: 2 = normal, 1 = low, 0 = ultra low
+
 							// vision testing
 	void					SetEyeHeight( float height );
 	float					EyeHeight( void ) const;

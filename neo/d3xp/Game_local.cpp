@@ -2720,23 +2720,33 @@ void idGameLocal::UpdateLevelOfDetail ( idPlayer* currentPlayer ) //MAKE THIS TO
 {
 	idEntity* ent;
 	idLight* lightEnt;
-
+	
 	if (r_useLevelOfDetail.IsModified()) {
 		r_useLevelOfDetail.ClearModified();
 		if (!r_useLevelOfDetail.GetBool()) {
 			for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
-
+				
 				if (ent->neverFakeHide) {
 					continue; //IGNORE these kind of entities
 				}
 
 				if (ent->IsType(idLight::Type)) {
 					lightEnt = static_cast<idLight*>(ent);
-					if (!lightEnt || lightEnt->isGiantSimpleLight) {
+					if (!lightEnt) {
+						continue;
+					}
+					if (lightEnt->isGiantSimpleLight) {
+						if  (r_simpleLight.GetBool()) {
+							lightEnt->Show();
+							lightEnt->On();
+						} else {
+							lightEnt->Hide();
+							lightEnt->Off();
+						}
 						continue;
 					}
 				}
-
+				
 				ent->FakeShow();
 			}
 			common->Printf("Reseting light values...\n");
@@ -2808,7 +2818,7 @@ makes rendering and sound system calls
 */
 bool idGameLocal::Draw( int clientNum) {
 
-	CheckSingleLightChange();
+	CheckDrawChanges();
 
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
@@ -5190,3 +5200,37 @@ void idGameLocal::SetScriptFPS( const float tCom_gameHz )
 		common->Printf("Unable to find GAME_FRAMETIME def\n");
 	}
 }
+
+void idGameLocal::CheckDrawChanges( void ) {
+	idEntity *	ent;
+
+	if (g_skipItemsModel.IsModified()) {
+		g_skipItemsModel.ClearModified();
+
+		common->Printf("g_skipItemsModel changed\n");
+
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			if (!ent->IsType( idItem::Type )) {
+				continue;
+			}
+
+			ent->CheckModelChange(g_skipItemsModel.GetBool());
+		}
+	}
+
+	if (g_modelsQuality.IsModified()) {
+		g_modelsQuality.ClearModified();
+
+		common->Printf("g_modelsQuality changed\n");
+
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			if (!ent->IsType( idAI::Type )) { //for idAI only now...
+				continue;
+			}
+
+			ent->CheckModelChange(false, g_modelsQuality.GetInteger());
+		}
+	}
+
+	CheckSingleLightChange(); //simple light
+} 

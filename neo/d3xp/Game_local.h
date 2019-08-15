@@ -516,6 +516,7 @@ public:
 
 	//added by Stradex
 	virtual void			CheckSingleLightChange( void );
+	virtual void			CheckDrawChanges( void );
 	void					UpdateLevelOfDetail ( idPlayer* currentPlayer );
 
 	//COOP START
