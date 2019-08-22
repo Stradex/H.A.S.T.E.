@@ -613,6 +613,251 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 /*
 =================
+idProjectile::Hitscan
+=================
+
+TO FIX: Clients can't see smoke, light colors or any impact effect at all, just the decal impact.
+*/
+
+bool idProjectile::Hitscan( const trace_t &collision, idEntity *ignore , const idVec3 &velocity, bool addDamageEffect , float dmgPower)
+{
+	idEntity	*ent;
+	idPlayer	*pOwner;
+	const char	*damageDefName;
+	idVec3		dir;
+	float		push;
+	float		damageScale;
+
+	if ( state == EXPLODED || state == FIZZLED ) {
+		return true;
+	}
+
+	// predict the explosion
+	if ( gameLocal.isClient ) {
+		if ( ClientPredictionCollide( owner.GetEntity(), spawnArgs, collision, velocity, (!spawnArgs.GetBool( "net_instanthit" ) && !spawnArgs.GetBool( "hitscan" )) ) ) {
+			Explode( collision, NULL );
+			return true;
+		}
+		return false;
+	}
+
+	// remove projectile when a 'noimpact' surface is hit
+	if ( ( collision.c.material != NULL ) && ( collision.c.material->GetSurfaceFlags() & SURF_NOIMPACT ) ) {
+		common->DPrintf( "Projectile collision no impact\n" );
+		return true;
+	}
+
+	// get the entity the projectile collided with
+	ent = gameLocal.entities[ collision.c.entityNum ];
+
+	pOwner = static_cast<idPlayer *>(owner.GetEntity());
+
+	if (pOwner && ent->entityNumber == pOwner->entityNumber ) {
+		assert( 0 );
+		return true;
+	}
+
+	// just get rid of the projectile when it hits a player in noclip
+	if ( ent->IsType( idPlayer::Type ) && static_cast<idPlayer *>( ent )->noclip ) {
+		PostEventMS( &EV_Remove, 0 );
+		return true;
+	}
+
+	// direction of projectile
+	dir = velocity; //this is zero = NO PUSH BUG
+	dir.Normalize();
+
+	// projectiles can apply an additional impulse next to the rigid body physics impulse
+	if ( spawnArgs.GetFloat( "push", "0", push ) && push > 0.0f ) {
+		ent->ApplyImpulse( this, collision.c.id, collision.c.point, push * dir ); //Stradex: let's try with NULL since the projectile is never created
+	}
+
+	// MP: projectiles open doors
+	if ( gameLocal.isMultiplayer && ent->IsType( idDoor::Type ) && !static_cast< idDoor * >(ent)->IsOpen() && !ent->spawnArgs.GetBool( "no_touch" ) ) {
+		ent->ProcessEvent( &EV_Activate , pOwner ); //pOwner or NULL?
+	}
+
+	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) ) {
+		if ( !spawnArgs.GetBool( "detonate_on_actor" )  ) {
+			return false;
+		}
+	} else {
+		if ( !spawnArgs.GetBool( "detonate_on_world" )  ) {
+
+			if ( !StartSound( "snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL ) ) {
+				float len = velocity.Length();
+				if ( len > BOUNCE_SOUND_MIN_VELOCITY ) {
+					SetSoundVolume( len > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( len - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) ) );
+					StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, true, NULL );
+				}
+			}
+
+			return false;
+		}
+	}
+
+	damageDefName = spawnArgs.GetString( "def_damage" );
+
+	ignore = NULL;
+
+	// if the hit entity takes damage
+	if ( ent->fl.takedamage ) {
+		if ( dmgPower ) {
+			damageScale = dmgPower;
+		} else {
+			damageScale = 1.0f;
+		}
+
+		// if the projectile owner is a player
+		if ( pOwner && pOwner->IsType( idPlayer::Type ) ) { // straex: && pOwner->IsType( idPlayer::Type ) ?? pOwner is already idPlayer...
+			// if the projectile hit an actor
+			if ( ent->IsType( idActor::Type ) ) {
+				idPlayer *player = static_cast<idPlayer *>( pOwner ); //static_cast?...
+				player->AddProjectileHits( 1 );
+				damageScale *= player->PowerUpModifier( PROJECTILE_DAMAGE );
+			}
+		}
+
+		if ( damageDefName[0] != '\0' ) {
+			ent->Damage( this, pOwner, dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ) );
+			ignore = ent;
+		}
+	}
+
+	// if the projectile causes a damage effect
+	if ( spawnArgs.GetBool( "impact_damage_effect" ) ) {
+		// if the hit entity has a special damage effect
+		if ( ent->spawnArgs.GetBool( "bleed" ) ) {
+			ent->AddDamageEffect( collision, velocity, damageDefName );
+		} else {
+			AddDefaultDamageEffect( collision, velocity );
+		}
+	}
+
+	Explode(collision, ignore);
+
+	return true;
+}
+
+/*
+=================
+idProjectile::CreateHitscan
+=================
+
+
+bool idProjectile::CreateHitscan( idEntity *weaponEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity, bool addDamageEffect , float dmgPower)
+{
+	idEntity	*ent;
+	idPlayer	*pOwner;
+	idEntity	*ignore;
+	const char	*damageDefName;
+	idVec3		dir;
+	float		push;
+	float		damageScale;
+
+	// predict the explosion
+	if ( gameLocal.isClient ) {
+		if ( ClientPredictionCollide( weaponEnt, projectileDef, collision, velocity, (!projectileDef.GetBool( "net_instanthit" ) && !projectileDef.GetBool( "hitscan" )) ) ) {
+			//Explode( collision, NULL );
+			HitscanExplode(static_cast<idEntity*>(static_cast<idWeapon *>(weaponEnt)->GetOwner()), projectileDef, collision, NULL, dmgPower );
+			return true;
+		}
+		return false;
+	}
+
+	// remove projectile when a 'noimpact' surface is hit
+	if ( ( collision.c.material != NULL ) && ( collision.c.material->GetSurfaceFlags() & SURF_NOIMPACT ) ) {
+		common->DPrintf( "Projectile collision no impact\n" );
+		return true;
+	}
+
+	// get the entity the projectile collided with
+	ent = gameLocal.entities[ collision.c.entityNum ];
+
+	pOwner = static_cast<idWeapon *>(weaponEnt)->GetOwner();
+
+	if (pOwner && ent->entityNumber == pOwner->entityNumber ) {
+		assert( 0 );
+		return true;
+	}
+
+	// just get rid of the projectile when it hits a player in noclip
+	if ( ent->IsType( idPlayer::Type ) && static_cast<idPlayer *>( ent )->noclip ) {
+		return true;
+	}
+
+	// direction of projectile
+	dir = velocity;
+	dir.Normalize();
+
+	// projectiles can apply an additional impulse next to the rigid body physics impulse
+	if ( projectileDef.GetFloat( "push", "0", push ) && push > 0.0f ) {
+		ent->ApplyImpulse( NULL, collision.c.id, collision.c.point, push * dir ); //Stradex: let's try with NULL since the projectile is never created
+	}
+
+	// MP: projectiles open doors
+	if ( gameLocal.isMultiplayer && ent->IsType( idDoor::Type ) && !static_cast< idDoor * >(ent)->IsOpen() && !ent->spawnArgs.GetBool( "no_touch" ) ) {
+		ent->ProcessEvent( &EV_Activate , pOwner ); //pOwner or NULL?
+	}
+
+	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) ) {
+		if ( !projectileDef.GetBool( "detonate_on_actor" )  ) {
+			return false;
+		}
+	} else {
+		if ( !projectileDef.GetBool( "detonate_on_world" )  ) {
+
+			return false;
+		}
+	}
+
+	damageDefName = projectileDef.GetString( "def_damage" );
+
+	ignore = NULL;
+
+	// if the hit entity takes damage
+	if ( ent->fl.takedamage ) {
+		if ( dmgPower ) {
+			damageScale = dmgPower;
+		} else {
+			damageScale = 1.0f;
+		}
+
+		// if the projectile owner is a player
+		if ( pOwner && pOwner->IsType( idPlayer::Type ) ) { // straex: && pOwner->IsType( idPlayer::Type ) ?? pOwner is already idPlayer...
+			// if the projectile hit an actor
+			if ( ent->IsType( idActor::Type ) ) {
+				idPlayer *player = static_cast<idPlayer *>( pOwner ); //static_cast?...
+				player->AddProjectileHits( 1 );
+				damageScale *= player->PowerUpModifier( PROJECTILE_DAMAGE );
+			}
+		}
+
+		if ( damageDefName[0] != '\0' ) {
+			ent->Damage( NULL, pOwner, dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ) );
+			ignore = ent;
+		}
+	}
+
+	// if the projectile causes a damage effect
+	if ( projectileDef.GetBool( "impact_damage_effect" ) ) {
+		// if the hit entity has a special damage effect
+		if ( ent->spawnArgs.GetBool( "bleed" ) ) {
+			ent->AddDamageEffect( collision, velocity, damageDefName );
+		} else {
+			DefaultDamageEffect( weaponEnt, projectileDef, collision, velocity );
+			//AddDefaultDamageEffect( collision, velocity );
+		}
+	}
+
+	HitscanExplode(static_cast<idEntity*>(static_cast<idWeapon *>(weaponEnt)->GetOwner()), projectileDef, collision, ignore, dmgPower );
+
+	return true;
+}
+*/
+
+/*
+=================
 idProjectile::DefaultDamageEffect
 =================
 */
@@ -762,6 +1007,19 @@ void idProjectile::Event_RadiusDamage( idEntity *ignore ) {
 		gameLocal.RadiusDamage( physicsObj.GetOrigin(), this, owner.GetEntity(), ignore, this, splash_damage, damagePower );
 	}
 }
+
+/*
+================
+idProjectile::RadiusDamage
+================
+
+void idProjectile::RadiusDamage(  idEntity *ownerEnt, const idDict &projectileDef, idEntity *ignore, const idVec3 &explodePos, float dmgPower  ) {
+	const char *splash_damage = projectileDef.GetString( "def_splash_damage" );
+	if ( splash_damage[0] != '\0' ) {
+		gameLocal.RadiusDamage( explodePos, NULL, ownerEnt, ignore, NULL, splash_damage, dmgPower );
+	}
+}
+*/
 
 /*
 ================
@@ -976,6 +1234,86 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	CancelEvents( &EV_Explode );
 	PostEventMS( &EV_Remove, removeTime );
 }
+
+/*
+================
+idProjectile::HitscanExplode 
+added by Stradex
+================
+
+
+void idProjectile::HitscanExplode(idEntity *ownerEnt, const idDict &projectileDef, const trace_t &collision, idEntity *ignore, float dmgPower ) {
+	const char *fxname, *light_shader, *sndExplode;
+	float		light_fadetime;
+	idVec3		normal;
+	int			removeTime;
+
+	// alert the ai
+	gameLocal.AlertAI( ownerEnt );
+	
+	// splash damage
+	//if ( !projectileFlags.noSplashDamage ) {
+		float delay = projectileDef.GetFloat( "delay_splash" );
+		if ( delay ) {
+			if ( removeTime < delay * 1000 ) {
+				removeTime = ( delay + 0.10 ) * 1000;
+			}
+			//PostEventSec( &EV_RadiusDamage, delay, ignore );
+			RadiusDamage( ownerEnt, projectileDef, ignore, collision.c.point, dmgPower); //Change for StaticPostEvenSec
+		} else {
+			RadiusDamage( ownerEnt, projectileDef, ignore, collision.c.point, dmgPower);
+		}
+	//}
+
+	// spawn debris entities
+	int fxdebris = projectileDef.GetInt( "debris_count" );
+	if ( fxdebris ) {
+		const idDict *debris = gameLocal.FindEntityDefDict( "projectile_debris", false );
+		if ( debris ) {
+			int amount = gameLocal.random.RandomInt( fxdebris );
+			for ( int i = 0; i < amount; i++ ) {
+				idEntity *ent;
+				idVec3 dir;
+				dir.x = gameLocal.random.CRandomFloat() * 4.0f;
+				dir.y = gameLocal.random.CRandomFloat() * 4.0f;
+				dir.z = gameLocal.random.RandomFloat() * 8.0f;
+				dir.Normalize();
+
+				gameLocal.SpawnEntityDef( *debris, &ent, false );
+				if ( !ent || !ent->IsType( idDebris::Type ) ) {
+					gameLocal.Error( "'projectile_debris' is not an idDebris" );
+				}
+
+				idDebris *debris = static_cast<idDebris *>(ent);
+				debris->Create( ownerEnt, collision.c.point, dir.ToMat3() );
+				debris->Launch();
+			}
+		}
+		debris = gameLocal.FindEntityDefDict( "projectile_shrapnel", false );
+		if ( debris ) {
+			int amount = gameLocal.random.RandomInt( fxdebris );
+			for ( int i = 0; i < amount; i++ ) {
+				idEntity *ent;
+				idVec3 dir;
+				dir.x = gameLocal.random.CRandomFloat() * 8.0f;
+				dir.y = gameLocal.random.CRandomFloat() * 8.0f;
+				dir.z = gameLocal.random.RandomFloat() * 8.0f + 8.0f;
+				dir.Normalize();
+
+				gameLocal.SpawnEntityDef( *debris, &ent, false );
+				if ( !ent || !ent->IsType( idDebris::Type ) ) {
+					gameLocal.Error( "'projectile_shrapnel' is not an idDebris" );
+				}
+
+				idDebris *debris = static_cast<idDebris *>(ent);
+				debris->Create( ownerEnt, collision.c.point, dir.ToMat3() );
+				debris->Launch();
+			}
+		}
+	}
+}
+
+*/
 
 /*
 ================

@@ -3066,7 +3066,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	if ( gameLocal.isClient ) {
 
 		// predict instant hit projectiles
-		if ( projectileDict.GetBool( "net_instanthit" ) ) {
+		if ( projectileDict.GetBool( "net_instanthit" ) || projectileDict.GetBool( "hitscan" ) ) {
 			float spreadRad = DEG2RAD( spread );
 			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
 			for( i = 0; i < num_projectiles; i++ ) {
@@ -3083,10 +3083,13 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 
 	} else {
 
-		ownerBounds = owner->GetPhysics()->GetAbsBounds();
-
 		owner->AddProjectilesFired( num_projectiles );
 
+		if (projectileDict.GetBool( "hitscan" )) {
+			this->LaunchHitscan(num_projectiles, spread,  fuseOffset,launchPower, dmgPower, projectileDict);
+		} else {
+
+		ownerBounds = owner->GetPhysics()->GetAbsBounds();
 		float spreadRad = DEG2RAD( spread );
 		for( i = 0; i < num_projectiles; i++ ) {
 			ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
@@ -3108,7 +3111,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
 			}
 
-			if ( projectileDict.GetBool( "net_instanthit" ) ) {
+			if ( projectileDict.GetBool( "net_instanthit" ) || projectileDict.GetBool( "hitscan" ) ) {
 				// don't synchronize this on top of the already predicted effect
 				ent->fl.networkSync = false;
 			}
@@ -3137,6 +3140,8 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			}
 
 			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower );
+		}
+
 		}
 
 		// toss the brass
@@ -3249,7 +3254,7 @@ void idWeapon::Event_LaunchAltProjectiles( int num_projectiles, float spread, fl
 	if ( gameLocal.isClient ) {
 
 		// predict instant hit projectiles
-		if ( altProjectileDict.GetBool( "net_instanthit" ) ) {
+		if ( altProjectileDict.GetBool( "net_instanthit" ) || altProjectileDict.GetBool( "hitscan" ) ) {
 			float spreadRad = DEG2RAD( spread );
 			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
 			for( i = 0; i < num_projectiles; i++ ) {
@@ -3266,10 +3271,14 @@ void idWeapon::Event_LaunchAltProjectiles( int num_projectiles, float spread, fl
 
 	} else {
 
-		ownerBounds = owner->GetPhysics()->GetAbsBounds();
-
 		owner->AddProjectilesFired( num_projectiles );
 
+
+		if (altProjectileDict.GetBool( "hitscan" )) {
+			this->LaunchHitscan(num_projectiles, spread,  fuseOffset,launchPower, dmgPower, altProjectileDict);
+		} else {
+
+		ownerBounds = owner->GetPhysics()->GetAbsBounds();
 		float spreadRad = DEG2RAD( spread );
 		for( i = 0; i < num_projectiles; i++ ) {
 			ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
@@ -3291,7 +3300,7 @@ void idWeapon::Event_LaunchAltProjectiles( int num_projectiles, float spread, fl
 				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
 			}
 
-			if ( altProjectileDict.GetBool( "net_instanthit" ) ) {
+			if ( altProjectileDict.GetBool( "net_instanthit" ) || altProjectileDict.GetBool( "hitscan" ) ) {
 				// don't synchronize this on top of the already predicted effect
 				ent->fl.networkSync = false;
 			}
@@ -3320,6 +3329,8 @@ void idWeapon::Event_LaunchAltProjectiles( int num_projectiles, float spread, fl
 			}
 
 			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower );
+		}
+
 		}
 
 		// toss the brass
@@ -3546,4 +3557,91 @@ idWeapon::ClientPredictionThink
 */
 void idWeapon::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame ) {
 	UpdateAnimation();
+}
+
+//added by Stradex
+
+void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower, const idDict &projectileDef) {
+	idProjectile	*proj;
+	idEntity		*ent;
+	idVec3			dir;
+	float			ang;
+	float			spin;
+	trace_t			tr;
+	idVec3			muzzle_pos;
+	int i;
+	idBounds		projBounds, ownerBounds, hitscanBounds;
+	float			distance;
+	idVec3			start;
+
+	hitscanBounds.Zero();
+	hitscanBounds.ExpandSelf( projectileDef.GetFloat( "hitscan_size", "0" ) );
+
+	ownerBounds = owner->GetPhysics()->GetAbsBounds();
+
+	float spreadRad = DEG2RAD( spread );
+	muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
+	for( i = 0; i < num_projectiles; i++ ) {
+		ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
+		spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
+		dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
+		dir.Normalize();
+
+		if ( projectileEnt ) {
+			ent = projectileEnt;
+			ent->Show();
+			ent->Unbind();
+			projectileEnt = NULL;
+		} else {
+			gameLocal.SpawnEntityDef( projectileDef, &ent, false );
+		}
+
+		if ( !ent || !ent->IsType( idProjectile::Type ) ) {
+			const char *projectileName = weaponDef->dict.GetString( "def_altprojectile" );
+			gameLocal.Error( "'%s' is not an idProjectile", projectileName );
+		}
+
+		if ( projectileDef.GetBool( "net_instanthit" ) || projectileDef.GetBool( "hitscan" ) ) {
+			// don't synchronize this on top of the already predicted effect
+			ent->fl.networkSync = false;
+		}
+
+		proj = static_cast<idProjectile *>(ent);
+		proj->Create( owner, muzzleOrigin, dir );
+
+		projBounds = proj->GetPhysics()->GetBounds().Rotate( proj->GetPhysics()->GetAxis() );
+
+		// make sure the projectile starts inside the bounding box of the owner
+		if ( i == 0 ) {
+			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
+			// DG: sometimes the assertion in idBounds::operator-(const idBounds&) triggers
+			//     (would get bounding box with negative volume)
+			//     => check that before doing ownerBounds - projBounds (equivalent to the check in the assertion)
+			idVec3 obDiff = ownerBounds[1] - ownerBounds[0];
+			idVec3 pbDiff = projBounds[1] - projBounds[0];
+			bool boundsSubLegal =  obDiff.x > pbDiff.x && obDiff.y > pbDiff.y && obDiff.z > pbDiff.z;
+			if ( boundsSubLegal && ( ownerBounds - projBounds ).RayIntersection( muzzle_pos, playerViewAxis[0], distance ) ) {
+				start = muzzle_pos + distance * playerViewAxis[0];
+			} else {
+				start = ownerBounds.GetCenter();
+			}
+			gameLocal.clip.Translation( tr, start, muzzle_pos, proj->GetPhysics()->GetClipModel(), proj->GetPhysics()->GetClipModel()->GetAxis(), MASK_SHOT_RENDERMODEL, owner );
+			muzzle_pos = tr.endpos;
+		}
+		if (projectileDef.GetFloat("hitscan_size", "0") > 0.0f) {
+			gameLocal.clip.TraceBounds(tr, muzzle_pos, muzzle_pos + dir * 1600.0f, hitscanBounds, MASK_SHOT_RENDERMODEL, owner); //stradex: range limit 1600 for hitscan projectiles 
+		} else {
+			gameLocal.clip.TracePoint(tr, muzzle_pos, muzzle_pos + dir * 4096.0f,  MASK_SHOT_RENDERMODEL, owner);
+		}
+
+		if ( tr.fraction < 1.0f ) {
+			proj->SetOrigin(tr.c.point);
+			float projAbsVelocity = projectileDef.GetVector("velocity", "0 0 0").Length();
+			proj->Hitscan(tr, NULL, dir*projAbsVelocity, true, dmgPower);
+		} else {
+			proj->Explode(tr, NULL);
+		}
+	}
+	
+	return;
 }

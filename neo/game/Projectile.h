@@ -65,6 +65,7 @@ public :
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 	virtual void			Explode( const trace_t &collision, idEntity *ignore );
+	virtual bool			Hitscan( const trace_t &collision, idEntity *ignore , const idVec3 &velocity, bool addDamageEffect , float dmgPower); //addded by Stradex
 	void					Fizzle( void );
 
 	static idVec3			GetVelocity( const idDict *projectile );
@@ -77,6 +78,9 @@ public :
 
 	static void				DefaultDamageEffect( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity );
 	static bool				ClientPredictionCollide( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity, bool addDamageEffect );
+	//static bool				CreateHitscan( idEntity *weaponEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity, bool addDamageEffect , float dmgPower); //added by Stradex
+	//static void				HitscanExplode( idEntity *ownerEnt, const idDict &projectileDef, const trace_t &collision, idEntity *ignore, float dmgPower);
+	//static void				RadiusDamage( idEntity *ownerEnt, const idDict &projectileDef, idEntity *ignore, const idVec3 &explodePos, float dmgPower  );
 	virtual void			ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int callsPerFrame );
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
