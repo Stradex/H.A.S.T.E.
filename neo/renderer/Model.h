@@ -312,6 +312,9 @@ public:
 	// Writing to and reading from a demo file.
 	virtual void				ReadFromDemoFile( class idDemoFile *f ) = 0;
 	virtual void				WriteToDemoFile( class idDemoFile *f ) = 0;
+
+	//added by Stradex UGLY UGLY UGLY
+	virtual void				setEndX(const float tEndX) = 0; //added by Stradex
 };
 
 #endif /* !__MODEL_H__ */

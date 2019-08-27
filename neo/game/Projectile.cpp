@@ -616,7 +616,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 idProjectile::Hitscan
 =================
 
-TO FIX: Clients can't see smoke, light colors or any impact effect at all, just the decal impact.
+TO FIX: Sometimes clients can't see the effects (Most present with multiple bullets entities, etc...)
 */
 
 bool idProjectile::Hitscan( const trace_t &collision, idEntity *ignore , const idVec3 &velocity, bool addDamageEffect , float dmgPower)
@@ -634,15 +634,21 @@ bool idProjectile::Hitscan( const trace_t &collision, idEntity *ignore , const i
 
 	// predict the explosion
 	if ( gameLocal.isClient ) {
-		if ( ClientPredictionCollide( owner.GetEntity(), spawnArgs, collision, velocity, (!spawnArgs.GetBool( "net_instanthit" ) && !spawnArgs.GetBool( "hitscan" )) ) ) {
+		if ( ClientPredictionCollide( owner.GetEntity(), spawnArgs, collision, velocity, !spawnArgs.GetBool( "net_instanthit" ) ) ) {
 			Explode( collision, NULL );
 			return true;
 		}
+		//probably no-impact surface or failed collision
+		if (this->clientsideNode.InList()) { //clientside hitscan only
+			CS_PostEventMS( &EV_Remove, 0 );
+		}
+		
 		return false;
 	}
 
 	// remove projectile when a 'noimpact' surface is hit
 	if ( ( collision.c.material != NULL ) && ( collision.c.material->GetSurfaceFlags() & SURF_NOIMPACT ) ) {
+		PostEventMS( &EV_Remove, 0 );
 		common->DPrintf( "Projectile collision no impact\n" );
 		return true;
 	}
@@ -1160,6 +1166,11 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	state = EXPLODED;
 
 	if ( gameLocal.isClient ) {
+		if (this->clientsideNode.InList()) {
+			this->ClientPredictionThink(false, false, 0);
+			CS_PostEventMS( &EV_Remove, removeTime );
+		}
+	
 		return;
 	}
 

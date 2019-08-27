@@ -509,6 +509,7 @@ void idEntityFx::Run( int time ) {
 					useAction->renderEntity.origin = GetPhysics()->GetOrigin() + fxaction.offset;
 					useAction->renderEntity.axis = (fxaction.explicitAxis) ? fxaction.axis : GetPhysics()->GetAxis();
 					useAction->renderEntity.hModel = renderModelManager->FindModel( fxaction.data );
+					//useAction->renderEntity.hModel->
 					useAction->renderEntity.shaderParms[ SHADERPARM_RED ]		= 1.0f;
 					useAction->renderEntity.shaderParms[ SHADERPARM_GREEN ]		= 1.0f;
 					useAction->renderEntity.shaderParms[ SHADERPARM_BLUE ]		= 1.0f;

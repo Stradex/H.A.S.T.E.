@@ -837,7 +837,7 @@ int idParticleStage::NumQuadsPerParticle() const {
 idParticleStage::ParticleOrigin
 ===============
 */
-void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
+void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin, float endX) const {
 	if ( customPathType == PPATH_STANDARD ) {
 		//
 		// find intial origin distribution
@@ -966,7 +966,11 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 				float s1, c1;
 				idMath::SinCos16( angle1, s1, c1 );
 
-				origin[0] = c1 * customPathParms[0];
+				if (endX > 0.0) {  //edit by Stradex
+					origin[0] = c1 * endX;
+				} else {
+					origin[0] = c1 * customPathParms[0];
+				}
 				origin[1] = s1 * customPathParms[1];
 				origin[2] = g->random.RandomFloat() * customPathParms[2] + customPathParms[4] * speed2 * g->age;
 				break;
@@ -1009,7 +1013,13 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 			}
 		}
 
-		origin += offset;
+		if (endX > 0.0) { //edit by Stradex
+			origin[0] += endX+5.0;
+			origin[1] += offset[1];
+			origin[2] += offset[2];
+		} else {
+			origin += offset;
+		}
 	}
 
 	// adjust for the per-particle smoke offset
@@ -1286,7 +1296,7 @@ Vertex order is:
 2 3
 ================
 */
-int idParticleStage::CreateParticle( particleGen_t *g, idDrawVert *verts ) const {
+int idParticleStage::CreateParticle( particleGen_t *g, idDrawVert *verts, float endX ) const {
 	idVec3	origin;
 
 	verts[0].Clear();
@@ -1301,7 +1311,7 @@ int idParticleStage::CreateParticle( particleGen_t *g, idDrawVert *verts ) const
 		return 0;
 	}
 
-	ParticleOrigin( g, origin );
+	ParticleOrigin( g, origin, endX ); //endX added by Stradex
 
 	ParticleTexCoords( g, verts );
 

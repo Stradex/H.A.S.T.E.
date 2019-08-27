@@ -410,6 +410,7 @@ idEntity::idEntity() {
 	activeNode.SetOwner( this );
 
 	snapshotNode.SetOwner( this );
+	clientsideNode.SetOwner( this );
 	snapshotSequence = -1;
 	snapshotBits = 0;
 

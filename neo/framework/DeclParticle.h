@@ -117,9 +117,9 @@ public:
 	void					Default();
 	virtual int				NumQuadsPerParticle() const;	// includes trails and cross faded animations
 	// returns the number of verts created, which will range from 0 to 4*NumQuadsPerParticle()
-	virtual int				CreateParticle( particleGen_t *g, idDrawVert *verts ) const;
+	virtual int				CreateParticle( particleGen_t *g, idDrawVert *verts, float endX = -1.0  ) const; //endX added by Stradex
 
-	void					ParticleOrigin( particleGen_t *g, idVec3 &origin ) const;
+	void					ParticleOrigin( particleGen_t *g, idVec3 &origin, float endX = -1.0 ) const; //endX added by Stradex
 	int						ParticleVerts( particleGen_t *g, const idVec3 origin, idDrawVert *verts ) const;
 	void					ParticleTexCoords( particleGen_t *g, idDrawVert *verts ) const;
 	void					ParticleColors( particleGen_t *g, idDrawVert *verts ) const;

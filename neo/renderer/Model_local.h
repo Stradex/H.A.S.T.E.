@@ -88,6 +88,9 @@ public:
 	virtual void				WriteToDemoFile( class idDemoFile *f );
 	virtual float				DepthHack() const;
 
+	//added by Stradex UGLY UGLY UGLY
+	virtual void				setEndX(const float tEndX) {}; //added by Stradex
+
 	void						MakeDefaultModel();
 
 	bool						LoadASE( const char *fileName );
@@ -298,9 +301,11 @@ public:
 	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
 	virtual float				DepthHack() const;
 	virtual int					Memory() const;
+	virtual void				setEndX(const float tEndX); //added by Stradex
 
 private:
 	const idDeclParticle *		particleSystem;
+	float						endX; //added by Stradex
 };
 
 /*

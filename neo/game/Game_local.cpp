@@ -255,6 +255,7 @@ void idGameLocal::Clear( void ) {
 	memset( lagometer, 0, sizeof( lagometer ) );
 
 	//added by Stradex
+	clientsideEntities.Clear();
 	/*
 	//FUCK YOU, YOU TOOK 10HS OF MY LIFE! UNCOMMENT THIS SHIT IF YOU DON'T WANT TO BE ABLE TO LOAD THE DEBUG BUILD USING LOADLIBRARY
 	org_simpleLightVal = r_simpleLight.GetBool();
@@ -3130,6 +3131,7 @@ void idGameLocal::UnregisterEntity( idEntity *ent ) {
 
 	if ( ( ent->entityNumber != ENTITYNUM_NONE ) && ( entities[ ent->entityNumber ] == ent ) ) {
 		ent->spawnNode.Remove();
+		ent->clientsideNode.Remove(); //added by Stradex
 		entities[ ent->entityNumber ] = NULL;
 		spawnIds[ ent->entityNumber ] = -1;
 		if ( ent->entityNumber >= MAX_CLIENTS && ent->entityNumber < firstFreeIndex ) {

@@ -40,6 +40,7 @@ idRenderModelPrt::idRenderModelPrt
 */
 idRenderModelPrt::idRenderModelPrt() {
 	particleSystem = NULL;
+	endX = -1.0; //added by Stradex
 }
 
 /*
@@ -210,7 +211,7 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 			g.age = g.frac * stage->particleLife;
 
 			// if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts
-			numVerts += stage->CreateParticle( &g, verts + numVerts );
+			numVerts += stage->CreateParticle( &g, verts + numVerts, endX );
 		}
 
 		// numVerts must be a multiple of 4
@@ -286,3 +287,16 @@ int idRenderModelPrt::Memory() const {
 
 	return total;
 }
+
+
+/*
+====================
+idRenderModelPrt::setEndX
+added by Stradex
+====================
+*/
+void idRenderModelPrt::setEndX(const float tEndX) {
+	this->endX = tEndX; 
+	//common->Printf("idRenderModelPrt::setEndX...\n");
+}
+

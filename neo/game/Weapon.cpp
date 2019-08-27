@@ -29,6 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "sys/platform.h"
 #include "framework/DeclEntityDef.h"
 #include "framework/DeclSkin.h"
+#include "framework/async/NetworkSystem.h" //added by Stradex
 
 #include "gamesys/SysCvar.h"
 #include "ai/AI.h"
@@ -3066,7 +3067,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	if ( gameLocal.isClient ) {
 
 		// predict instant hit projectiles
-		if ( projectileDict.GetBool( "net_instanthit" ) || projectileDict.GetBool( "hitscan" ) ) {
+		if ( projectileDict.GetBool( "net_instanthit" ) ) {
 			float spreadRad = DEG2RAD( spread );
 			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
 			for( i = 0; i < num_projectiles; i++ ) {
@@ -3074,11 +3075,15 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
 				dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
 				dir.Normalize();
+
 				gameLocal.clip.Translation( tr, muzzle_pos, muzzle_pos + dir * 4096.0f, NULL, mat3_identity, MASK_SHOT_RENDERMODEL, owner );
 				if ( tr.fraction < 1.0f ) {
-					idProjectile::ClientPredictionCollide( this, projectileDict, tr, vec3_origin, true );
+						idProjectile::ClientPredictionCollide( this, projectileDict, tr, vec3_origin, true );
 				}
+
 			}
+		} else if (projectileDict.GetBool( "hitscan" )) {
+			LaunchHitscan(num_projectiles, spread,  fuseOffset,launchPower, dmgPower, projectileDict);
 		}
 
 	} else {
@@ -3254,7 +3259,7 @@ void idWeapon::Event_LaunchAltProjectiles( int num_projectiles, float spread, fl
 	if ( gameLocal.isClient ) {
 
 		// predict instant hit projectiles
-		if ( altProjectileDict.GetBool( "net_instanthit" ) || altProjectileDict.GetBool( "hitscan" ) ) {
+		if ( altProjectileDict.GetBool( "net_instanthit" ) ) {
 			float spreadRad = DEG2RAD( spread );
 			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
 			for( i = 0; i < num_projectiles; i++ ) {
@@ -3267,6 +3272,8 @@ void idWeapon::Event_LaunchAltProjectiles( int num_projectiles, float spread, fl
 					idProjectile::ClientPredictionCollide( this, altProjectileDict, tr, vec3_origin, true );
 				}
 			}
+		} else if (altProjectileDict.GetBool( "hitscan" )) {
+			LaunchHitscan(num_projectiles, spread,  fuseOffset,launchPower, dmgPower, altProjectileDict);
 		}
 
 	} else {
@@ -3564,6 +3571,7 @@ void idWeapon::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, i
 void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower, const idDict &projectileDef) {
 	idProjectile	*proj;
 	idEntity		*ent;
+	idEntity		*fxTrailEnt;
 	idVec3			dir;
 	float			ang;
 	float			spin;
@@ -3573,6 +3581,10 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 	idBounds		projBounds, ownerBounds, hitscanBounds;
 	float			distance;
 	idVec3			start;
+	const char*		fxTrailName;
+	idDict			args;
+
+	fxTrailName = projectileDef.GetString( "fx_trail" );
 
 	hitscanBounds.Zero();
 	hitscanBounds.ExpandSelf( projectileDef.GetFloat( "hitscan_size", "0" ) );
@@ -3594,10 +3606,13 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 			projectileEnt = NULL;
 		} else {
 			gameLocal.SpawnEntityDef( projectileDef, &ent, false );
+			if (gameLocal.isClient && ent) {
+				ent->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
+			}
 		}
 
 		if ( !ent || !ent->IsType( idProjectile::Type ) ) {
-			const char *projectileName = weaponDef->dict.GetString( "def_altprojectile" );
+			const char *projectileName = projectileDef.GetString("classname", "error");
 			gameLocal.Error( "'%s' is not an idProjectile", projectileName );
 		}
 
@@ -3629,7 +3644,7 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 			muzzle_pos = tr.endpos;
 		}
 		if (projectileDef.GetFloat("hitscan_size", "0") > 0.0f) {
-			gameLocal.clip.TraceBounds(tr, muzzle_pos, muzzle_pos + dir * 1600.0f, hitscanBounds, MASK_SHOT_RENDERMODEL, owner); //stradex: range limit 1600 for hitscan projectiles 
+			gameLocal.clip.TraceBounds(tr, muzzle_pos, muzzle_pos + dir * 3600.0f, hitscanBounds, MASK_SHOT_RENDERMODEL, owner); //stradex: range limit 1600 for hitscan projectiles 
 		} else {
 			gameLocal.clip.TracePoint(tr, muzzle_pos, muzzle_pos + dir * 4096.0f,  MASK_SHOT_RENDERMODEL, owner);
 		}
@@ -3638,8 +3653,57 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 			proj->SetOrigin(tr.c.point);
 			float projAbsVelocity = projectileDef.GetVector("velocity", "0 0 0").Length();
 			proj->Hitscan(tr, NULL, dir*projAbsVelocity, true, dmgPower);
+
+			if ( *fxTrailName != '\0' ) { //trail FX
+				float distanceImpact  = (tr.c.point - muzzle_pos).Length()/2.0; //distance traveled to hitpoint
+				//fxTrailEnt = NULL;
+				args.Clear();
+				args.Set( "model", fxTrailName );
+				args.Set( "classname", "func_emitter" );
+				args.SetFloat( "end_x", distanceImpact );
+				args.SetVector("origin", muzzle_pos);
+				gameLocal.SpawnEntityDef( args, &fxTrailEnt, false );
+				//TODO
+				//Set 		customPath 			helix 250.000 0.000 0.000 0.000 0.000 (250.000 = abs(tr.c.point - muzzle_pos) 
+				//count 	mathRound(abs(tr.c.point - muzzle_pos))+1;
+				if (fxTrailEnt) {
+					//fxTrailEnt->SetAngles(owner->GetPhysics()->GetAxis().ToAngles());
+					fxTrailEnt->SetAngles(dir.ToAngles());
+					fxTrailEnt->CS_PostEventMS( &EV_Remove, 1000 ); //FIXME: change 1000.0 for a spawnArg
+					fxTrailEnt->fl.networkSync = false;
+					if (gameLocal.isClient) {
+						fxTrailEnt->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
+					}
+				}
+			}
 		} else {
 			proj->Explode(tr, NULL);
+
+			//Copy & paste this is bad
+			if ( *fxTrailName != '\0' ) { //trail FX
+				//fxTrailEnt = NULL;
+				args.Clear();
+				args.Set( "model", fxTrailName );
+				args.Set( "classname", "func_emitter" );
+				args.SetFloat( "end_x", 3600.0f/2.0f );
+				args.SetVector("origin", muzzle_pos);
+				gameLocal.SpawnEntityDef( args, &fxTrailEnt, false );
+				//TODO
+				//Set 		customPath 			helix 250.000 0.000 0.000 0.000 0.000 (250.000 = abs(tr.c.point - muzzle_pos) 
+				//count 	mathRound(abs(tr.c.point - muzzle_pos))+1;
+				if (fxTrailEnt) {
+					//fxTrailEnt->SetAngles(owner->GetPhysics()->GetAxis().ToAngles());
+					fxTrailEnt->SetAngles(dir.ToAngles());
+					fxTrailEnt->fl.networkSync = false;
+					if (gameLocal.isClient) {
+						fxTrailEnt->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
+						fxTrailEnt->CS_PostEventMS( &EV_Remove, 1000 ); //FIXME: change 1000.0 for a spawnArg
+					} else {
+						fxTrailEnt->PostEventMS( &EV_Remove, 1000); //FIXME: change 1000.0 for a spawnArg
+					}
+				}
+			}
+
 		}
 	}
 	

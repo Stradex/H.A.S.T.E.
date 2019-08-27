@@ -1156,6 +1156,10 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 	// add entities in the PVS that haven't changed since the last applied snapshot
 	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 
+		if (ent->clientsideNode.InList()) { //Stradex: ignore clientside only entities to avoid weird shit
+			continue;
+		}
+
 		// if the entity is already in the snapshot
 		if ( ent->snapshotSequence == sequence ) {
 			continue;
@@ -1176,10 +1180,11 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 					// possible fix for left over lights on CTF flag
 					ent->FreeLightDef(); //added by Stradex for CTF
 
-					if (!net_clientUnlagged.GetBool()){ //added by Stradex to test
-						ent->UpdateVisuals();
-					}
+					//if (!net_clientUnlagged.GetBool()){ //added by Stradex to test
+					ent->UpdateVisuals();
+					//}
 					ent->GetPhysics()->UnlinkClip();
+					common->Printf("happening...\n");
 				}
 			}
 			continue;
@@ -1513,7 +1518,7 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 	//{
 		framenum++;
 		previousTime = time;
-		time += msec;
+		time += msec; //causing problems with CS_PostEventMS and all CS_ time events
 	//}
 	// update the real client time and the new frame flag
 	if ( time > realClientTime ) {
@@ -1540,6 +1545,12 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 				if ( ent->thinkFlags != 0 ) { //testing
 					ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
 				}
+			}
+			for( ent = clientsideEntities.Next(); ent != NULL; ent = ent->clientsideNode.Next() ) {
+				//if ( ent->thinkFlags != 0 ) { //testing
+					ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
+					//common->Printf("Clientside only entities thinking...\n");
+				//}
 			}
 		} else {
 			//player always should do client prediction for all tics

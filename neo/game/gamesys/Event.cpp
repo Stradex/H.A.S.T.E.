@@ -527,6 +527,7 @@ void idEvent::ServiceEvents( void ) {
 		event->eventNode.Remove();
 		assert( event->object );
 		event->object->ProcessEventArgPtr( ev, args );
+		//common->Printf("Time: %d - gameLocal.time %d - gameLocal.realClientTime: %d\m", event->time, gameLocal.time, gameLocal.realClientTime);
 
 		// return the event to the free list
 		event->Free();
