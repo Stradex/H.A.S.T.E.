@@ -1597,7 +1597,7 @@ idElevator::idElevator( void ) {
 	lastTouchTime = 0;
 	returnFloor = 0;
 	returnTime = 0;
-
+	fl.neverUnlagged		= true; //added by Stradex
 	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 }
 
@@ -4018,6 +4018,7 @@ idPlat::idPlat( void ) {
 	trigger = NULL;
 	localTriggerOrigin.Zero();
 	localTriggerAxis.Identity();
+	fl.neverUnlagged = true; //added by Stradex
 }
 
 /*

@@ -185,6 +185,7 @@ void idGameLocal::Clear( void ) {
 	memset( entities, 0, sizeof( entities ) );
 	memset( spawnIds, -1, sizeof( spawnIds ) );
 	firstFreeIndex = 0;
+	firstFreeCsIndex = 0;
 	num_entities = 0;
 	spawnedEntities.Clear();
 	activeEntities.Clear();
@@ -905,6 +906,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// range are NEVER anything but clients
 	num_entities	= MAX_CLIENTS;
 	firstFreeIndex	= MAX_CLIENTS;
+	firstFreeCsIndex = CS_ENTITIESSTART;
 
 	// reset the random number generator.
 	random.SetSeed( isMultiplayer ? randseed : 0 );
@@ -3097,19 +3099,37 @@ void idGameLocal::RegisterEntity( idEntity *ent ) {
 	}
 
 	if ( !spawnArgs.GetInt( "spawn_entnum", "0", spawn_entnum ) ) {
-		while( entities[firstFreeIndex] && firstFreeIndex < ENTITYNUM_MAX_NORMAL ) {
-			firstFreeIndex++;
+
+		if (spawnArgs.GetBool("clientside", "0")) { //is  clientside only entity
+			while( entities[firstFreeCsIndex] && firstFreeCsIndex < ENTITYNUM_MAX_NORMAL ) {
+				firstFreeCsIndex++;
+			}
+			if ( firstFreeCsIndex >= ENTITYNUM_MAX_NORMAL ) {
+				Error( "no free clientside entities." );
+			}
+
+			spawn_entnum = firstFreeCsIndex++;
+		} else { //normal entity
+			while( entities[firstFreeIndex] && firstFreeIndex < ENTITYNUM_MAX_NORMAL ) {
+				firstFreeIndex++;
+			}
+			if ( firstFreeIndex >= ENTITYNUM_MAX_NORMAL ) {
+				Error( "no free entities" );
+			}
+
+			spawn_entnum = firstFreeIndex++;
 		}
-		if ( firstFreeIndex >= ENTITYNUM_MAX_NORMAL ) {
-			Error( "no free entities" );
-		}
-		spawn_entnum = firstFreeIndex++;
 	}
 
 	entities[ spawn_entnum ] = ent;
 	spawnIds[ spawn_entnum ] = spawnCount++;
 	ent->entityNumber = spawn_entnum;
 	ent->spawnNode.AddToEnd( spawnedEntities );
+
+	if (spawnArgs.GetBool("clientside", "0")) { //added by Stradex
+		ent->clientsideNode.AddToEnd( clientsideEntities ); 
+	}
+
 	ent->spawnArgs.TransferKeyValues( spawnArgs );
 
 	if ( spawn_entnum >= num_entities ) {
@@ -3131,12 +3151,19 @@ void idGameLocal::UnregisterEntity( idEntity *ent ) {
 
 	if ( ( ent->entityNumber != ENTITYNUM_NONE ) && ( entities[ ent->entityNumber ] == ent ) ) {
 		ent->spawnNode.Remove();
+
 		ent->clientsideNode.Remove(); //added by Stradex
 		entities[ ent->entityNumber ] = NULL;
 		spawnIds[ ent->entityNumber ] = -1;
+
 		if ( ent->entityNumber >= MAX_CLIENTS && ent->entityNumber < firstFreeIndex ) {
 			firstFreeIndex = ent->entityNumber;
 		}
+
+		if ( ent->entityNumber >= CS_ENTITIESSTART && ent->entityNumber < firstFreeCsIndex ) { //clientside firstFreeCsIndex update
+			firstFreeCsIndex = ent->entityNumber;
+		}
+
 		ent->entityNumber = ENTITYNUM_NONE;
 	}
 }
@@ -4798,33 +4825,37 @@ void idGameLocal::SetScriptFPS( const float tCom_gameHz )
 void idGameLocal::CheckDrawChanges( void ) {
 	idEntity *	ent;
 
-	if (g_skipItemsModel.IsModified()) {
-		g_skipItemsModel.ClearModified();
-
-		common->Printf("g_skipItemsModel changed\n");
-
-		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
-			if (!ent->IsType( idItem::Type )) {
-				continue;
-			}
-
-			ent->CheckModelChange(g_skipItemsModel.GetBool());
-		}
-	}
-
-	if (g_modelsQuality.IsModified()) {
-		g_modelsQuality.ClearModified();
-
-		common->Printf("g_modelsQuality changed\n");
-
-		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
-			if (!ent->IsType( idAI::Type )) { //for idAI only now...
-				continue;
-			}
-
-			ent->CheckModelChange(false, g_modelsQuality.GetInteger());
-		}
-	}
-
 	CheckSingleLightChange(); //simple light
+
+	if (g_skipItemsModel.IsModified() || g_modelsQuality.IsModified() || r_ambientLighting.IsModified()) {
+		idLight  *	entLight;
+		for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+			if (ent->IsType( idItem::Type ) && g_skipItemsModel.IsModified()) { //for g_skipItemsModel
+				ent->CheckModelChange(g_skipItemsModel.GetBool());
+				if (g_skipItemsModel.GetBool()) {
+					ent->SetDynamicInteraction(false); //optimize sprites 
+				} else {
+					ent->SetDynamicInteraction(true);
+				}
+			}
+
+			if (ent->IsType( idAI::Type ) && g_modelsQuality.IsModified()) { //for g_skipItemsModel
+				ent->CheckModelChange(false, g_modelsQuality.GetInteger());
+			}
+
+			
+			if (ent->IsType( idLight::Type ) && r_ambientLighting.IsModified() && !cvarSystem->GetCVarBool("r_useStaticLighting")) { //for r_ambientLighting
+				entLight = static_cast<idLight *>( ent );
+				if (r_ambientLighting.GetBool()) {
+					entLight->setLowQualityLight();
+				} else {
+					entLight->restoreQualityLight();
+				}
+			}
+			
+		}
+		g_skipItemsModel.ClearModified();
+		g_modelsQuality.ClearModified();
+		r_ambientLighting.ClearModified();
+	}
 }

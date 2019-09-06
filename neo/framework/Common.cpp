@@ -2429,7 +2429,7 @@ idCommonLocal::Frame
 */
 void idCommonLocal::Frame( void ) {
 	static int gameMsecPassed = 0;
-	int clientSideMsec = idMath::FtoiFast(1000.0f / static_cast<float>(com_clientGameHz.GetInteger() + 3)); // + 3 is just a dirty hack
+	int clientSideMsec = idMath::FtoiFast(1000.0f / static_cast<float>(com_clientGameHz.GetInteger() + 5)); // + 5 is just a dirty hack
 	try {
 
 		// pump all the events
@@ -2461,6 +2461,11 @@ void idCommonLocal::Frame( void ) {
 #else
 		idAsyncNetwork::RunFrame();
 #endif
+
+		//client uncap fps
+		clientSideMsec = idMath::FtoiFast(1000.0f / static_cast<float>(com_clientGameHz.GetInteger() + 5 ));
+		gameMsecPassed += com_gameMSRate;
+
 		if ( idAsyncNetwork::IsActive() ) {
 			if ( idAsyncNetwork::serverDedicated.GetInteger() != 1 ) { //MP Game
 				session->GuiFrameEvents();
@@ -2468,11 +2473,8 @@ void idCommonLocal::Frame( void ) {
 #ifdef ID_DEDICATED
 					session->UpdateScreen( false );
 #else
-				 //client uncap fps
-				clientSideMsec = idMath::FtoiFast(1000.0f / static_cast<float>(com_clientGameHz.GetInteger()));
-				gameMsecPassed += com_gameMSRate;
 				if (gameMsecPassed >= clientSideMsec) {
-					session->UpdateScreen( false );
+					session->UpdateScreen( false ); //render only
 					gameMsecPassed = 0;
 				}
 #endif
@@ -2482,7 +2484,10 @@ void idCommonLocal::Frame( void ) {
 			session->Frame();
 
 			// normal, in-sequence screen update
-			session->UpdateScreen( false );
+			if (gameMsecPassed >= clientSideMsec) {
+				session->UpdateScreen( false );
+				gameMsecPassed = 0;
+			}
 		}
 		// report timing information
 		if ( com_speeds.GetBool() ) {

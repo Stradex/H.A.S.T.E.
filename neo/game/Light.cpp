@@ -86,7 +86,7 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	const char	*texture;
 	idVec3	color;
 
-	if (!levelOfDetail) { //added for r_useLevelOfDetail
+	if (!levelOfDetail) { //added for r_ambientLighting FIXME: change levelOfDetail to ambientLighting
 
 	memset( renderLight, 0, sizeof( *renderLight ) );
 
@@ -215,11 +215,17 @@ idLight::restoreQualityLight
 ================
 */
 void idLight::restoreQualityLight(void){
+	if (!(&bakRenderLight)) { //Probably NULL
+		return;
+	}
 	copyRenderLight(&bakRenderLight, &renderLight); //renderLight = bakRenderLight
 
 	if ( lightDefHandle != -1 ) {
 		gameRenderWorld->FreeLightDef( lightDefHandle );
 	}
+
+	PresentLightDefChange();
+	PresentModelDefChange();
 }
 
 /*
@@ -241,6 +247,9 @@ void idLight::setLowQualityLight(void){
 	if ( lightDefHandle != -1 ) {
 		gameRenderWorld->FreeLightDef( lightDefHandle );
 	}
+
+	PresentLightDefChange();
+	PresentModelDefChange();
 }
 
 
@@ -306,6 +315,7 @@ idLight::idLight
 */
 idLight::idLight() {
 	memset( &renderLight, 0, sizeof( renderLight ) );
+	memset( &bakRenderLight, 0, sizeof( bakRenderLight ) ); //added by Stradex
 	localLightOrigin	= vec3_zero;
 	localLightAxis		= mat3_identity;
 	lightDefHandle		= -1;
@@ -559,6 +569,7 @@ void idLight::Spawn( void ) {
 
 	PostEventMS( &EV_PostSpawn, 0 );
 
+	copyRenderLight(&renderLight, &bakRenderLight); //added by Stradex
 	UpdateVisuals();
 }
 

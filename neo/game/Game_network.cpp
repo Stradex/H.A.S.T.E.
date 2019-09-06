@@ -604,6 +604,10 @@ void idGameLocal::ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &ms
 	// create the snapshot
 	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 
+		if (ent->clientsideNode.InList()) { //Stradex: ignore clientside only entities to avoid weird shit
+			continue;
+		}
+
 		// if the entity is not in the player PVS
 		if ( !ent->PhysicsTeamInPVS( pvsHandle ) && ent->entityNumber != clientNum ) {
 			continue;
@@ -1184,7 +1188,7 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 					ent->UpdateVisuals();
 					//}
 					ent->GetPhysics()->UnlinkClip();
-					common->Printf("happening...\n");
+					//common->Printf("happening...\n");
 				}
 			}
 			continue;
@@ -1538,13 +1542,24 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 	// run prediction on all entities from the last snapshot
 	if (net_clientUnlagged.GetBool()) //UNLAGGED ON
 	{
+		for( ent = snapshotEntities.Next(); ent != NULL; ent = ent->snapshotNode.Next() ) { //entities that never use unlagged
+			if (!ent->fl.neverUnlagged) {
+				continue; 
+			}
+			ent->thinkFlags |= TH_PHYSICS; 
+			ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
+		}
+
 		if (lastPredictFrame)
 		{
 			for( ent = snapshotEntities.Next(); ent != NULL; ent = ent->snapshotNode.Next() ) {
-				//ent->thinkFlags |= TH_PHYSICS; 
-				if ( ent->thinkFlags != 0 ) { //testing
-					ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
+				if (ent->fl.neverUnlagged) {
+					continue; //avoid these entities
 				}
+				ent->thinkFlags |= TH_PHYSICS; 
+				//if ( ent->thinkFlags != 0 ) { //testing
+					ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
+				//}
 			}
 			for( ent = clientsideEntities.Next(); ent != NULL; ent = ent->clientsideNode.Next() ) {
 				//if ( ent->thinkFlags != 0 ) { //testing
@@ -1557,6 +1572,7 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 			player->thinkFlags |= TH_PHYSICS;
 			player->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
 		}
+
 	} else {  //UNLAGGED OFF
 		for( ent = snapshotEntities.Next(); ent != NULL; ent = ent->snapshotNode.Next() ) {
 			//ent->thinkFlags |= TH_PHYSICS;

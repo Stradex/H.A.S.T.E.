@@ -431,6 +431,7 @@ idEntity::idEntity() {
 
 	fakeHidden		= false;
 	neverFakeHide	= false;
+	fl.neverUnlagged	= false; //addded by Stradex
 
 	memset( PVSAreas, 0, sizeof( PVSAreas ) );
 	numPVSAreas		= -1;
@@ -569,6 +570,7 @@ void idEntity::Spawn( void ) {
 
 	if (spriteTemp && *spriteTemp) { //added by Stradex
 		SetModel( spriteTemp );
+		SetDynamicInteraction(false);
 	} else  if ( temp && *temp ) {
 		if (!CheckModelChange(0, g_modelsQuality.GetInteger())) {
 			SetModel( temp );
@@ -1147,6 +1149,16 @@ bool idEntity::CheckModelChange(bool useSprite, int quality) {
 		return true;
 	}
 	return false;
+}
+/*
+================
+idEntity::SetDynamicInteraction(
+================
+*/
+void idEntity::SetDynamicInteraction(bool newVal)
+{
+	this->renderEntity.noDynamicInteractions = !newVal;
+	BecomeActive( TH_UPDATEVISUALS ); //addded by Stradex
 }
 
 /*
@@ -4846,6 +4858,10 @@ void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent
 
 	// prevent dupe events caused by frame re-runs
 	if ( !gameLocal.isNewFrame ) {
+		return;
+	}
+
+	if (clientsideNode.InList()) { //ignore client-side entities only
 		return;
 	}
 

@@ -1430,6 +1430,10 @@ void idStaticEntity::Spawn( void ) {
 	fadeStart = 0;
 	fadeEnd	= 0;
 
+	if (cvarSystem->GetCVarBool("r_useStaticLighting")) {
+		renderEntity.noDynamicInteractions = true; //added by Stradex
+	}
+
 	// NOTE: this should be used very rarely because it is expensive
 	runGui = spawnArgs.GetBool( "runGui" );
 	if ( runGui ) {

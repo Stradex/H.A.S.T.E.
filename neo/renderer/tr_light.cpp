@@ -578,7 +578,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 
 			// some big outdoor meshes are flagged to not create any dynamic interactions
 			// when the level designer knows that nearby moving lights shouldn't actually hit them
-			if ( edef->parms.noDynamicInteractions && edef->world->generateAllInteractionsCalled ) {
+			if (edef->parms.noDynamicInteractions && edef->world->generateAllInteractionsCalled ) {
 				continue;
 			}
 

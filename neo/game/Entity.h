@@ -159,6 +159,7 @@ public:
 		bool				isDormant			:1;	// if true the entity is dormant
 		bool				hasAwakened			:1;	// before a monster has been awakened the first time, use full PVS for dormant instead of area-connected
 		bool				networkSync			:1; // if true the entity is synchronized over the network
+		bool				neverUnlagged		:1; // Stradex: entity that should never use unlagged
 	} fl;
 
 public:
@@ -197,6 +198,7 @@ public:
 	virtual int				GetModelDefHandle( void );
 	virtual void			SetModel( const char *modelname );
 	virtual bool			CheckModelChange( bool useSprite , int quality=2); //added by Stradex. Quality: 2 = normal, 1 = low, 0 = ultra low
+	void					SetDynamicInteraction(bool newVal); //added by Stradex
 	void					SetSkin( const idDeclSkin *skin );
 	const idDeclSkin *		GetSkin( void ) const;
 	void					SetShaderParm( int parmnum, float value );

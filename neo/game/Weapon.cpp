@@ -3606,7 +3606,7 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 			projectileEnt = NULL;
 		} else {
 			gameLocal.SpawnEntityDef( projectileDef, &ent, false );
-			if (gameLocal.isClient && ent) {
+			if (ent) {
 				ent->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
 			}
 		}
@@ -3660,8 +3660,10 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 				args.Clear();
 				args.Set( "model", fxTrailName );
 				args.Set( "classname", "func_emitter" );
+				args.Set( "clientside", "1" );
 				args.SetFloat( "end_x", distanceImpact );
 				args.SetVector("origin", muzzle_pos);
+				args.Set("disable_lod", "1");
 				gameLocal.SpawnEntityDef( args, &fxTrailEnt, false );
 				//TODO
 				//Set 		customPath 			helix 250.000 0.000 0.000 0.000 0.000 (250.000 = abs(tr.c.point - muzzle_pos) 
@@ -3671,9 +3673,9 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 					fxTrailEnt->SetAngles(dir.ToAngles());
 					fxTrailEnt->CS_PostEventMS( &EV_Remove, 1000 ); //FIXME: change 1000.0 for a spawnArg
 					fxTrailEnt->fl.networkSync = false;
-					if (gameLocal.isClient) {
-						fxTrailEnt->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
-					}
+					//if (gameLocal.isClient) {
+					//	fxTrailEnt->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
+					//}
 				}
 			}
 		} else {
@@ -3685,8 +3687,10 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 				args.Clear();
 				args.Set( "model", fxTrailName );
 				args.Set( "classname", "func_emitter" );
+				args.Set( "clientside", "1" );
 				args.SetFloat( "end_x", 3600.0f/2.0f );
 				args.SetVector("origin", muzzle_pos);
+				args.Set("disable_lod", "1");
 				gameLocal.SpawnEntityDef( args, &fxTrailEnt, false );
 				//TODO
 				//Set 		customPath 			helix 250.000 0.000 0.000 0.000 0.000 (250.000 = abs(tr.c.point - muzzle_pos) 
@@ -3695,8 +3699,8 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 					//fxTrailEnt->SetAngles(owner->GetPhysics()->GetAxis().ToAngles());
 					fxTrailEnt->SetAngles(dir.ToAngles());
 					fxTrailEnt->fl.networkSync = false;
+					//fxTrailEnt->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
 					if (gameLocal.isClient) {
-						fxTrailEnt->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
 						fxTrailEnt->CS_PostEventMS( &EV_Remove, 1000 ); //FIXME: change 1000.0 for a spawnArg
 					} else {
 						fxTrailEnt->PostEventMS( &EV_Remove, 1000); //FIXME: change 1000.0 for a spawnArg

@@ -106,6 +106,7 @@ idCVar developer(					"developer",				"0",			CVAR_GAME | CVAR_BOOL, "" );
 idCVar r_aspectRatio(				"r_aspectRatio",			"-1",			CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "aspect ratio of view:\n0 = 4:3\n1 = 16:9\n2 = 16:10\n-1 = auto (guess from resolution)", -1, 2 );
 //added by Stradex
 idCVar r_simpleLight(				"r_simpleLight",			"0",			CVAR_GAME | CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE | CVAR_BOOL, "Enable-Disable Simple lighting system.");
+idCVar r_ambientLighting(			"r_ambientLighting",		"0",				CVAR_GAME | CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE | CVAR_BOOL, "Test");
 idCVar r_simpleLightIntensity(		"r_simpleLightIntensity",	"1",			CVAR_GAME | CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Intensity of the simple light.\nValues between 0.0 and 1.0" );
 idCVar r_useLevelOfDetail(			"r_useLevelOfDetail",		"0",			CVAR_GAME | CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE | CVAR_BOOL , "Enable level of  detail per distance" );
 idCVar r_levelOfDetailDistance(		"r_levelOfDetailDistance",	"10",			CVAR_GAME | CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE , "Level o detail distance", 10, 100 );
