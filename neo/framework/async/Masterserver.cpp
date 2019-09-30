@@ -1,4 +1,4 @@
-#include "masterserver.h"
+#include "Masterserver.h"
 
 idWebMasterServer htmlMasterServer;
 
