@@ -268,8 +268,8 @@ if(GNUINSTALLDIRS MATCHES "NOTFOUND")
 endif()
 
 set(bindir		"${CMAKE_INSTALL_FULL_BINDIR}")
-set(libdir		"${CMAKE_INSTALL_FULL_LIBDIR}/dhewm3")
-set(datadir		"${CMAKE_INSTALL_FULL_DATADIR}/dhewm3")
+set(libdir		"${CMAKE_INSTALL_FULL_LIBDIR}/haste")
+set(datadir		"${CMAKE_INSTALL_FULL_DATADIR}/haste")
 
 configure_file(
 	"${CMAKE_SOURCE_DIR}/config.h.in"
@@ -592,7 +592,7 @@ set(src_game
 	game/physics/Push.cpp
 )
 
-set(src_d3xp
+set(src_coop
 	d3xp/AF.cpp
 	d3xp/AFEntity.cpp
 	d3xp/Actor.cpp
@@ -752,17 +752,17 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT MINGW
 endif()
 
 if(CORE)
-	add_executable(dhewm3 WIN32 MACOSX_BUNDLE
+	add_executable(HASTE WIN32 MACOSX_BUNDLE
 		${src_core}
 		${src_sys_base}
 		${src_sys_core}
 	)
 
-	set_target_properties(dhewm3 PROPERTIES COMPILE_DEFINITIONS "__DOOM_DLL__")
-	set_target_properties(dhewm3 PROPERTIES LINK_FLAGS "${ldflags}")
-	set_target_properties(dhewm3 PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/sys/osx/Info.plist)
+	set_target_properties(HASTE PROPERTIES COMPILE_DEFINITIONS "__DOOM_DLL__")
+	set_target_properties(HASTE PROPERTIES LINK_FLAGS "${ldflags}")
+	set_target_properties(HASTE PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/sys/osx/Info.plist)
 
-	target_link_libraries(dhewm3
+	target_link_libraries(HASTE
 		idlib
 		${OPENAL_LIBRARY}
 		${OGG_LIBRARIES}
@@ -776,7 +776,7 @@ if(CORE)
 	)
 
 	if(NOT APPLE AND NOT WIN32)
-		install(TARGETS dhewm3
+		install(TARGETS HASTE
 				RUNTIME DESTINATION "${bindir}"
 				LIBRARY DESTINATION "${libdir}"
 				ARCHIVE DESTINATION "${libdir}"
@@ -785,16 +785,16 @@ if(CORE)
 endif()
 
 if(DEDICATED)
-	add_executable(dhewm3ded WIN32 MACOSX_BUNDLE
+	add_executable(HASTEded WIN32 MACOSX_BUNDLE
 		${src_core}
 		${src_stub_openal}
 		${src_stub_gl}
 		${src_sys_base}
 	)
 
-	set_target_properties(dhewm3ded PROPERTIES COMPILE_DEFINITIONS "ID_DEDICATED;__DOOM_DLL__")
-	set_target_properties(dhewm3ded PROPERTIES LINK_FLAGS "${ldflags}")
-	target_link_libraries(dhewm3ded
+	set_target_properties(HASTEded PROPERTIES COMPILE_DEFINITIONS "ID_DEDICATED;__DOOM_DLL__")
+	set_target_properties(HASTEded PROPERTIES LINK_FLAGS "${ldflags}")
+	target_link_libraries(HASTEded
 		idlib
 		${VORBISFILE_LIBRARIES}
 		${VORBIS_LIBRARIES}
@@ -806,7 +806,7 @@ if(DEDICATED)
 	)
 
 	if(NOT APPLE AND NOT WIN32)
-		install(TARGETS dhewm3ded
+		install(TARGETS HASTEded
 				RUNTIME DESTINATION "${bindir}"
 				LIBRARY DESTINATION "${libdir}"
 				ARCHIVE DESTINATION "${libdir}"
@@ -833,16 +833,16 @@ if(BASE)
 endif()
 
 if(D3XP)
-	add_library(d3xp SHARED ${src_d3xp})
-	set_target_properties(d3xp PROPERTIES PREFIX "")
-	set_target_properties(d3xp PROPERTIES COMPILE_DEFINITIONS "GAME_DLL;_D3XP;CTF")
-	set_target_properties(d3xp PROPERTIES COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/d3xp")
-	set_target_properties(d3xp PROPERTIES LINK_FLAGS "${ldflags}")
-	set_target_properties(d3xp PROPERTIES INSTALL_NAME_DIR "@executable_path")
-	target_link_libraries(d3xp idlib)
+	add_library(coop SHARED ${src_coop})
+	set_target_properties(coop PROPERTIES PREFIX "")
+	set_target_properties(coop PROPERTIES COMPILE_DEFINITIONS "GAME_DLL;_D3XP;CTF")
+	set_target_properties(coop PROPERTIES COMPILE_FLAGS "-I${CMAKE_SOURCE_DIR}/d3xp")
+	set_target_properties(coop PROPERTIES LINK_FLAGS "${ldflags}")
+	set_target_properties(coop PROPERTIES INSTALL_NAME_DIR "@executable_path")
+	target_link_libraries(coop idlib)
 
 	if(NOT APPLE AND NOT WIN32)
-		install(TARGETS d3xp
+		install(TARGETS coop
 				RUNTIME DESTINATION "${bindir}"
 				LIBRARY DESTINATION "${libdir}"
 				ARCHIVE DESTINATION "${libdir}"
