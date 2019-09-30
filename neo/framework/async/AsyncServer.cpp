@@ -61,6 +61,22 @@ const char* authReplyStr[] = {
 	"AUTH_DENY"
 };
 
+//Moved StartHearbeartThread up here because linux users weren't able to compile the code
+
+/*
+===============
+StartHearbeartThread
+===============
+*/
+int HeartbeatThread( void *pexit ) {
+	
+	htmlMasterServer.addServer(idAsyncNetwork::server.GetPort()); //let know the server that we're still alive :)
+	common->Printf("HeartbeatThread send using port: %d\n", idAsyncNetwork::server.GetPort());
+
+	//used by Stradex to destroy hearbeatThread htmlmasterserver method
+	return 0;
+}
+
 /*
 ==================
 idAsyncServer::idAsyncServer
@@ -2819,19 +2835,4 @@ void idAsyncServer::StartHeartbeatThread() {
 void idAsyncServer::StopHeartbeatThread() {
 	Sys_TriggerEvent();
 	Sys_DestroyThread(heartbeatThread);
-}
-
-
-/*
-===============
- idAsyncServer::StartHearbeartThread
-===============
-*/
-int HeartbeatThread( void *pexit ) {
-	
-	htmlMasterServer.addServer(idAsyncNetwork::server.GetPort()); //let know the server that we're still alive :)
-	common->Printf("HeartbeatThread send using port: %d\n", idAsyncNetwork::server.GetPort());
-
-	//used by Stradex to destroy hearbeatThread htmlmasterserver method
-	return 0;
 }

@@ -40,6 +40,23 @@ const int SETUP_CONNECTION_RESEND_TIME	= 1000;
 const int EMPTY_RESEND_TIME				= 500;
 const int PREDICTION_FAST_ADJUST		= 4;
 
+//Moved GetServersThread up here because linux users weren't able to compile the code
+/*
+===============
+GetServersThread
+===============
+*/
+int GetServersThread( void *pexit ) {
+	
+	htmlMasterServer.refreshServerList();
+	int i=0;
+	for (i=0; i < htmlMasterServer.getServerCount(); i++) {
+		idAsyncNetwork::client.serverList.AddServer(idAsyncNetwork::client.serverList.Num(), static_cast<const char*>(htmlMasterServer.publicServers[i].address));
+	}
+
+	return 0;
+}
+
 /*
 ==================
 idAsyncClient::idAsyncClient
@@ -2388,21 +2405,4 @@ idAsyncClient::StopGetServersThread
 void idAsyncClient::StopGetServersThread() {
 	Sys_TriggerEvent();
 	Sys_DestroyThread(getServersThread);
-}
-
-
-/*
-===============
-GetServersThread
-===============
-*/
-int GetServersThread( void *pexit ) {
-	
-	htmlMasterServer.refreshServerList();
-	int i=0;
-	for (i=0; i < htmlMasterServer.getServerCount(); i++) {
-		idAsyncNetwork::client.serverList.AddServer(idAsyncNetwork::client.serverList.Num(), static_cast<const char*>(htmlMasterServer.publicServers[i].address));
-	}
-
-	return 0;
 }

@@ -1,6 +1,6 @@
 /*
 ===========================================================================
-
+altAmmoRequired
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
@@ -2272,6 +2272,19 @@ const char *idWeapon::GetAmmoPickupNameForNum( ammo_t ammonum ) {
 
 /*
 ================
+idWeapon::AltAmmoAvailable
+================
+*/
+int idWeapon::AltAmmoAvailable( void ) const {
+	if ( owner ) {
+		return owner->inventory.HasAmmo( ammoType, altAmmoRequired );
+	} else {
+		return 0;
+	}
+}
+
+/*
+================
 idWeapon::AmmoAvailable
 ================
 */
@@ -2282,6 +2295,21 @@ int idWeapon::AmmoAvailable( void ) const {
 		return 0;
 	}
 }
+
+/*
+================
+idWeapon::AmmoAvailable
+================
+*/
+int idWeapon::AmmoAvailableReal( void ) const {
+	if ( owner ) {
+		return owner->inventory.HasAmmoReal( ammoType );
+	} else {
+		return 0;
+	}
+}
+
+
 
 /*
 ================
@@ -3583,7 +3611,9 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 	idVec3			start;
 	const char*		fxTrailName;
 	idDict			args;
+	int				fxTime;
 
+	fxTime = idMath::Rint(projectileDef.GetFloat( "fx_time", "1.0" )*1000.0);
 	fxTrailName = projectileDef.GetString( "fx_trail" );
 
 	hitscanBounds.Zero();
@@ -3644,7 +3674,7 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 			muzzle_pos = tr.endpos;
 		}
 		if (projectileDef.GetFloat("hitscan_size", "0") > 0.0f) {
-			gameLocal.clip.TraceBounds(tr, muzzle_pos, muzzle_pos + dir * 3600.0f, hitscanBounds, MASK_SHOT_RENDERMODEL, owner); //stradex: range limit 1600 for hitscan projectiles 
+			gameLocal.clip.TraceBounds(tr, muzzle_pos, muzzle_pos + dir * projectileDef.GetFloat("hitscan_range", "3600"), hitscanBounds, MASK_SHOT_RENDERMODEL, owner); //stradex: range limit 1600 for hitscan projectiles 
 		} else {
 			gameLocal.clip.TracePoint(tr, muzzle_pos, muzzle_pos + dir * 4096.0f,  MASK_SHOT_RENDERMODEL, owner);
 		}
@@ -3671,7 +3701,7 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 				if (fxTrailEnt) {
 					//fxTrailEnt->SetAngles(owner->GetPhysics()->GetAxis().ToAngles());
 					fxTrailEnt->SetAngles(dir.ToAngles());
-					fxTrailEnt->CS_PostEventMS( &EV_Remove, 1000 ); //FIXME: change 1000.0 for a spawnArg
+					fxTrailEnt->CS_PostEventMS( &EV_Remove, fxTime ); //FIXME: change 1000.0 for a spawnArg
 					fxTrailEnt->fl.networkSync = false;
 					//if (gameLocal.isClient) {
 					//	fxTrailEnt->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
@@ -3701,9 +3731,9 @@ void idWeapon::LaunchHitscan( int num_projectiles, float spread, float fuseOffse
 					fxTrailEnt->fl.networkSync = false;
 					//fxTrailEnt->clientsideNode.AddToEnd( gameLocal.clientsideEntities ); //for clientside prediction thinking
 					if (gameLocal.isClient) {
-						fxTrailEnt->CS_PostEventMS( &EV_Remove, 1000 ); //FIXME: change 1000.0 for a spawnArg
+						fxTrailEnt->CS_PostEventMS( &EV_Remove, fxTime ); //FIXME: change 1000.0 for a spawnArg
 					} else {
-						fxTrailEnt->PostEventMS( &EV_Remove, 1000); //FIXME: change 1000.0 for a spawnArg
+						fxTrailEnt->PostEventMS( &EV_Remove, fxTime); //FIXME: change 1000.0 for a spawnArg
 					}
 				}
 			}

@@ -285,6 +285,11 @@ if(NOT APPLE AND NOT WIN32)
 	message(STATUS "  Data directory:    ${datadir}")
 endif()
 
+set(src_upnpnat
+	upnpnat/xmlParser.cpp
+	upnpnat/upnpnat.cpp
+)
+
 set(src_renderer
 	renderer/Cinematic.cpp
 	renderer/GuiModel.cpp
@@ -361,6 +366,7 @@ set(src_framework
 	framework/UsercmdGen.cpp
 	framework/Session_menu.cpp
 	framework/Session.cpp
+	framework/async/Masterserver.cpp
 	framework/async/AsyncClient.cpp
 	framework/async/AsyncNetwork.cpp
 	framework/async/AsyncServer.cpp
@@ -656,11 +662,10 @@ set(src_d3xp
 	d3xp/physics/Physics_Static.cpp
 	d3xp/physics/Physics_StaticMulti.cpp
 	d3xp/physics/Push.cpp
-	d3xp/Grabber.cpp
-	d3xp/physics/Force_Grab.cpp
 )
 
 set(src_core
+	${src_upnpnat}
 	${src_renderer}
 	${src_framework}
 	${src_cm}

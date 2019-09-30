@@ -2676,7 +2676,7 @@ void idCommonLocal::LoadGameDLLbyName( const char *dll, idStr& s ) {
 		}
 	#endif
 }
-
+/*
 const char* GetLastErrorAsString() //DELETE THIS FOR LINUX USERS, MAY THEY CANT COMPILE  CAUSE STRDUP!
 {
     //Get the error message, if any.
@@ -2694,6 +2694,7 @@ const char* GetLastErrorAsString() //DELETE THIS FOR LINUX USERS, MAY THEY CANT 
 
     return returnMsg;
 }
+*/
 
 /*
 =================
@@ -2726,10 +2727,13 @@ void idCommonLocal::LoadGameDLL( void ) {
 		LoadGameDLLbyName(dll, s);
 	}
 
+	
 	if ( !gameDLL ) {
-		common->FatalError( "couldn't load game dynamic library: %s\n", GetLastErrorAsString());
+		//common->FatalError( "couldn't load game dynamic library: %s\n", GetLastErrorAsString());
+		common->FatalError( "couldn't load game dynamic library\n");
 		return;
 	}
+	
 
 	common->Printf("loaded game library '%s'.\n", s.c_str());
 

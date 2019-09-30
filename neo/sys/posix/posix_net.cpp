@@ -42,6 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <net/if.h>
 #include <ifaddrs.h>
 
+#include "upnpnat/upnpnat.h"
 #include "sys/platform.h"
 #include "framework/Common.h"
 #include "framework/CVarSystem.h"
@@ -722,4 +723,44 @@ int	idTCP::Write(void *data, int size) {
 	}
 
 	return nbytes;
+}
+
+/*
+==================
+TryUPnP
+==================
+*/
+bool idPort::TryUPnP( int portNumber ) {
+
+    UPNPNAT nat;
+    nat.init(5,10);
+
+    char szHostName[255];
+    gethostname(szHostName, 255);
+    struct hostent *host_entry;
+    host_entry=gethostbyname(szHostName);
+    char * szLocalIP;
+    szLocalIP = inet_ntoa (*(struct in_addr *)*host_entry->h_addr_list);
+
+    upnpFailed = true;
+
+    if (!szLocalIP) {
+        common->Printf("[UPnP] failed: unabled to get local ip!\n");
+    }
+
+
+    if(!nat.discovery()){
+        common->Printf("[UPnP] failed: discovery error is %s\n",nat.get_last_error());
+        return false;
+    }
+
+    if(!nat.add_port_mapping("H.A.S.T.E.",szLocalIP, portNumber, portNumber,"UDP")){
+        common->Printf("[UPnP] failed: add_port_mapping for %s:%d error is %s\n", szLocalIP, portNumber, nat.get_last_error());
+        return false;
+    }
+
+    common->Printf("[UPnP]: add port mapping  %s:%d successful.\n", szLocalIP, portNumber);
+    upnpFailed = false;
+
+    return true;
 }
