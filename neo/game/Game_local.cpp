@@ -1033,6 +1033,9 @@ void idGameLocal::MapRestart( ) {
 	const idKeyValue *keyval, *keyval2;
 
 	if ( isClient ) {
+		if (gameLocal.isMultiplayer) {
+			mpGame.ClientClearData(); //added by Stradex
+		}
 		LocalMapRestart();
 	} else {
 		newInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );

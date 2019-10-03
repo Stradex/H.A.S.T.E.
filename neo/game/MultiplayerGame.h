@@ -272,6 +272,8 @@ public:
 	void			ServerWriteInitialReliableMessages( int clientNum );
 	void			ClientReadStartState( const idBitMsg &msg );
 	void			ClientReadWarmupTime( const idBitMsg &msg );
+	void			ClientReadOvertime( const idBitMsg &msg );
+	void			ClientClearData( void ); //added by Stradex
 
 	void			ServerClientConnect( int clientNum );
 

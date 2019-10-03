@@ -593,6 +593,10 @@ const char *idMultiplayerGame::GameTime() {
 		}
 	} else {
 		int timeLimit = gameLocal.serverInfo.GetInt( "si_timeLimit" );
+
+		if ((gameLocal.gameType == GAME_TOURNEY) && gameLocal.serverInfo.GetBool( "si_overtime" )) { //Overtime
+			timeLimit += overtimeCount*gameLocal.serverInfo.GetInt("si_overtime_duration");
+		}
 		if ( timeLimit ) {
 			ms = ( timeLimit * 60000 ) - ( gameLocal.time - matchStartedTime );
 		} else {
@@ -1081,6 +1085,7 @@ void idMultiplayerGame::NewState( gameState_t news, idPlayer *player ) {
 			//End for CTF by Stradex
 
 			PlayGlobalSound( -1, SND_FIGHT );
+			overtimeCount = 0; //added by Stradex for overtime
 			matchStartedTime = gameLocal.time;
 			fragLimitTimeout = 0;
 			for( i = 0; i < gameLocal.numClients; i++ ) {
@@ -1580,6 +1585,17 @@ void idMultiplayerGame::Run() {
 					if ( !player ) {
 						if ((gameLocal.gameType == GAME_TOURNEY) && gameLocal.serverInfo.GetBool( "si_overtime" )) {
 							overtimeCount++; //new overtime
+
+							//START: inform clients  about the overtime
+							idBitMsg	outMsg;
+							byte		msgBuf[ 128 ];
+
+							outMsg.Init( msgBuf, sizeof( msgBuf ) );
+							outMsg.WriteByte( GAME_RELIABLE_MESSAGE_OVERTIME );
+							outMsg.WriteInt( overtimeCount );
+							networkSystem->ServerSendReliableMessage( -1, outMsg );
+							//END: inform clients  about the overtime
+
 							PrintMessageEvent( -1, MSG_OVERTIME );
 							PlayGlobalSound( -1, SND_OVERTIME );
 						} else {
@@ -2176,7 +2192,13 @@ void idMultiplayerGame::UpdateHud( idPlayer *player, idUserInterface *hud ) {
 		}
 	}
 
-	hud->SetStateString( "timer", ( Warmup() ) ? common->GetLanguageDict()->GetString( "#str_04251" ) : ( gameState == SUDDENDEATH ) ? common->GetLanguageDict()->GetString( "#str_04252" ) : GameTime() );
+	if ((gameLocal.gameType == GAME_TOURNEY) && gameLocal.serverInfo.GetBool( "si_overtime" ) && overtimeCount > 0) { //Overtime
+		hud->SetStateString( "timer",  va( "Overtime %i\n%s", overtimeCount, GameTime() ));
+	} else {
+		hud->SetStateString( "timer", ( Warmup() ) ? common->GetLanguageDict()->GetString( "#str_04251" ) : ( gameState == SUDDENDEATH ) ? common->GetLanguageDict()->GetString( "#str_04252" ) : GameTime() );
+	}
+
+
 	if ( vote != VOTE_NONE ) {
 		hud->SetStateString( "vote", va( "%s (y: %d n: %d)", voteString.c_str(), (int)yesVotes, (int)noVotes ) );
 	} else {
@@ -3730,6 +3752,23 @@ idMultiplayerGame::ClientReadWarmupTime
 */
 void idMultiplayerGame::ClientReadWarmupTime( const idBitMsg &msg ) {
 	warmupEndTime = msg.ReadInt();
+}
+
+/*
+================
+idMultiplayerGame::ClientReadOvertime
+================
+*/
+void idMultiplayerGame::ClientReadOvertime( const idBitMsg &msg ) {
+	overtimeCount = msg.ReadInt();
+}
+/*
+================
+idMultiplayerGame::ClientClearData
+================
+*/
+void idMultiplayerGame::ClientClearData( void ) {
+	overtimeCount = 0;
 }
 
 

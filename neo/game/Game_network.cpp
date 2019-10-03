@@ -1477,6 +1477,10 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 			mpGame.ClientReadWarmupTime( msg );
 			break;
 		}
+		case  GAME_RELIABLE_MESSAGE_OVERTIME: { //added by Stradex
+			mpGame.ClientReadOvertime( msg );
+			break;
+		}
 		default: {
 			Error( "Unknown server->client reliable message: %d", id );
 			break;
