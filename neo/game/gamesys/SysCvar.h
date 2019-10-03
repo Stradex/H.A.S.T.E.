@@ -254,6 +254,8 @@ extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
 extern idCVar	si_alwaysPickup; //added for by Stradex
+extern idCVar	si_overtime; //added for by Stradex
+extern idCVar	si_overtime_duration; //added for by Stradex
 
 //added by Stradex for D3XP CTF
 extern idCVar si_flagDropTimeLimit;

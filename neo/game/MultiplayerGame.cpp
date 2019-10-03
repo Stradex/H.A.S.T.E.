@@ -65,7 +65,8 @@ const char *idMultiplayerGame::GlobalSoundStrings[] = {
 	"sound/ctf/flag_taken_yours.wav",	//added by Stradex for D3XP CTF
 	"sound/ctf/flag_taken_theirs.wav",	//added by Stradex for D3XP CTF
 	"sound/ctf/flag_dropped_yours.wav",	//added by Stradex for D3XP CTF
-	"sound/ctf/flag_dropped_theirs.wav"	//added by Stradex for D3XP CTF
+	"sound/ctf/flag_dropped_theirs.wav",//added by Stradex for D3XP CTF
+	"sound/feedback/overtime.wav"		//added by Stradex
 };
 
 // handy verbose
@@ -290,6 +291,8 @@ void idMultiplayerGame::Clear() {
 	voteValue.Clear();
 	voteString.Clear();
 	startFragLimit = -1;
+
+	overtimeCount = 0; //added by Stradex
 }
 
 /*
@@ -549,8 +552,18 @@ void idMultiplayerGame::UpdateScoreboard( idUserInterface *scoreBoard, idPlayer 
 		livesinfo = va( "%s: %i", common->GetLanguageDict()->GetString( "#str_01982" ), gameLocal.serverInfo.GetInt( "si_fragLimit" ) );
 	}
 
-	if ( gameLocal.serverInfo.GetInt( "si_timeLimit" ) > 0 ) {
-		timeinfo = va( "%s: %i", common->GetLanguageDict()->GetString( "#str_01983" ), gameLocal.serverInfo.GetInt( "si_timeLimit" ) );
+	//added by Stradex for overtime
+	int realTimeLimit = gameLocal.serverInfo.GetInt( "si_timeLimit" );
+	if ((gameLocal.gameType == GAME_TOURNEY) && gameLocal.serverInfo.GetBool( "si_overtime" )) { //Overtime
+		realTimeLimit += overtimeCount*gameLocal.serverInfo.GetInt("si_overtime_duration");
+	}
+
+	if ( realTimeLimit > 0 ) {
+		if (overtimeCount > 0) {
+			timeinfo = va( "Overtime %i: %i", overtimeCount, realTimeLimit ); //overtime special message
+		} else {
+			timeinfo = va( "%s: %i", common->GetLanguageDict()->GetString( "#str_01983" ), realTimeLimit );
+		}
 	} else {
 		timeinfo = va("%s", common->GetLanguageDict()->GetString( "#str_07209" ));
 	}
@@ -753,6 +766,11 @@ idMultiplayerGame::TimeLimitHit
 */
 bool idMultiplayerGame::TimeLimitHit() {
 	int timeLimit = gameLocal.serverInfo.GetInt( "si_timeLimit" );
+
+	if ((gameLocal.gameType == GAME_TOURNEY) && gameLocal.serverInfo.GetBool( "si_overtime" )) { //Overtime
+		timeLimit += overtimeCount*gameLocal.serverInfo.GetInt("si_overtime_duration");
+	}
+
 	if ( timeLimit ) {
 		if ( gameLocal.time >= matchStartedTime + timeLimit * 60000 ) {
 			return true;
@@ -1560,7 +1578,13 @@ void idMultiplayerGame::Run() {
 				} else if ( TimeLimitHit() ) {
 					player = FragLeader();
 					if ( !player ) {
-						NewState( SUDDENDEATH );
+						if ((gameLocal.gameType == GAME_TOURNEY) && gameLocal.serverInfo.GetBool( "si_overtime" )) {
+							overtimeCount++; //new overtime
+							PrintMessageEvent( -1, MSG_OVERTIME );
+							PlayGlobalSound( -1, SND_OVERTIME );
+						} else {
+							NewState( SUDDENDEATH );
+						}
 					} else {
 						NewState( GAMEREVIEW, player );
 						PrintMessageEvent( -1, MSG_TIMELIMIT );
@@ -2526,6 +2550,9 @@ void idMultiplayerGame::PrintMessageEvent( int to, msg_evt_t evt, int parm1, int
 			AddChatLine( common->GetLanguageDict()->GetString( "#str_11107" ), parm1, parm2 );
 			break;
 		//End for CTF
+		case MSG_OVERTIME:
+			AddChatLine( common->GetLanguageDict()->GetString( "OVERTIME!" ) );
+			break;
 		default:
 			gameLocal.DPrintf( "PrintMessageEvent: unknown message type %d\n", evt );
 			return;

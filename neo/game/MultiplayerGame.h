@@ -119,6 +119,7 @@ typedef enum {
 	SND_FLAG_TAKEN_THEIRS,  //added by Stradex from D3XP for CTF
 	SND_FLAG_DROPPED_YOURS,  //added by Stradex from D3XP for CTF
 	SND_FLAG_DROPPED_THEIRS,  //added by Stradex from D3XP for CTF
+	SND_OVERTIME,  //added by Stradex
 	SND_COUNT
 } snd_evt_t;
 
@@ -200,6 +201,7 @@ public:
 		MSG_FLAGRETURN, //added by Stradex from D3XP for CTF
 		MSG_FLAGCAPTURE, //added by Stradex from D3XP for CTF
 		MSG_SCOREUPDATE, //added by Stradex from D3XP for CTF
+		MSG_OVERTIME, //added by Stradex for OVERTIME
 		MSG_COUNT
 	} msg_evt_t;
 	void			PrintMessageEvent( int to, msg_evt_t evt, int parm1 = -1, int parm2 = -1 );
@@ -316,6 +318,7 @@ private:
 	int				nextStateSwitch;		// time next state switch
 	int				warmupEndTime;			// warmup till..
 	int				matchStartedTime;		// time current match started
+	int				overtimeCount;			// added by Stradex for OVERTIME
 
 	// tourney
 	int				currentTourneyPlayer[2];// our current set of players
