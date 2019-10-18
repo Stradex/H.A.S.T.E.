@@ -61,7 +61,7 @@ idCVar net_clientSmoothing( "net_clientSmoothing", "0.8", CVAR_GAME | CVAR_FLOAT
 idCVar net_clientSelfSmoothing( "net_clientSelfSmoothing", "0.6", CVAR_GAME | CVAR_FLOAT, "smooth self position if network causes prediction error.", 0.0f, 0.95f );
 idCVar net_clientMaxPrediction( "net_clientMaxPrediction", "1000", CVAR_SYSTEM | CVAR_INTEGER | CVAR_NOCHEAT, "maximum number of milliseconds a client can predict ahead of server." );
 idCVar net_clientLagOMeter( "net_clientLagOMeter", "1", CVAR_GAME | CVAR_BOOL | CVAR_NOCHEAT | CVAR_ARCHIVE, "draw prediction graph" );
-idCVar net_clientUnlagged( "net_clientUnlagged", "1", CVAR_GAME | CVAR_BOOL | CVAR_NOCHEAT | CVAR_ARCHIVE, "Sorry <ARG>" );  //added by Stradex
+idCVar net_clientUnlagged( "net_clientUnlagged", "1", CVAR_GAME | CVAR_USERINFO | CVAR_BOOL | CVAR_NOCHEAT | CVAR_ARCHIVE, "Sorry <ARG>" );  //added by Stradex
 
 /*
 ================
@@ -608,6 +608,15 @@ void idGameLocal::ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &ms
 			continue;
 		}
 
+		if (ent->IsType(idProjectile::Type) && gameLocal.userInfo[ clientNum ].GetBool( "net_clientUnlagged", "1")) {
+			idEntity* tmpOwner = static_cast<idProjectile*>(ent)->GetOwner();
+			if (tmpOwner && tmpOwner->entityNumber == clientNum) { //projectiles created by current player
+				//common->Printf("Server: ignoring projectile...\n");
+				continue;
+			}
+			
+		}
+
 		// if the entity is not in the player PVS
 		if ( !ent->PhysicsTeamInPVS( pvsHandle ) && ent->entityNumber != clientNum ) {
 			continue;
@@ -1060,6 +1069,10 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 			if ( i < MAX_CLIENTS && ent ) {
 				// SPAWN_PLAYER should be taking care of spawning the entity with the right spawnId
 				common->Warning( "ClientReadSnapshot: recycling client entity %d\n", i );
+			}
+
+			if (ent) {
+				common->Warning( "Replacing entity: %s\n", ent->GetEntityDefName() );
 			}
 
 			delete ent;
@@ -1554,7 +1567,7 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 			ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
 		}
 
-		if (lastPredictFrame)
+		if (isNewFrame)
 		{
 			for( ent = snapshotEntities.Next(); ent != NULL; ent = ent->snapshotNode.Next() ) {
 				if (ent->fl.neverUnlagged) {
@@ -1567,12 +1580,13 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 			}
 			for( ent = clientsideEntities.Next(); ent != NULL; ent = ent->clientsideNode.Next() ) {
 				//if ( ent->thinkFlags != 0 ) { //testing
-					ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
+				ent->thinkFlags |= TH_PHYSICS;
+				ent->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
 					//common->Printf("Clientside only entities thinking...\n");
 				//}
 			}
 		} else {
-			//player always should do client prediction for all tics
+			//player and clientside projectiles always should do client prediction for all tics
 			player->thinkFlags |= TH_PHYSICS;
 			player->ClientPredictionThink(lastPredictFrame, firstCallThisFrame, currentFrameCall);
 		}

@@ -2192,7 +2192,7 @@ void idMultiplayerGame::UpdateHud( idPlayer *player, idUserInterface *hud ) {
 		}
 	}
 
-	if ((gameLocal.gameType == GAME_TOURNEY) && gameLocal.serverInfo.GetBool( "si_overtime" ) && overtimeCount > 0) { //Overtime
+	if (!Warmup() && (gameLocal.gameType == GAME_TOURNEY) && gameLocal.serverInfo.GetBool( "si_overtime" ) && overtimeCount > 0) { //Overtime
 		hud->SetStateString( "timer",  va( "Overtime %i\n%s", overtimeCount, GameTime() ));
 	} else {
 		hud->SetStateString( "timer", ( Warmup() ) ? common->GetLanguageDict()->GetString( "#str_04251" ) : ( gameState == SUDDENDEATH ) ? common->GetLanguageDict()->GetString( "#str_04252" ) : GameTime() );

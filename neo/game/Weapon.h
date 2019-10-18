@@ -327,6 +327,7 @@ private:
 
 	//Added by Stradex
 	void					LaunchHitscan(  int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower, const idDict &projectileDef);
+	void					ClientsideFireProjectile(  int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower, const idDict &projectileDef);
 
 	// script events
 	void					Event_Clear( void );
