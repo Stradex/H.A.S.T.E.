@@ -266,6 +266,8 @@ void idGameLocal::Clear( void ) {
 		serverOverflowEvents[i].event = NULL;
 	}
 	overflowEventCountdown=0;
+	aithinking_count = 0; //ai optimization
+	aithinking_queuecount = 0;
 	//COOP END
 
 	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
@@ -909,6 +911,8 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	spawnCount = INITIAL_SPAWN_COUNT;
 	coopCount =  INITIAL_SPAWN_COUNT; //COOP
 
+	aithinking_count = 0;		//AI Thinking optimization
+	aithinking_queuecount = 0;	//AI Thinking optimization
 	coopSyncEntities.Clear(); //COOP
 	spawnedEntities.Clear();
 	activeEntities.Clear();
@@ -1044,6 +1048,8 @@ void idGameLocal::LocalMapRestart( ) {
 	firstClientToSpawn = true;
 	coopMapScriptLoad = false;
 	num_coopentities = 0;
+	aithinking_count = 0;		//added for AI thinking optimization for coop (more AI at the same time)
+	aithinking_queuecount = 0;	//added for AI thinking optimization for coop (more AI at the same time)
 
 	for (i=0; i < MAX_CLIENTS; i++) {
 		mpGame.playerUseCheckpoints[i] = false;
@@ -2526,7 +2532,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 					ent->Think();
 					num++;
 				}
-			} else {
+			} else { ///normal place
 				num = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
 					//COOP START
@@ -2538,6 +2544,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 					ent->Think();
 					num++;
 				}
+
 			}
 
 		}

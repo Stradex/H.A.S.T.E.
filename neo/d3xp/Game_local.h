@@ -59,6 +59,7 @@ const int MAX_SERVER_EVENTS_PER_FRAME = 15; //COOP: May the limit could be highe
 const int SERVER_EVENTS_QUEUE_SIZE = 256; //Added to avoid events overflow by server
 const int SERVER_EVENT_NONE = -999; //Added to avoid events overflow by server
 const int SERVER_EVENT_OVERFLOW_WAIT = 7; //How many frames to wait in case of server event overflow
+const int SERVER_MAX_AITHINK_PERFRAME = 7; //COOP: How many AI entities can think per frame
 //COOP ENDS
 
 
@@ -300,6 +301,8 @@ public:
 	void					addToServerEventOverFlowList(entityNetEvent_t* event, int clientNum); //To avoid server reliabe messages overflow
 	void					sendServerOverflowEvents( void ); //to send the overflow events that are in queue to avoid event overflow
 	int						overflowEventCountdown; //FIXME: Not pretty way I I think
+	int						aithinking_count;		//added for AI thinking optimization for coop (more AI at the same time)
+	int						aithinking_queuecount;	//added for AI thinking optimization for coop (more AI at the same time)
 	//COOP END
 
 	// can be used to automatically effect every material in the world that references globalParms

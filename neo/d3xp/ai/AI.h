@@ -293,6 +293,8 @@ public:
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg ); //Added for COOP by Stradex
 	void					ClientProcessNetAction(netActionType_t newAction);  //Added for COOP by Stradex
 	idPlayer				*GetClosestPlayerEnemy( void );
+	bool					inThinkingQueue; //for thinking optimization
+	bool					entityAlreadyThinked;  //for thinking optimization
 	//COOP END
 
 	void					TriggerWeaponEffects( const idVec3 &muzzle ); //moved to public by Stradex

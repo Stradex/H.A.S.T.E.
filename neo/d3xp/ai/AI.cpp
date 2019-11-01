@@ -405,6 +405,8 @@ idAI::idAI() {
 	neverFakeHide			= true; //important entity, never hide while using r_useLevelOfDetail
 
 	alwaysTryToReachEnemy = false; //added by Stradex
+	inThinkingQueue = false;
+	entityAlreadyThinked = false;
 }
 
 /*
@@ -1693,14 +1695,16 @@ bool idAI::MoveToEnemy( void ) {
 		return true;
 	}
 
+
 	idVec3 pos = lastVisibleReachableEnemyPos;
 
 	move.toAreaNum = 0;
 	if ( aas ) {
+
 		move.toAreaNum = PointReachableAreaNum( pos );
 		aas->PushPointIntoAreaNum( move.toAreaNum, pos );
 
-		if (!alwaysTryToReachEnemy) { //added by Stradex for stupid but fast performance AI with AAS
+		if (!alwaysTryToReachEnemy ) { //added by Stradex for stupid but fast performance AI with AAS
 
 			areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
 
@@ -1785,7 +1789,7 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	if ( !move.toAreaNum ) {
 		// if only trying to update the entity position
 		if ( move.moveCommand == MOVE_TO_ENTITY ) {
-			if ( !aas ) {
+			if ( !aas  ) {
 				// keep the move destination up to date for wandering
 				move.moveDest = pos;
 			}
@@ -2590,7 +2594,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 	float			dist;
 	bool			foundPath;
 
-	if ( ignore_obstacles ) {
+	if ( gameLocal.isClient || ignore_obstacles ) { 
 		newPos = goalPos;
 		move.obstacle = NULL;
 		return;
@@ -3776,6 +3780,7 @@ void idAI::SetEnemyPosition( void ) {
 		if ( move.moveCommand == MOVE_TO_ENEMY ) {
 			AI_DEST_UNREACHABLE = false;
 		}
+
 		enemyAreaNum = 0;
 		areaNum = 0;
 	} else {
@@ -3791,16 +3796,25 @@ void idAI::SetEnemyPosition( void ) {
 			}
 			areaNum = 0;
 		} else {
-			const idVec3 &org = physicsObj.GetOrigin();
-			areaNum = PointReachableAreaNum( org );
-			if ( alwaysTryToReachEnemy || PathToGoal( path, areaNum, org, enemyAreaNum, pos ) ) { //alwaysTryToReachEnemy to improve performance but stupid AI
+			if (alwaysTryToReachEnemy) 
+			{
 				lastVisibleReachableEnemyPos = pos;
 				lastVisibleReachableEnemyAreaNum = enemyAreaNum;
 				if ( move.moveCommand == MOVE_TO_ENEMY ) {
 					AI_DEST_UNREACHABLE = false;
 				}
-			} else if ( move.moveCommand == MOVE_TO_ENEMY ) {
-				AI_DEST_UNREACHABLE = true;
+			} else {
+				const idVec3 &org = physicsObj.GetOrigin();
+				areaNum = PointReachableAreaNum( org );
+				if (PathToGoal( path, areaNum, org, enemyAreaNum, pos ) ) { //alwaysTryToReachEnemy to improve performance but stupid AI
+					lastVisibleReachableEnemyPos = pos;
+					lastVisibleReachableEnemyAreaNum = enemyAreaNum;
+					if ( move.moveCommand == MOVE_TO_ENEMY ) {
+						AI_DEST_UNREACHABLE = false;
+					}
+				} else if ( move.moveCommand == MOVE_TO_ENEMY ) {
+					AI_DEST_UNREACHABLE = true;
+				}
 			}
 		}
 	}
@@ -5437,7 +5451,7 @@ void idAI::CSAnimMove( void ) {
 		goalPos = oldorigin;
 	} else if ( GetMovePos( goalPos ) ) {
 		if ( move.moveCommand != MOVE_WANDER ) {
-			CheckObstacleAvoidance( goalPos, newDest );
+			//CheckObstacleAvoidance( goalPos, newDest ); //nonsense in coop
 			TurnToward( turnTowardPos );
 		} else {
 			TurnToward( turnTowardPos );
