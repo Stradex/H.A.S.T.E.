@@ -99,6 +99,7 @@ const int MP_PLAYER_MAXFRAGS = 400;	// in CTF frags are player points (edited by
 const int MP_PLAYER_MAXWINS	= 100;
 const int MP_PLAYER_MAXPING	= 999;
 const int MP_PLAYER_MAXLIVES = 100; //COOP
+const int COOP_PLAYER_MAXFRAGS = 999;	// For Coop
 
 const int MP_CTF_MAXPOINTS = 25; //added by Stradex from D3XP for CTF
 
@@ -298,6 +299,8 @@ public:
 	void			WantAddCheckpoint( int clientNum , bool isGlobal=false);
 	void			WantNoClip( int clientNum );
 	void			IncrementFrags(idPlayer* player);
+	int				GetPlayerFrags(idPlayer* player);
+	int				GetPlayerLives(idPlayer* player);
 	void			SavePersistentPlayersInfo( void );
 
 	idVec3			playerCheckpoints[ MAX_CLIENTS ]; //added for coop checkpoints

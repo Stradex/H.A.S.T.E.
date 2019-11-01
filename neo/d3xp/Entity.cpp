@@ -413,6 +413,7 @@ idEntity::idEntity() {
 	coopNode.SetOwner( this ); //COOP
 
 	snapshotNode.SetOwner( this );
+	clientsideNode.SetOwner( this ); //for clientside entities...
 	snapshotSequence = -1;
 	snapshotBits = 0;
 
@@ -5047,6 +5048,10 @@ void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent
 
 	// prevent dupe events caused by frame re-runs
 	if ( !gameLocal.isNewFrame ) {
+		return;
+	}
+
+	if (clientsideNode.InList()) { //ignore client-side entities only
 		return;
 	}
 

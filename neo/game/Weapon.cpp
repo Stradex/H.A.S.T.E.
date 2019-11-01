@@ -2298,7 +2298,7 @@ int idWeapon::AmmoAvailable( void ) const {
 
 /*
 ================
-idWeapon::AmmoAvailable
+idWeapon::AmmoAvailableReal
 ================
 */
 int idWeapon::AmmoAvailableReal( void ) const {

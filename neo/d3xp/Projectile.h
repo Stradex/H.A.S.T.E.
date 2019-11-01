@@ -65,6 +65,7 @@ public :
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 	virtual void			Explode( const trace_t &collision, idEntity *ignore );
+	virtual bool			Hitscan( const trace_t &collision, idEntity *ignore , const idVec3 &velocity, bool addDamageEffect , float dmgPower); //addded by Stradex
 	void					Fizzle( void );
 
 	static idVec3			GetVelocity( const idDict *projectile );

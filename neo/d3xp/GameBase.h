@@ -73,6 +73,7 @@ If you have questions concerning this license or the applicable additional terms
 #define	MAX_CLIENTS				32
 #define	GENTITYNUM_BITS			12
 #define	MAX_GENTITIES			(1<<GENTITYNUM_BITS)
+#define CS_ENTITIESSTART		(MAX_GENTITIES-1024) //Clientside entities start entityNumber
 #define	ENTITYNUM_NONE			(MAX_GENTITIES-1)
 #define	ENTITYNUM_WORLD			(MAX_GENTITIES-2)
 #define	ENTITYNUM_MAX_NORMAL	(MAX_GENTITIES-2)

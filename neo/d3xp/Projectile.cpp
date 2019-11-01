@@ -387,23 +387,35 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 
 	thruster.SetPosition( &physicsObj, 0, idVec3( GetPhysics()->GetBounds()[ 0 ].x, 0, 0 ) );
 
-	if ( !gameLocal.isClient ) {
+	if ( !gameLocal.isClient || this->clientsideNode.InList() ) {
 		if ( fuse <= 0 ) {
 			// run physics for 1 second
 			RunPhysics();
-			PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "1500" ) );
+			if (gameLocal.isClient) {
+				CS_PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "1500" ) );
+			} else {
+				PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "1500" ) );
+			}
 		} else if ( spawnArgs.GetBool( "detonate_on_fuse" ) ) {
 			fuse -= timeSinceFire;
 			if ( fuse < 0.0f ) {
 				fuse = 0.0f;
 			}
-			PostEventSec( &EV_Explode, fuse );
+			if (gameLocal.isClient) {
+				CS_PostEventSec( &EV_Explode, fuse );
+			} else {
+				PostEventSec( &EV_Explode, fuse );
+			}
 		} else {
 			fuse -= timeSinceFire;
 			if ( fuse < 0.0f ) {
 				fuse = 0.0f;
 			}
-			PostEventSec( &EV_Fizzle, fuse );
+			if (gameLocal.isClient) {
+				PostEventSec( &EV_Fizzle, fuse );
+			} else {
+				CS_PostEventSec( &EV_Fizzle, fuse );
+			}
 		}
 	}
 
@@ -509,6 +521,13 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			Explode( collision, NULL );
 			return true;
 		}
+		// remove projectile when a 'noimpact' surface is hit
+		if ( collision.c.material && ( collision.c.material->GetSurfaceFlags() & SURF_NOIMPACT ) ) {
+			//no-impact surface or failed collision
+			if (this->clientsideNode.InList()) {
+				CS_PostEventMS( &EV_Remove, 0 );
+			}
+		}
 		return false;
 	}
 
@@ -608,6 +627,141 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 
 	Explode( collision, ignore );
+
+	return true;
+}
+
+
+/*
+=================
+idProjectile::Hitscan
+=================
+
+TO FIX: Sometimes clients can't see the effects (Most present with multiple bullets entities, etc...)
+*/
+
+bool idProjectile::Hitscan( const trace_t &collision, idEntity *ignore , const idVec3 &velocity, bool addDamageEffect , float dmgPower)
+{
+	idEntity	*ent;
+	idPlayer	*pOwner;
+	const char	*damageDefName;
+	idVec3		dir;
+	float		push;
+	float		damageScale;
+
+	if ( state == EXPLODED || state == FIZZLED ) {
+		return true;
+	}
+
+	// predict the explosion
+	if ( gameLocal.isClient ) {
+		if ( ClientPredictionCollide( owner.GetEntity(), spawnArgs, collision, velocity, !spawnArgs.GetBool( "net_instanthit" ) ) ) {
+			Explode( collision, NULL );
+			return true;
+		}
+		//probably no-impact surface or failed collision
+		if (this->clientsideNode.InList()) { //clientside hitscan only
+			CS_PostEventMS( &EV_Remove, 0 );
+		}
+		
+		return false;
+	}
+
+	// remove projectile when a 'noimpact' surface is hit
+	if ( ( collision.c.material != NULL ) && ( collision.c.material->GetSurfaceFlags() & SURF_NOIMPACT ) ) {
+		PostEventMS( &EV_Remove, 0 );
+		common->DPrintf( "Projectile collision no impact\n" );
+		return true;
+	}
+
+	// get the entity the projectile collided with
+	ent = gameLocal.entities[ collision.c.entityNum ];
+
+	pOwner = static_cast<idPlayer *>(owner.GetEntity());
+
+	if (pOwner && ent->entityNumber == pOwner->entityNumber ) {
+		assert( 0 );
+		return true;
+	}
+
+	// just get rid of the projectile when it hits a player in noclip
+	if ( ent->IsType( idPlayer::Type ) && static_cast<idPlayer *>( ent )->noclip ) {
+		PostEventMS( &EV_Remove, 0 );
+		return true;
+	}
+
+	// direction of projectile
+	dir = velocity; //this is zero = NO PUSH BUG
+	dir.Normalize();
+
+	// projectiles can apply an additional impulse next to the rigid body physics impulse
+	if ( spawnArgs.GetFloat( "push", "0", push ) && push > 0.0f ) {
+		ent->ApplyImpulse( this, collision.c.id, collision.c.point, push * dir ); //Stradex: let's try with NULL since the projectile is never created
+	}
+
+	// MP: projectiles open doors
+	if ( gameLocal.isMultiplayer && ent->IsType( idDoor::Type ) && !static_cast< idDoor * >(ent)->IsOpen() && !ent->spawnArgs.GetBool( "no_touch" ) ) {
+		ent->ProcessEvent( &EV_Activate , pOwner ); //pOwner or NULL?
+	}
+
+	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) ) {
+		if ( !spawnArgs.GetBool( "detonate_on_actor" )  ) {
+			return false;
+		}
+	} else {
+		if ( !spawnArgs.GetBool( "detonate_on_world" )  ) {
+
+			if ( !StartSound( "snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL ) ) {
+				float len = velocity.Length();
+				if ( len > BOUNCE_SOUND_MIN_VELOCITY ) {
+					SetSoundVolume( len > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( len - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) ) );
+					StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, true, NULL );
+				}
+			}
+
+			return false;
+		}
+	}
+
+	damageDefName = spawnArgs.GetString( "def_damage" );
+
+	ignore = NULL;
+
+	// if the hit entity takes damage
+	if ( ent->fl.takedamage ) {
+		if ( dmgPower ) {
+			damageScale = dmgPower;
+		} else {
+			damageScale = 1.0f;
+		}
+
+		// if the projectile owner is a player
+		if ( pOwner && pOwner->IsType( idPlayer::Type ) ) { // straex: && pOwner->IsType( idPlayer::Type ) ?? pOwner is already idPlayer...
+			// if the projectile hit an actor
+			if ( ent->IsType( idActor::Type ) ) {
+				idPlayer *player = static_cast<idPlayer *>( pOwner ); //static_cast?...
+				player->AddProjectileHits( 1 );
+				damageScale *= player->PowerUpModifier( PROJECTILE_DAMAGE );
+			}
+		}
+
+		if ( damageDefName[0] != '\0' ) {
+			ent->Damage( this, pOwner, dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ) );
+			ignore = ent;
+		}
+	}
+
+	// if the projectile causes a damage effect
+	if ( spawnArgs.GetBool( "impact_damage_effect" ) ) {
+		// if the hit entity has a special damage effect
+		if ( ent->spawnArgs.GetBool( "bleed" ) ) {
+			ent->AddDamageEffect( collision, velocity, damageDefName );
+		} else {
+			AddDefaultDamageEffect( collision, velocity );
+		}
+	}
+
+	Explode(collision, ignore);
 
 	return true;
 }
@@ -909,6 +1063,11 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	state = EXPLODED;
 
 	if ( gameLocal.isClient ) {
+		if (this->clientsideNode.InList()) {
+			this->ClientPredictionThink(false, false, 0);
+			CS_PostEventMS( &EV_Remove, removeTime );
+		}
+
 		return;
 	}
 

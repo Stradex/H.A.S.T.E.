@@ -1,211 +1,211 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="game\AF.cpp">
+    <ClCompile Include="d3xp\AF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\AFEntity.cpp">
+    <ClCompile Include="d3xp\AFEntity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Actor.cpp">
+    <ClCompile Include="d3xp\Actor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Camera.cpp">
+    <ClCompile Include="d3xp\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Entity.cpp">
+    <ClCompile Include="d3xp\Entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\BrittleFracture.cpp">
+    <ClCompile Include="d3xp\BrittleFracture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Fx.cpp">
+    <ClCompile Include="d3xp\Fx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\GameEdit.cpp">
+    <ClCompile Include="d3xp\GameEdit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Game_local.cpp">
+    <ClCompile Include="d3xp\Game_local.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Game_network.cpp">
+    <ClCompile Include="d3xp\Game_network.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Item.cpp">
+    <ClCompile Include="d3xp\Item.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\IK.cpp">
+    <ClCompile Include="d3xp\IK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Light.cpp">
+    <ClCompile Include="d3xp\Light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Misc.cpp">
+    <ClCompile Include="d3xp\Misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Mover.cpp">
+    <ClCompile Include="d3xp\Mover.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Moveable.cpp">
+    <ClCompile Include="d3xp\Moveable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\MultiplayerGame.cpp">
+    <ClCompile Include="d3xp\MultiplayerGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Player.cpp">
+    <ClCompile Include="d3xp\Player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\PlayerIcon.cpp">
+    <ClCompile Include="d3xp\PlayerIcon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\PlayerView.cpp">
+    <ClCompile Include="d3xp\PlayerView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Projectile.cpp">
+    <ClCompile Include="d3xp\Projectile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Pvs.cpp">
+    <ClCompile Include="d3xp\Pvs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\SecurityCamera.cpp">
+    <ClCompile Include="d3xp\SecurityCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\SmokeParticles.cpp">
+    <ClCompile Include="d3xp\SmokeParticles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Sound.cpp">
+    <ClCompile Include="d3xp\Sound.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Target.cpp">
+    <ClCompile Include="d3xp\Target.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Trigger.cpp">
+    <ClCompile Include="d3xp\Trigger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\Weapon.cpp">
+    <ClCompile Include="d3xp\Weapon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\WorldSpawn.cpp">
+    <ClCompile Include="d3xp\WorldSpawn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\AAS.cpp">
+    <ClCompile Include="d3xp\ai\AAS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\AAS_debug.cpp">
+    <ClCompile Include="d3xp\ai\AAS_debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\AAS_pathing.cpp">
+    <ClCompile Include="d3xp\ai\AAS_pathing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\AAS_routing.cpp">
+    <ClCompile Include="d3xp\ai\AAS_routing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\AI.cpp">
+    <ClCompile Include="d3xp\ai\AI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\AI_events.cpp">
+    <ClCompile Include="d3xp\ai\AI_events.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\AI_pathing.cpp">
+    <ClCompile Include="d3xp\ai\AI_pathing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\AI_Vagary.cpp">
+    <ClCompile Include="d3xp\ai\AI_Vagary.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\DebugGraph.cpp">
+    <ClCompile Include="d3xp\gamesys\DebugGraph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\Class.cpp">
+    <ClCompile Include="d3xp\gamesys\Class.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\Event.cpp">
+    <ClCompile Include="d3xp\gamesys\Event.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\SaveGame.cpp">
+    <ClCompile Include="d3xp\gamesys\SaveGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\SysCmds.cpp">
+    <ClCompile Include="d3xp\gamesys\SysCmds.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\SysCvar.cpp">
+    <ClCompile Include="d3xp\gamesys\SysCvar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\TypeInfo.cpp">
+    <ClCompile Include="d3xp\gamesys\TypeInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\anim\Anim.cpp">
+    <ClCompile Include="d3xp\anim\Anim.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\anim\Anim_Blend.cpp">
+    <ClCompile Include="d3xp\anim\Anim_Blend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\anim\Anim_Import.cpp">
+    <ClCompile Include="d3xp\anim\Anim_Import.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\anim\Anim_Testmodel.cpp">
+    <ClCompile Include="d3xp\anim\Anim_Testmodel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\script\Script_Compiler.cpp">
+    <ClCompile Include="d3xp\script\Script_Compiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\script\Script_Interpreter.cpp">
+    <ClCompile Include="d3xp\script\Script_Interpreter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\script\Script_Program.cpp">
+    <ClCompile Include="d3xp\script\Script_Program.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\script\Script_Thread.cpp">
+    <ClCompile Include="d3xp\script\Script_Thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Clip.cpp">
+    <ClCompile Include="d3xp\physics\Clip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Force.cpp">
+    <ClCompile Include="d3xp\physics\Force.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Force_Constant.cpp">
+    <ClCompile Include="d3xp\physics\Force_Constant.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Force_Drag.cpp">
+    <ClCompile Include="d3xp\physics\Force_Drag.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Force_Field.cpp">
+    <ClCompile Include="d3xp\physics\Force_Field.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Force_Spring.cpp">
+    <ClCompile Include="d3xp\physics\Force_Spring.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics.cpp">
+    <ClCompile Include="d3xp\physics\Physics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_AF.cpp">
+    <ClCompile Include="d3xp\physics\Physics_AF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_Actor.cpp">
+    <ClCompile Include="d3xp\physics\Physics_Actor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_Base.cpp">
+    <ClCompile Include="d3xp\physics\Physics_Base.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_Monster.cpp">
+    <ClCompile Include="d3xp\physics\Physics_Monster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_Parametric.cpp">
+    <ClCompile Include="d3xp\physics\Physics_Parametric.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_Player.cpp">
+    <ClCompile Include="d3xp\physics\Physics_Player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_RigidBody.cpp">
+    <ClCompile Include="d3xp\physics\Physics_RigidBody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_Static.cpp">
+    <ClCompile Include="d3xp\physics\Physics_Static.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Physics_StaticMulti.cpp">
+    <ClCompile Include="d3xp\physics\Physics_StaticMulti.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game\physics\Push.cpp">
+    <ClCompile Include="d3xp\physics\Push.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

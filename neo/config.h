@@ -6,8 +6,8 @@
 
 #define BUILD_LIBRARY_SUFFIX	".dll"
 
-#define BUILD_LIBDIR			"C:/Program Files (x86)/dhewm3/lib/dhewm3"
-#define BUILD_DATADIR			"C:/Program Files (x86)/dhewm3/share/dhewm3"
+#define BUILD_LIBDIR			"C:/Program Files (x86)/dhewm3/lib/haste"
+#define BUILD_DATADIR			"C:/Program Files (x86)/dhewm3/share/haste"
 
 /* #undef HAVE_JPEG_MEM_SRC */
 

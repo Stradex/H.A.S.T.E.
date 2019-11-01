@@ -888,6 +888,26 @@ void idInventory::Drop( const idDict &spawnArgs, const char *weapon_classname, i
 
 /*
 ===============
+idInventory::HasAmmoReal
+===============
+*/
+int idInventory::HasAmmoReal( ammo_t type ) {
+	if ( type == 0 ) {
+		// always allow weapons that don't use ammo to fire
+		return -1;
+	}
+
+	// check if we have infinite ammo
+	if ( ammo[ type ] < 0 ) {
+		return -1;
+	}
+
+	// return how many shots we can fire
+	return ammo[ type ];
+}
+
+/*
+===============
 idInventory::HasAmmo
 ===============
 */
@@ -916,6 +936,18 @@ int idInventory::HasAmmo( const char *weapon_classname ) {
 	ammo_t ammo_i = AmmoIndexForWeaponClass( weapon_classname, &ammoRequired );
 	return HasAmmo( ammo_i, ammoRequired );
 }
+
+/*
+===============
+idInventory::HasAmmoReal
+===============
+*/
+int idInventory::HasAmmoReal( const char *weapon_classname ) {
+	int ammoRequired;
+	ammo_t ammo_i = AmmoIndexForWeaponClass( weapon_classname, &ammoRequired );
+	return HasAmmoReal( ammo_i );
+}
+
 
 /*
 ===============
@@ -1473,7 +1505,9 @@ void idPlayer::Spawn( void ) {
 	if ( !gameLocal.isMultiplayer || entityNumber == gameLocal.localClientNum ) {
 
 		// load HUD
-		if ( gameLocal.isMultiplayer ) {
+		if ( gameLocal.isMultiplayer && gameLocal.mpGame.IsGametypeCoopBased() ) {
+			hud = uiManager->FindGui( "guis/coophud.gui", true, false, true );
+		} else if ( gameLocal.isMultiplayer ) {
 			hud = uiManager->FindGui( "guis/mphud.gui", true, false, true );
 		} else if ( spawnArgs.GetString( "hud", "", temp ) ) {
 			hud = uiManager->FindGui( temp, true, false, true );
@@ -2551,20 +2585,21 @@ idPlayer::UpdateHudAmmo
 */
 void idPlayer::UpdateHudAmmo( idUserInterface *_hud ) {
 	int inclip;
-	int ammoamount;
+	int ammoamount, ammoAmountReal;
 
 	assert( weapon.GetEntity() );
 	assert( _hud );
 
 	inclip		= weapon.GetEntity()->AmmoInClip();
 	ammoamount	= weapon.GetEntity()->AmmoAvailable();
+	ammoAmountReal = weapon.GetEntity()->AmmoAvailableReal();
 	if ( ammoamount < 0 || !weapon.GetEntity()->IsReady() ) {
 		// show infinite ammo
 		_hud->SetStateString( "player_ammo", "" );
 		_hud->SetStateString( "player_totalammo", "" );
 	} else {
 		// show remaining ammo
-		_hud->SetStateString( "player_totalammo", va( "%i", ammoamount - inclip ) );
+		_hud->SetStateString( "player_totalammo", va( "%i", ammoAmountReal - inclip ) );
 		_hud->SetStateString( "player_ammo", weapon.GetEntity()->ClipSize() ? va( "%i", inclip ) : "--" );		// how much in the current clip
 		_hud->SetStateString( "player_clips", weapon.GetEntity()->ClipSize() ? va( "%i", ammoamount / weapon.GetEntity()->ClipSize() ) : "--" );
 		_hud->SetStateString( "player_allammo", va( "%i/%i", inclip, ammoamount - inclip ) );
@@ -2644,6 +2679,18 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 
 		_hud->HandleNamedEvent( "RedFlagStatusChange" );
 		_hud->HandleNamedEvent( "BlueFlagStatusChange" );
+	} else if (gameLocal.mpGame.IsGametypeCoopBased()  && _hud ) {
+		int value = idMath::ClampInt( MP_PLAYER_MINFRAGS, COOP_PLAYER_MAXFRAGS, gameLocal.mpGame.GetPlayerFrags(this) );
+		_hud->SetStateInt( "player_frags", value );
+
+		if (gameLocal.gameType == GAME_SURVIVAL) {
+			value = idMath::ClampInt( 0, MP_PLAYER_MAXLIVES, gameLocal.mpGame.GetPlayerLives(this) );
+			_hud->SetStateInt( "player_lives", value );
+			_hud->SetStateInt( "game_survival", 1 ); //for specific hud stuff that works only in survival
+		} else {
+			_hud->SetStateInt( "game_survival", 0 ); //for specific hud stuff that works only in survival
+		}
+		//_hud->SetStateInt( "red_team_score",  gameLocal.mpGame.GetFlagPoints( 0 ) );
 	}
 	//end by Stradex for CTF
 
@@ -2879,7 +2926,7 @@ void idPlayer::FireWeapon( bool isSecAttack ) {
 	}
 
 	if ( !hiddenWeapon && weapon.GetEntity()->IsReady() ) {
-		if ( weapon.GetEntity()->AmmoInClip() || weapon.GetEntity()->AmmoAvailable() ) {
+		if ( weapon.GetEntity()->AmmoInClip() || (weapon.GetEntity()->AmmoAvailable() && !isSecAttack) || (weapon.GetEntity()->AltAmmoAvailable() && isSecAttack) ) {
 			AI_ATTACK_HELD = true;
 			weapon.GetEntity()->BeginAttack( isSecAttack );
 			if ( ( weapon_soulcube >= 0 ) && ( currentWeapon == weapon_soulcube ) ) {
@@ -3777,7 +3824,7 @@ void idPlayer::SelectWeapon( int num, bool force ) {
 	}
 
 	if ( force || ( inventory.weapons & ( 1 << num ) ) ) {
-		if ( !inventory.HasAmmo( weap ) && !spawnArgs.GetBool( va( "weapon%d_allowempty", num ) ) ) {
+		if ( !inventory.HasAmmoReal( weap ) && !spawnArgs.GetBool( va( "weapon%d_allowempty", num ) ) ) {  //edited by Stradex
 			return;
 		}
 		if ( ( previousWeapon >= 0 ) && ( idealWeapon == num ) && ( spawnArgs.GetBool( va( "weapon%d_toggle", num ) ) ) ) {
@@ -3994,7 +4041,7 @@ void idPlayer::Weapon_Combat( void ) {
 	} else {
 		weaponGone = false;	// if you drop and re-get weap, you may miss the = false above
 		if ( weapon.GetEntity()->IsHolstered() ) {
-			if ( !weapon.GetEntity()->AmmoAvailable() ) {
+			if ( !weapon.GetEntity()->AmmoAvailable() && !weapon.GetEntity()->AltAmmoAvailable()) {
 				// weapons can switch automatically if they have no more ammo
 				NextBestWeapon();
 			} else {
@@ -5839,9 +5886,12 @@ void idPlayer::AdjustSpeed(float speedMultiplier) {
 		speed = pm_noclipspeed.GetFloat();
 		bobFrac = 0.0f;
 	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) ) {
+		/*
+		//Stradex: No stamina at all, not even in SP
 		if ( !gameLocal.isMultiplayer && !physicsObj.IsCrouching() && !PowerUpActive( ADRENALINE ) ) {
 			stamina -= MS2SEC( gameLocal.msec );
 		}
+		*/
 		if ( stamina < 0 ) {
 			stamina = 0;
 		}

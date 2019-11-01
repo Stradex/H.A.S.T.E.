@@ -883,7 +883,7 @@ void idInventory::Drop( const idDict &spawnArgs, const char *weapon_classname, i
 
 /*
 ===============
-idInventory::HasAmmo
+idInventory::HasAmmoReal
 ===============
 */
 int idInventory::HasAmmoReal( ammo_t type ) {

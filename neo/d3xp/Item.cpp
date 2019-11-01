@@ -398,14 +398,14 @@ bool idItem::Pickup( idPlayer *player ) {
 	bool dropped = spawnArgs.GetBool( "dropped" );
 	bool no_respawn = spawnArgs.GetBool( "no_respawn" );
 
-	if ( (!gameLocal.mpGame.IsGametypeCoopBased() || si_itemRespawn.GetBool() ) && gameLocal.isMultiplayer && respawn == 0.0f ) {
+	if ( ( (!gameLocal.mpGame.IsGametypeCoopBased() || gameLocal.serverInfo.GetBool("si_itemRespawn") ) && gameLocal.isMultiplayer && respawn == 0.0f ) || !gameLocal.isMultiplayer) { //respawn items in SP by now...
 		respawn = 20.0f;
 	}
 
 	//COOP STARRT
 
 	if ( gameLocal.isClient && gameLocal.mpGame.IsGametypeCoopBased() ) { //client-side pickup for coop
-		if (player && si_onePickupPerPlayer.GetBool() && (player->entityNumber != gameLocal.localClientNum)) { //One Pickup per player clientside behaviour
+		if (player && gameLocal.serverInfo.GetBool("si_onePickupPerPlayer") && (player->entityNumber != gameLocal.localClientNum)) { //One Pickup per player clientside behaviour
 			return false;
 		}
 		if ( !CS_GiveToPlayer( player ) ) {

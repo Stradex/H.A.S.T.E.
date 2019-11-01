@@ -295,6 +295,8 @@ public:
 	idPlayer				*GetClosestPlayerEnemy( void );
 	//COOP END
 
+	void					TriggerWeaponEffects( const idVec3 &muzzle ); //moved to public by Stradex
+
 protected:
 	// navigation
 	idAAS *					aas;
@@ -564,7 +566,7 @@ protected:
 	// special effects
 	void					GetMuzzle( const char *jointname, idVec3 &muzzle, idMat3 &axis );
 	void					InitMuzzleFlash( void );
-	void					TriggerWeaponEffects( const idVec3 &muzzle );
+	//void					TriggerWeaponEffects( const idVec3 &muzzle );
 	void					UpdateMuzzleFlash( void );
 	virtual bool			UpdateAnimationControllers( void );
 	void					UpdateParticles( void );

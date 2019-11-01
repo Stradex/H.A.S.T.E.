@@ -4295,6 +4295,11 @@ void idAI::DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage ) 
 
 	} else if ( victim == enemy.GetEntity() ) {
 		AI_HIT_ENEMY = true;
+	} else if (victim->IsType(idActor::Type)) { //added by Stradex
+		idActor* victimAct = static_cast<idActor*>(victim);
+		if (victimAct && victimAct->team == this->team) { //Disable AI friendly damage
+			damage = 0; //no damage
+		}
 	}
 }
 

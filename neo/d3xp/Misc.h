@@ -381,6 +381,8 @@ public:
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	virtual void		SetModel( const char *modelname ); //added by Stradex
+
 private:
 	bool				hidden;
 

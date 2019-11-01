@@ -158,28 +158,25 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{29CC0302-05D1-329E-88AB-9B2A2DE0532E}</Project>
       <Name>ZERO_CHECK</Name>
     </ProjectReference>
+    <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\HASTE.vcxproj">
+      <Project>{6A307E86-B0A1-3383-A61F-959BC7FA70AC}</Project>
+      <Name>HASTE</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\HASTEded.vcxproj">
+      <Project>{75E4FB7D-E43C-390E-B528-4065E55A938F}</Project>
+      <Name>HASTEded</Name>
+    </ProjectReference>
     <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\base.vcxproj">
       <Project>{8282064D-5D5B-310F-A8C0-15BA11B90E99}</Project>
       <Name>base</Name>
     </ProjectReference>
-    <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\d3xp.vcxproj">
-      <Project>{A95607B3-EA3C-39C9-AAE5-BB24431D1D62}</Project>
-      <Name>d3xp</Name>
-    </ProjectReference>
-    <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\dhewm3.vcxproj">
-      <Project>{D93369CA-F4CA-3152-B377-B6A73AFC353B}</Project>
-      <Name>dhewm3</Name>
-    </ProjectReference>
-    <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\dhewm3ded.vcxproj">
-      <Project>{CAA95775-9D17-3062-AD07-85A4FBB18046}</Project>
-      <Name>dhewm3ded</Name>
+    <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\coop.vcxproj">
+      <Project>{5A5ABE0E-3FD1-3A17-B838-1229AF78904D}</Project>
+      <Name>coop</Name>
     </ProjectReference>
     <ProjectReference Include="D:\Maxi\Hobbies\HASTE\SourceCode\repository\neo\idlib.vcxproj">
       <Project>{2456FF5B-5C7B-3D2F-AAD1-918D38F45497}</Project>
       <Name>idlib</Name>
-    </ProjectReference>
-    <ProjectReference Include="upnpnat\upnpnat.vcxproj">
-      <Project>{93a50857-b96e-4fcd-bc07-bb39332083bc}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

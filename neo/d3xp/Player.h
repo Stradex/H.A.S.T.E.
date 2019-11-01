@@ -184,8 +184,10 @@ public:
 	void					AddPickupName( const char *name, const char *icon );
 
 	int						HasAmmo( ammo_t type, int amount );
+	int						HasAmmoReal( ammo_t type ); //added by Stradex to get REAL current ammo
 	bool					UseAmmo( ammo_t type, int amount );
 	int						HasAmmo( const char *weapon_classname );			// looks up the ammo information for the weapon class first
+	int						HasAmmoReal( const char *weapon_classname ); // looks up the ammo information for the weapon class first
 
 	void					UpdateArmor( void );
 

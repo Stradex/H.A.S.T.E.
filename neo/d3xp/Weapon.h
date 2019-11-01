@@ -138,7 +138,9 @@ public:
 	static const char		*GetAmmoNameForNum( ammo_t ammonum );
 	static const char		*GetAmmoPickupNameForNum( ammo_t ammonum );
 	ammo_t					GetAmmoType( void ) const;
+	int						AltAmmoAvailable( void ) const; //added by Stradex
 	int						AmmoAvailable( void ) const;
+	int						AmmoAvailableReal( void ) const; //added by Stradex
 	int						AmmoInClip( void ) const;
 	void					SetAmmoInClip( int newClip); //added by Stradex
 	void					ResetAmmoClip( void );
@@ -322,6 +324,11 @@ private:
 	void					MuzzleRise( idVec3 &origin, idMat3 &axis );
 	void					UpdateNozzleFx( void );
 	void					UpdateFlashPosition( void );
+
+	//Added by Stradex
+	void					LaunchHitscan(  int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower, const idDict &projectileDef);
+	void					ClientsideFireProjectile(  int num_projectiles, float spread, float fuseOffset, float launchPower, float dmgPower, const idDict &projectileDef);
+
 
 	// script events
 	void					Event_Clear( void );

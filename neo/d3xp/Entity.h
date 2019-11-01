@@ -132,6 +132,7 @@ public:
 	idLinkList<idEntity>	coopNode;				// COOP: for being linked into coopSyncEntities list by Stradex for Coop
 
 	idLinkList<idEntity>	snapshotNode;			// for being linked into snapshotEntities list
+	idLinkList<idEntity>	clientsideNode;			// for being linked into clientsideEntities list (added by Stradex)
 	int						snapshotSequence;		// last snapshot this entity was in
 	int						snapshotBits;			// number of bits this entity occupied in the last snapshot
 

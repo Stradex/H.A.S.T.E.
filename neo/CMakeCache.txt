@@ -303,6 +303,9 @@ ZLIB_LIBRARY_RELEASE:FILEPATH=D:/Maxi/Hobbies/HASTE/SourceCode/dhewm3-libs/i686-
 base_LIB_DEPENDS:STATIC=general;idlib;
 
 //Dependencies for the target
+coop_LIB_DEPENDS:STATIC=general;idlib;
+
+//Dependencies for the target
 d3xp_LIB_DEPENDS:STATIC=general;idlib;
 
 //Value Computed by CMake

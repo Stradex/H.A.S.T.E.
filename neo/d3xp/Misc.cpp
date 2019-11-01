@@ -1799,6 +1799,16 @@ void idFuncEmitter::Spawn( void ) {
 	} else {
 		hidden = false;
 	}
+
+	if ( spawnArgs.GetFloat( "end_x" ) > 0.0 ) { //added by Stradex for lighting gun effect
+		const char* temp;
+		//re-set model again
+		temp = spawnArgs.GetString( "model" );
+
+		if ( temp && *temp ) {
+			SetModel( temp ); 
+		}
+	}
 }
 
 /*
@@ -1859,6 +1869,39 @@ void idFuncEmitter::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	if ( msg.HasChanged() ) {
 		UpdateVisuals();
 	}
+}
+
+/*
+================
+idFuncEmitter::SetModel
+added by Stradex
+================
+*/
+void idFuncEmitter::SetModel( const char *modelname ) {
+	assert( modelname );
+
+	FreeModelDef();
+
+	renderEntity.hModel = renderModelManager->FindModel( modelname );
+
+	if ( renderEntity.hModel ) {
+		if ( spawnArgs.GetFloat( "end_x" ) > 0.0 ) {
+			renderEntity.hModel->setEndX(spawnArgs.GetFloat( "end_x" )); //added by Stradex ugly shitty fucking hack
+		}
+		
+		renderEntity.hModel->Reset();
+	}
+
+	renderEntity.callback = NULL;
+	renderEntity.numJoints = 0;
+	renderEntity.joints = NULL;
+	if ( renderEntity.hModel ) {
+		renderEntity.bounds = renderEntity.hModel->Bounds( &renderEntity );
+	} else {
+		renderEntity.bounds.Zero();
+	}
+
+	UpdateVisuals();
 }
 
 
