@@ -50,7 +50,7 @@ If you have questions concerning this license or the applicable additional terms
 static const int DELAY_DORMANT_TIME = 3000;
 //COOP START
 static const int DEFAULT_SNAPSHOT_PRIORITY = 5; //All snapshotPriority values behind are top priority
-static const int MAX_MISSING_SNAPSHOTS = 10;
+static const int MAX_MISSING_SNAPSHOTS = 15; //up to 15 now for HASTE
 //COOP END
 
 extern const idEventDef EV_PostSpawn;
@@ -163,6 +163,7 @@ public:
 	bool					readByServer;			//if the entity was already tried to be sent in the snapshot
 	int						snapshotPriority;		//The priority of this entity (useful when snapshot overflow
 	int						snapshotMissingCount[MAX_CLIENTS];	//Missing snapshots count for coop
+	bool					spawnSnapShot; //first snapshot send by server
 	//COOP END
 
 	struct entityFlags_s {

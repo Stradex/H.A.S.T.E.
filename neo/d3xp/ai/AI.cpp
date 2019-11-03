@@ -407,6 +407,7 @@ idAI::idAI() {
 	alwaysTryToReachEnemy = false; //added by Stradex
 	inThinkingQueue = false;
 	entityAlreadyThinked = false;
+	currentChannelOverride = 0;
 }
 
 /*
@@ -940,7 +941,7 @@ void idAI::Spawn( void ) {
 	useBoneAxis = spawnArgs.GetBool( "useBoneAxis" );
 	SpawnParticles( "smokeParticleSystem" );
 
-	if ( num_cinematics || spawnArgs.GetBool( "hide" ) || spawnArgs.GetBool( "teleport" ) || spawnArgs.GetBool( "trigger_anim" ) ) {
+	if ( num_cinematics || spawnArgs.GetBool( "hide" ) || spawnArgs.GetBool( "teleport" ) || spawnArgs.GetBool( "trigger_anim" ) || gameLocal.isClient ) { //gameLocal.isClient added to avoid bug in coop
 		fl.takedamage = false;
 		physicsObj.SetContents( 0 );
 		physicsObj.GetClipModel()->Unlink();
@@ -4653,10 +4654,11 @@ idAI::Hide
 ================
 */
 void idAI::Hide( void ) {
-
+	/*
 	if (gameLocal.isServer && gameLocal.mpGame.IsGametypeCoopBased()) {
 		currentNetAction = NETACTION_HIDE; //added by Stradex for COOP
 	}
+	*/
 
 	idActor::Hide();
 	fl.takedamage = false;
@@ -4677,9 +4679,11 @@ idAI::Show
 */
 void idAI::Show( void ) {
 
+	/*
 	if (gameLocal.isServer && gameLocal.mpGame.IsGametypeCoopBased()) {
 		currentNetAction = NETACTION_SHOW; //added by Stradex for COOP
 	}
+	*/
 
 	idActor::Show();
 	if ( spawnArgs.GetBool( "big_monster" ) ) {
@@ -5134,6 +5138,14 @@ void idAI::WriteToSnapshot( idBitMsgDelta &msg ) const {
 		normalizedLastDamageDir = lastDamageDir;
 	}
 
+	msg.WriteBits( spawnSnapShot, 1 );
+	if (spawnSnapShot) {
+		//sending origin position
+		msg.WriteFloat(GetPhysics()->GetOrigin().x);
+		msg.WriteFloat(GetPhysics()->GetOrigin().y);
+		msg.WriteFloat(GetPhysics()->GetOrigin().z);
+	}
+
 	physicsObj.WriteToSnapshot( msg );
 
 	WriteBindToSnapshot( msg );
@@ -5182,6 +5194,9 @@ void idAI::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteInt( enemyEntityNum );
 	msg.WriteInt( goalEntityNum );
 
+	msg.WriteShort( currentChannelOverride );
+	msg.WriteBits( disableGravity, 1 );
+
 	msg.WriteBits( fl.hidden, 1);
 }
 
@@ -5197,10 +5212,19 @@ void idAI::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	}
 
 	int		i, oldHealth, enemySpawnId, torsoAnimId, legsAnimId, enemyEntityId, goalEntityId;
-	bool	newHitToggle, stateHitch, hasEnemy;
+	bool	newHitToggle, stateHitch, hasEnemy, isSpawnSnapshot;
+	idVec3	tmpOrigin = vec3_zero;
 	netActionType_t newNetAction;
 
 	oldHealth = health;
+
+	isSpawnSnapshot  = msg.ReadBits( 1 ) != 0;
+	if (isSpawnSnapshot) {
+		//sending origin position
+		tmpOrigin.x = msg.ReadFloat();
+		tmpOrigin.y = msg.ReadFloat();
+		tmpOrigin.z = msg.ReadFloat();
+	}
 
 	physicsObj.ReadFromSnapshot( msg );
 	ReadBindFromSnapshot( msg );
@@ -5255,6 +5279,10 @@ void idAI::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		move.goalEntity.SetSpawnId(gameLocal.GetSpawnId(gameLocal.coopentities[goalEntityId])); //should I use SetSpawnId or better SetCoopId?
 	}
 
+	currentChannelOverride = msg.ReadShort();
+
+	disableGravity = msg.ReadBits( 1 ) != 0;
+
 	bool isInvisible=false;
 	isInvisible = msg.ReadBits( 1 ) != 0;
 
@@ -5283,6 +5311,9 @@ void idAI::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		//AI_PAIN = Pain( NULL, NULL, oldHealth - health, lastDamageDir, lastDamageLocation ); //causing crash.
 	}
 	if ( msg.HasChanged() ) {
+		if (isSpawnSnapshot) { //lets update origin then
+			physicsObj.SetOrigin( tmpOrigin + idVec3( 0, 0, CM_CLIP_EPSILON ) );
+		}
 		ClientProcessNetAction(newNetAction);
 		UpdateVisuals();
 	}
@@ -5380,6 +5411,9 @@ void idAI::ClientProcessNetAction(netActionType_t newAction) {
 		break;
 		case NETACTION_HIDE:
 			Hide();
+		break;
+		case NETACTION_OVERRIDEANIM:
+			Event_OverrideAnim(currentChannelOverride);
 		break;
 	}
 
@@ -5579,6 +5613,22 @@ void idAI::CSKilled( void ) {
 
 	SetWaitState( "" );
 	animator.ClearAllJoints(); //should this happen?
+}
+
+/*
+===============
+idAI::Event_OverrideAnim
+===============
+*/
+void idAI::Event_OverrideAnim( int channel ) {
+	if (gameLocal.isServer) {
+		currentChannelOverride = channel;
+		currentNetAction = NETACTION_OVERRIDEANIM;
+	}
+
+	idActor::Event_OverrideAnim(channel);
+
+	return;
 }
 
 //end coop stuff

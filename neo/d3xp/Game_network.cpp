@@ -41,6 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "Mover.h" //FIXME, I need to solve the duplicated entities problem at clientreadsnapshot and serverwritesnapshot
 #include "Misc.h"  //FIXME, I need to solve the duplicated entities problem at clientreadsnapshot and serverwritesnapshot
 #include "Trigger.h"  //FIXME, I need to solve the duplicated entities problem at clientreadsnapshot and serverwritesnapshot
+#include "ai/AI.h"  //FIXME, I need to solve the duplicated entities problem at clientreadsnapshot and serverwritesnapshot
 #include "gamesys/SysCvar.h" //added for netcode optimization stuff
 //COOP END
 
@@ -2143,7 +2144,7 @@ gameReturn_t	idGameLocal::RunClientSideFrame(idPlayer	*clientPlayer, const userc
 
 	//FIXME: AVOID UGLY COOP IN BUG START
 	for( ent = coopSyncEntities.Next(); ent != NULL; ent = ent->coopNode.Next() ) {
-		if (!ent->forceNetworkSync || (ent->entityCoopNumber == clientPlayer->entityCoopNumber)) {
+		if (!ent->forceNetworkSync || (ent->entityCoopNumber == clientPlayer->entityCoopNumber) || ent->IsType(idAI::Type)) { //idAI test...
 			continue;
 		}
 
@@ -2816,13 +2817,13 @@ void idGameLocal::ServerWriteSnapshotCoop( int clientNum, int sequence, idBitMsg
 		// write the class specific data to the snapshot
 		ent->WriteToSnapshot( deltaMsg );
 
-		if ( !deltaMsg.HasChanged() ) {
+		if ( !deltaMsg.HasChanged() ) { 
 			msg.RestoreWriteState( msgSize, msgWriteBit );
 			entityStateAllocator.Free( newBase );
 		} else {
 			newBase->next = snapshot->firstEntityState;
 			snapshot->firstEntityState = newBase;
-
+			ent->spawnSnapShot = false; //used to send spawn data first time an entity is in the snapshot
 #if ASYNC_WRITE_TAGS
 			msg.WriteInt( tagRandom.RandomInt() );
 #endif

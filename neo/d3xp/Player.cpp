@@ -4567,6 +4567,13 @@ void idPlayer::UpdateFocus( void ) {
 			lastMPAim = MPAim;
 			MPAim = iclient;
 			lastMPAimTime = gameLocal.realClientTime;
+			if ( MPAim != -1 && gameLocal.entities[ MPAim ] && gameLocal.entities[ MPAim ]->IsType( idPlayer::Type )) {
+				idPlayer* aimed;
+				aimed = static_cast< idPlayer * >( gameLocal.entities[ MPAim ] );
+				hud->SetStateString( "aim_text", gameLocal.userInfo[ MPAim ].GetString( "ui_name" ) );
+				hud->SetStateFloat( "aim_color", aimed->colorBarIndex );
+				hud->HandleNamedEvent( "aim_coopflash" );
+			}
 		}
 	}
 

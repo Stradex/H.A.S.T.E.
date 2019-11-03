@@ -460,6 +460,7 @@ idEntity::idEntity() {
 		inSnapshotQueue[i] = false;
 		snapshotMissingCount[i] = 0;
 	}
+	spawnSnapShot = true;
 	//COOP END
 }
 
