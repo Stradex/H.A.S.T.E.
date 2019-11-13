@@ -500,6 +500,7 @@ protected:
 	//COOP START
 	//client-side movement for Coop
 	void					CSAnimMove( void );
+	void					CSFlyMove( void );
 	void					CSKilled( void );
 	void					Event_OverrideAnim( int channel ); //for netaction
 	//COOP END

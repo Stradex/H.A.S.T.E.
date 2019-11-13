@@ -189,6 +189,7 @@ void idGameLocal::Clear( void ) {
 	memset( coopIds, -1, sizeof( coopIds ) ); //COOP
 	firstFreeIndex = 0;
 	firstFreeCoopIndex = 0;  //COOP
+	firstFreeCsIndex = 0;
 	num_entities = 0;
 	num_coopentities=0;  //COOP
 	spawnedEntities.Clear();
@@ -932,7 +933,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	num_entities	= MAX_CLIENTS;
 	num_coopentities = MAX_CLIENTS; //COOP
 	firstFreeIndex	= MAX_CLIENTS;
-	firstFreeCoopIndex = MAX_CLIENTS; //COOP
+	firstFreeCsIndex = CS_ENTITIESSTART; //COOP
 
 	// reset the random number generator.
 	random.SetSeed( isMultiplayer ? randseed : 0 );
@@ -2521,26 +2522,12 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 						ent->GetPhysics()->UpdateTime( time );
 						continue;
 					}
-
-					//COOP START
-					if  (isMultiplayer && mpGame.IsGametypeCoopBased() && localClientNum < 0 && !gameLocal.firstClientToSpawn && g_freezeUntilClientJoins.GetBool()) {
-						num++;
-						continue; //don't let any entity to think while there're no players in-game yet for dedicated server in coop
-					}
-					//COOP END
-
 					ent->Think();
 					num++;
 				}
 			} else { ///normal place
 				num = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-					//COOP START
-					if  (isMultiplayer && mpGame.IsGametypeCoopBased() && localClientNum < 0 && !gameLocal.firstClientToSpawn  && g_freezeUntilClientJoins.GetBool()) {
-						num++;
-						continue;//don't let any entity to think while there're no players in-game yet for dedicated server in coop
-					}
-					//COOP END
 					ent->Think();
 					num++;
 				}

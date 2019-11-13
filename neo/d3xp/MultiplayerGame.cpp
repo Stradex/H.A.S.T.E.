@@ -134,6 +134,7 @@ idMultiplayerGame::idMultiplayerGame() {
 
 	player_blue_flag = -1;
 	player_red_flag = -1;
+	coopRoundWin = false;
 	//end by Stradex for D3XP CTF
 
 	Clear();
@@ -331,7 +332,7 @@ void idMultiplayerGame::ClearGuis() {
 		scoreBoard->SetStateInt( "rank_self", 0 );
 
 		idPlayer *player = static_cast<idPlayer *>( gameLocal.entities[ i ] );
-		if ( !player || !player->hud ) {
+		if ( !player || !player->hud ) { //in coop hud is not working
 			continue;
 		}
 		player->hud->SetStateString( va( "player%i",i+1 ), "" );
@@ -1522,13 +1523,6 @@ void idMultiplayerGame::Run() {
 
 	pureReady = true;
 
-	//REMOVE ME LATER (Stradex)
-	if (!gameLocal.coopMapScriptLoad && gameLocal.firstClientToSpawn && IsGametypeCoopBased() && gameLocal.localClientNum < 0 && g_freezeUntilClientJoins.GetBool()) { //first player joined by the dedicated server
-		gameLocal.coopMapScriptLoad = true;
-		gameLocal.world->InitializateMapScript();
-	}
-	//END REMOVE
-
 	if ( gameState == INACTIVE ) {
 		lastGameType = gameLocal.gameType;
 		if (gameLocal.gameType == GAME_COOP) {
@@ -1568,8 +1562,11 @@ void idMultiplayerGame::Run() {
 		}
 		case NEXTGAME: {
 			if ( nextState == INACTIVE ) {
-				// game rotation, new map, gametype etc.
+				// game rotation, new map, gametype etc. coopRoundWin
 				if (gameLocal.gameType == GAME_SURVIVAL || gameLocal.NextMap() ) { //in survival automatically do a serverMapRestart after everyone dies
+					if ((gameLocal.gameType == GAME_SURVIVAL) && coopRoundWin) {
+						gameLocal.NextMap();
+					}
 					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "serverMapRestart\n" );
 					return;
 				}
@@ -3331,6 +3328,7 @@ void idMultiplayerGame::CheckAbortGame( void ) {
 					playerState[j].teamFragCount = 0;
 					playerState[j].livesLeft = si_lives.GetInteger();
 				}
+				coopRoundWin = false;
 				//Everyone is dead so restart the map
 				NewState( GAMEREVIEW );
 			}
@@ -4627,4 +4625,61 @@ void idMultiplayerGame::SavePersistentPlayersInfo( void ) {
 		}
 		gameLocal.GetPersistentPlayerInfo(i); //This function basically save the current player persistent info
 	}
+}
+
+/*
+================
+idMultiplayerGame::EndLevel
+================
+*/
+
+void idMultiplayerGame::EndLevel( void )
+{
+	SavePersistentPlayersInfo();
+	coopRoundWin = true;
+	NewState(GAMEREVIEW);
+}
+/*
+================
+idMultiplayerGame::GuiNamedEventCall
+================
+*/
+void idMultiplayerGame::GuiNamedEventCall( const char *namedGuiEvent, int parm1, int parm2 )
+{
+	if (gameLocal.isServer) { //only servers can use this function while in multiplayer
+		idBitMsg	outMsg;
+		byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
+		outMsg.Init( msgBuf, sizeof( msgBuf ) );
+		outMsg.WriteByte( GAME_RELIABLE_MESSAGE_GUIEVENT );
+		outMsg.WriteString(namedGuiEvent);
+		outMsg.WriteInt(parm1);
+		outMsg.WriteInt(parm2);
+		networkSystem->ServerSendReliableMessage( -1, outMsg );
+	}
+
+	idPlayer *player, *viewPlayer;
+
+	for ( int i = 0; i < gameLocal.numClients; i++ ) {
+		player = static_cast<idPlayer *>( gameLocal.entities[ i ] );
+		if ( player && !player->NeedsIcon() ) {
+			player->HidePlayerIcons();
+		}
+	}
+	int clientNum = gameLocal.localClientNum;
+	player = viewPlayer = static_cast<idPlayer *>( gameLocal.entities[ clientNum ] );
+
+	if ( player == NULL ) {
+		return;
+	}
+
+	if ( player->spectating ) {
+		viewPlayer = static_cast<idPlayer *>( gameLocal.entities[ player->spectator ] );
+		if ( viewPlayer == NULL ) {
+			return;
+		}
+	}
+
+	viewPlayer->hud->SetStateInt( "event_parm1", parm1 );
+	viewPlayer->hud->SetStateInt( "event_parm2", parm2 );
+	viewPlayer->hud->HandleNamedEvent(namedGuiEvent);
 }

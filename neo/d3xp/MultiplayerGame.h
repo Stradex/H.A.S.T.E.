@@ -302,9 +302,12 @@ public:
 	int				GetPlayerFrags(idPlayer* player);
 	int				GetPlayerLives(idPlayer* player);
 	void			SavePersistentPlayersInfo( void );
+	void			GuiNamedEventCall( const char *namedGuiEvent, int parm1, int parm2 );
+	void			EndLevel( void );
 
 	idVec3			playerCheckpoints[ MAX_CLIENTS ]; //added for coop checkpoints
 	bool			playerUseCheckpoints[ MAX_CLIENTS ]; //added for coop checkpoints
+	bool			coopRoundWin; //to let know the game if the round was a win or a lose
 	//COOP END
 
 private:

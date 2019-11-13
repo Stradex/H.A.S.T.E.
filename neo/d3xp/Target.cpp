@@ -207,10 +207,10 @@ void idTarget_EndLevel::Event_Activate( idEntity *activator ) {
 		return;
 	}
 
-	if ( gameLocal.mpGame.IsGametypeCoopBased() ) {
-		gameLocal.mpGame.SavePersistentPlayersInfo();
+	if ( gameLocal.mpGame.IsGametypeCoopBased() && gameLocal.isServer ) {
 		si_map.SetString(nextMap);
-		gameLocal.MapRestart();
+		gameLocal.mpGame.EndLevel();
+		//gameLocal.MapRestart();
 	} else {
 		if (spawnArgs.GetInt("devmap", "0")) {
 			gameLocal.sessionCommand = "devmap ";	// only for special demos

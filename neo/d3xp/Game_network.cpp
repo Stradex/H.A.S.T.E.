@@ -1024,6 +1024,10 @@ void idGameLocal::ServerProcessReliableMessage( int clientNum, const idBitMsg &m
 			mpGame.WantNoClip(clientNum);
 			break;
 		}
+		case GAME_RELIABLE_MESSAGE_GUIEVENT: { //for Coop invasion maps
+			
+			break;
+		}
 		//COOP END
 		default: {
 			Warning( "Unknown client->server reliable message: %d", id );
@@ -1708,6 +1712,15 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 		}
 		case GAME_RELIABLE_MESSAGE_WARMUPTIME: {
 			mpGame.ClientReadWarmupTime( msg );
+			break;
+		}
+		case GAME_RELIABLE_MESSAGE_GUIEVENT: {
+			char guiNamedEventName[ MAX_STRING_CHARS ];
+			int parm1, parm2;
+			msg.ReadString(guiNamedEventName, sizeof( guiNamedEventName ));
+			parm1 = msg.ReadInt();
+			parm2 = msg.ReadInt();
+			gameLocal.mpGame.GuiNamedEventCall(guiNamedEventName, parm1, parm2);
 			break;
 		}
 		default: {

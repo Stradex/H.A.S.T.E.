@@ -5078,7 +5078,7 @@ void idAI::ClientPredictionThink( bool lastFrameCall, bool firstFrameCall, int c
 
 			case MOVETYPE_FLY :
 				// flying monsters
-				FlyMove(); //TODO: Replace with a clientside specific function
+				CSFlyMove();
 				break;
 
 			case MOVETYPE_STATIC :
@@ -5450,6 +5450,93 @@ idPlayer *idAI::GetClosestPlayerEnemy( void ) {
 	}
 
 	return closestPlayer;
+}
+
+
+/*
+=====================
+idAI::CSFlyMove
+=====================
+*/
+void idAI::CSFlyMove( void ) {
+	idVec3	goalPos;
+	idVec3	oldorigin;
+	idVec3	newDest;
+
+	AI_BLOCKED = false;
+	if ( ( move.moveCommand != MOVE_NONE ) && ReachedPos( move.moveDest, move.moveCommand ) ) {
+		StopMove( MOVE_STATUS_DONE );
+	}
+
+	if ( ai_debugMove.GetBool() ) {
+		gameLocal.Printf( "%d: %s: %s, vel = %.2f, sp = %.2f, maxsp = %.2f\n", gameLocal.time, name.c_str(), moveCommandString[ move.moveCommand ], physicsObj.GetLinearVelocity().Length(), move.speed, fly_speed );
+	}
+
+	if ( move.moveCommand != MOVE_TO_POSITION_DIRECT ) {
+		idVec3 vel = physicsObj.GetLinearVelocity();
+
+		/* //OLD
+		if ( GetMovePos( goalPos ) ) {
+			CheckObstacleAvoidance( goalPos, newDest );
+			goalPos = newDest;
+		}*/
+		// NEW 
+		GetMovePos( goalPos );
+
+		if ( move.speed	) {
+			FlySeekGoal( vel, goalPos );
+		}
+
+		// add in bobbing
+		AddFlyBob( vel );
+
+		if ( enemy.GetEntity() && ( move.moveCommand != MOVE_TO_POSITION ) ) {
+			AdjustFlyHeight( vel, goalPos );
+		}
+
+		AdjustFlySpeed( vel );
+
+		physicsObj.SetLinearVelocity( vel );
+	}
+
+	// turn
+	FlyTurn();
+
+	// run the physics for this frame
+	oldorigin = physicsObj.GetOrigin();
+	physicsObj.UseFlyMove( true );
+	physicsObj.UseVelocityMove( false );
+	physicsObj.SetDelta( vec3_zero );
+	physicsObj.ForceDeltaMove( disableGravity );
+	RunPhysics();
+
+	monsterMoveResult_t	moveResult = physicsObj.GetMoveResult();
+	if ( !af_push_moveables && attack.Length() && TestMelee() ) {
+		DirectDamage( attack, enemy.GetEntity() );
+	} else {
+		idEntity *blockEnt = physicsObj.GetSlideMoveEntity();
+		if ( blockEnt && blockEnt->IsType( idMoveable::Type ) && blockEnt->GetPhysics()->IsPushable() ) {
+			KickObstacles( viewAxis[ 0 ], kickForce, blockEnt );
+		} else if ( moveResult == MM_BLOCKED ) {
+			move.blockTime = gameLocal.time + 500;
+			AI_BLOCKED = true;
+		}
+	}
+
+	idVec3 org = physicsObj.GetOrigin();
+	if ( oldorigin != org ) {
+		ClientTouchTriggers(); //client-side triggers only
+	}
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 4000 );
+		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), gameLocal.msec, true );
+		gameRenderWorld->DebugLine( colorBlue, org, goalPos, gameLocal.msec, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		DrawRoute();
+	}
 }
 
 /*

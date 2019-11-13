@@ -28,6 +28,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "sys/platform.h"
 
+#include "framework/async/NetworkSystem.h"
 #include "gamesys/SysCvar.h"
 #include "Player.h"
 #include "Camera.h"
@@ -113,6 +114,7 @@ const idEventDef EV_Thread_DebugCircle( "debugCircle", "vvvfdf" );
 const idEventDef EV_Thread_DebugBounds( "debugBounds", "vvvf" );
 const idEventDef EV_Thread_DrawText( "drawText", "svfvdf" );
 const idEventDef EV_Thread_InfluenceActive( "influenceActive", NULL, 'd' );
+const idEventDef EV_Thread_CallGuiEvent( "callGuiEvent", "sdd" ); //used for coop HUD while sending messsages
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
@@ -193,6 +195,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_DebugBounds,			idThread::Event_DebugBounds )
 	EVENT( EV_Thread_DrawText,				idThread::Event_DrawText )
 	EVENT( EV_Thread_InfluenceActive,		idThread::Event_InfluenceActive )
+	EVENT( EV_Thread_CallGuiEvent,			idThread::Event_CallGuiEvent ) //added for coop
 END_CLASS
 
 idThread			*idThread::currentThread = NULL;
@@ -1856,5 +1859,28 @@ void idThread::Event_InfluenceActive( void ) {
 		idThread::ReturnInt( true );
 	} else {
 		idThread::ReturnInt( false );
+	}
+}
+
+
+/*
+================
+idThread::Event_CallGuiEvent
+================
+*/
+void idThread::Event_CallGuiEvent( const char *namedGuiEvent, int parm1, int parm2 )
+{
+
+	idPlayer *player;
+	player = gameLocal.GetLocalPlayer();
+
+	if (gameLocal.isMultiplayer) {
+		if (gameLocal.isServer) { //only server can trigger this
+			gameLocal.mpGame.GuiNamedEventCall(namedGuiEvent, parm1, parm2);
+		}
+	} else if (player) {
+		player->hud->SetStateInt( "event_parm1", parm1 );
+		player->hud->SetStateInt( "event_parm1", parm2 );
+		player->hud->HandleNamedEvent(namedGuiEvent);
 	}
 }
