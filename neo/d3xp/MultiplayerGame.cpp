@@ -439,6 +439,7 @@ void idMultiplayerGame::UpdateScoreboard( idUserInterface *scoreBoard, idPlayer 
 	int value;
 
 	scoreBoard->SetStateString( "scoretext", gameLocal.gameType == GAME_LASTMAN ? common->GetLanguageDict()->GetString( "#str_04242" ) : common->GetLanguageDict()->GetString( "#str_04243" ) );
+	scoreBoard->SetStateInt(	"waves_limit", si_wavesCount.GetInteger() );
 
 	iline = 0; // the display lines
 	if ( gameState != WARMUP ) {
@@ -2255,7 +2256,8 @@ void idMultiplayerGame::UpdateHud( idPlayer *player, idUserInterface *hud ) {
 		return;
 	}
 
-	hud->SetStateBool( "warmup", Warmup() );
+	hud->SetStateInt( "warmup", Warmup() );
+	hud->SetStateBool(	"waves_limit", si_wavesCount.GetInteger() );
 
 	if ( gameState == WARMUP ) {
 		if ( player->IsReady() ) {

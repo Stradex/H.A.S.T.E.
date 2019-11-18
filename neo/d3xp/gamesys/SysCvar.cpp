@@ -94,6 +94,7 @@ idCVar si_midnight(                 "si_midnight",              "0",            
 //fluff start (Thanks fluff :3)
 idCVar si_shootDoors(				"si_shootDoors",			"0",			CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_BOOL, "all doors can be opened by shooting them, even if they're locked");
 idCVar si_itemRespawn(				"si_itemRespawn",			"0",			CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_BOOL, "items will respawn in coop modes");
+idCVar si_wavesCount(				"si_wavesCount",			"0",			CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_INTEGER, "amount of waves at max per round", 0, 3); // 0 = 5 waves, 1 = 10 waves, 2 = 15 waves, 3 = 20 waves
 //fluff end
 
 //stradex start
@@ -136,7 +137,7 @@ idCVar g_doubleVision(				"g_doubleVision",			"1",			CVAR_GAME | CVAR_ARCHIVE | 
 idCVar g_monsters(					"g_monsters",				"1",			CVAR_GAME | CVAR_BOOL, "" );
 idCVar g_decals(					"g_decals",					"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "show decals such as bullet holes" );
 idCVar g_knockback(					"g_knockback",				"1000",			CVAR_GAME | CVAR_INTEGER, "" );
-idCVar g_skill(						"g_skill",					"1",			CVAR_GAME | CVAR_INTEGER | CVAR_NETWORKSYNC, "" ); //CVAR_NETWORKSYNC sync for coop
+idCVar g_skill(						"g_skill",					"1",			CVAR_GAME | CVAR_INTEGER | CVAR_SERVERINFO, "" ); //CVAR_SERVERINFO sync for coop
 idCVar g_nightmare(					"g_nightmare",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "if nightmare mode is allowed" );
 idCVar g_gravity(					"g_gravity",		DEFAULT_GRAVITY_STRING, CVAR_GAME | CVAR_FLOAT, "" );
 idCVar g_skipFX(					"g_skipFX",					"0",			CVAR_GAME | CVAR_BOOL, "" );

@@ -3,7 +3,7 @@
 
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
+firstFreeCsIndex 
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
@@ -933,6 +933,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	num_entities	= MAX_CLIENTS;
 	num_coopentities = MAX_CLIENTS; //COOP
 	firstFreeIndex	= MAX_CLIENTS;
+	firstFreeCoopIndex = MAX_CLIENTS;
 	firstFreeCsIndex = CS_ENTITIESSTART; //COOP
 
 	// reset the random number generator.
@@ -3624,19 +3625,90 @@ idGameLocal::InhibitEntitySpawn
 bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 
 	bool result = false;
+	int i;
+
+	int siWavesCount = isMultiplayer ? gameLocal.serverInfo.GetInt("si_wavesCount", "0") : si_wavesCount.GetInteger();
+	int siGSkill = isMultiplayer ? gameLocal.serverInfo.GetInt("g_skill", "0") : g_skill.GetInteger();
+
+	switch (siWavesCount) { //use this only for triggers, func and stuff.. if possible
+		case 1:
+			
+			for (i=0; i < 4; i++) {
+
+				if (i == 1) continue;
+
+				spawnArgs.GetBool( va("waves_limit_%d", (i+1)*5), "0", result ); //wave_count_5, 15, 20
+				
+				if (result) {
+					//common->Printf("Avoiding to spawn entity for wave limit %d\n",  (i+1)*5);
+					return true;
+				}
+			}
+
+		break;
+
+		case 2:
+
+			for (i=0; i < 4; i++) {
+
+				if (i == 2) continue;
+
+				spawnArgs.GetBool( va("waves_limit_%d", (i+1)*5), "0", result ); //wave_count_5, 10, 20
+				
+				if (result) {
+					//common->Printf("Avoiding to spawn entity for wave limit %d\n",  (i+1)*5);
+					return true;
+				}
+			}
+
+		break;
+
+		case 3:
+
+			for (i=0; i < 4; i++) {
+
+				if (i == 3) continue;
+
+				spawnArgs.GetBool( va("waves_limit_%d", (i+1)*5), "0", result ); //wave_count_5, 10, 15
+				
+				if (result) {
+					//common->Printf("Avoiding to spawn entity for wave limit %d\n",  (i+1)*5);
+					return true;
+				}
+			}
+
+		break;
+			
+		default:
+
+			for (i=0; i < 4; i++) {
+
+				if (i == 0) continue;
+
+				spawnArgs.GetBool( va("waves_limit_%d", (i+1)*5), "0", result ); //wave_count_10, 15, 20
+				
+				if (result) {
+					//common->Printf("Avoiding to spawn entity for wave limit %d\n",  (i+1)*5);
+					return true;
+				}
+			}
+
+		break;
+	}
+
 
 	if ( isMultiplayer && !gameLocal.mpGame.IsGametypeCoopBased() ) {
 		spawnArgs.GetBool( "not_multiplayer", "0", result );
-	} else if ( g_skill.GetInteger() == 0 ) {
+	} else if ( siGSkill == 0 ) {
 		spawnArgs.GetBool( "not_easy", "0", result );
-	} else if ( g_skill.GetInteger() == 1 ) {
+	} else if ( siGSkill == 1 ) {
 		spawnArgs.GetBool( "not_medium", "0", result );
 	} else {
 		spawnArgs.GetBool( "not_hard", "0", result );
 	}
 
 	const char *name;
-	if ( g_skill.GetInteger() == 3 ) {
+	if ( siGSkill == 3 ) {
 		name = spawnArgs.GetString( "classname" );
 		if ( idStr::Icmp( name, "item_medkit" ) == 0 || idStr::Icmp( name, "item_medkit_small" ) == 0 ) {
 			result = true;
