@@ -1783,6 +1783,7 @@ gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clie
 	if ( time > realClientTime ) {
 		realClientTime = time;
 		isNewFrame = true;
+		clientsideTime += msec; //added for clientside movement code and events
 	} else {
 		isNewFrame = false;
 	}

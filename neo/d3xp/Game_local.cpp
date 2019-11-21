@@ -244,6 +244,7 @@ void idGameLocal::Clear( void ) {
 	isServer = false;
 	isClient = false;
 	realClientTime = 0;
+	clientsideTime = 0;
 	isNewFrame = true;
 	clientSmoothing = 0.1f;
 	entityDefBits = 0;
@@ -2449,6 +2450,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		previousTime = time;
 		time += msec;
 		realClientTime = time;
+		clientsideTime = time;
 
 		//COOP START
 		if (mpGame.IsGametypeCoopBased()) {

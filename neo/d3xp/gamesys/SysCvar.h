@@ -273,6 +273,7 @@ extern idCVar g_CTFArrows;
 extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
 extern idCVar	net_clientUnlagged; //added by Stradex
+extern idCVar	net_clientSideMovement; //added by Stradex (experimental, works only with high ping)
 
 //COOP START
 //fluff start (Thanks fluff :3)

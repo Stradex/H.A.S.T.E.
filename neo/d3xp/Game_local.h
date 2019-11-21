@@ -354,6 +354,7 @@ public:
 	idLinkList<idEntity>	snapshotEntities;		// entities from the last snapshot
 	idLinkList<idEntity>	clientsideEntities;		// entities only present in the client machine that requires to think (added by Stradex)
 	int						realClientTime;			// real client time
+	int						clientsideTime;			// only for clients added by Stradex
 	bool					isNewFrame;				// true if this is a new game frame, not a rerun due to prediction
 	float					clientSmoothing;		// smoothing of other clients in the view
 	int						entityDefBits;			// bits required to store an entity def number

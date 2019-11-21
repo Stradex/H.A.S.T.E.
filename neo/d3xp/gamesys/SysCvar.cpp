@@ -368,6 +368,7 @@ idCVar g_balanceTDM(				"g_balanceTDM",				"1",			CVAR_GAME | CVAR_BOOL, "mainta
 idCVar g_CTFArrows(					"g_CTFArrows",				"1",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_BOOL, "draw arrows over teammates in CTF" );
 
 idCVar net_clientPredictGUI(		"net_clientPredictGUI",		"1",			CVAR_GAME | CVAR_BOOL, "test guis in networking without prediction" );
+idCVar net_clientSideMovement(		"net_clientSideMovement",	"0",			CVAR_GAME | CVAR_BOOL | CVAR_NOCHEAT, "Clientside movement, use only if you're suffering lag" );
 
 idCVar g_voteFlags(					"g_voteFlags",				"0",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_INTEGER | CVAR_ARCHIVE, "vote flags. bit mask of votes not allowed on this server\n"
 																					"bit 0 (+1)   restart now\n"
