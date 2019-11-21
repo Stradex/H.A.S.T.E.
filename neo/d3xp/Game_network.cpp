@@ -1723,6 +1723,10 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 			gameLocal.mpGame.GuiNamedEventCall(guiNamedEventName, parm1, parm2);
 			break;
 		}
+		case GAME_RELIABLE_MESSAGE_ENDROUND: {
+			gameLocal.mpGame.coopRoundWin = (msg.ReadBits( 1 ) != 0); //getting info about how if we won or lost the round
+			break;
+		}
 		default: {
 			Error( "Unknown server->client reliable message: %d", id );
 			break;

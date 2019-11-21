@@ -581,6 +581,10 @@ private:
 	bool					weaponEnabled;
 	bool					showWeaponViewModel;
 
+	//Coop specific
+	bool					usingSpawnProtection;
+	//end coop
+
 	const idDeclSkin *		skin;
 	const idDeclSkin *		powerUpSkin;
 	idStr					baseSkinName;
@@ -720,6 +724,7 @@ private:
 	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
 	void					Event_GetIdealWeapon( void );
+	void					Event_DisableSpawnProtection( void ); //added by Stradex
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

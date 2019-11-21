@@ -75,6 +75,9 @@ const int HEALTHPULSE_TIME = 333;
 // minimum speed to bob and play run/walk animations at
 const float MIN_BOB_SPEED = 5.0f;
 
+// How many time the spawn protection should last in seconds
+const int SPAWN_PROTECTION_TIME = 2;
+
 const idEventDef EV_Player_GetButtons( "getButtons", NULL, 'd' );
 const idEventDef EV_Player_GetMove( "getMove", NULL, 'v' );
 const idEventDef EV_Player_GetViewAngles( "getViewAngles", NULL, 'v' );
@@ -93,26 +96,28 @@ const idEventDef EV_Player_HideTip( "hideTip" );
 const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 const idEventDef EV_Player_GetIdealWeapon( "getIdealWeapon", NULL, 's' );
+const idEventDef EV_Player_DisableSpawnProtection( "<disablespawnprotection>", NULL );
 
 CLASS_DECLARATION( idActor, idPlayer )
-	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
-	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
-	EVENT( EV_Player_GetViewAngles,			idPlayer::Event_GetViewAngles )
-	EVENT( EV_Player_StopFxFov,				idPlayer::Event_StopFxFov )
-	EVENT( EV_Player_EnableWeapon,			idPlayer::Event_EnableWeapon )
-	EVENT( EV_Player_DisableWeapon,			idPlayer::Event_DisableWeapon )
-	EVENT( EV_Player_GetCurrentWeapon,		idPlayer::Event_GetCurrentWeapon )
-	EVENT( EV_Player_GetPreviousWeapon,		idPlayer::Event_GetPreviousWeapon )
-	EVENT( EV_Player_SelectWeapon,			idPlayer::Event_SelectWeapon )
-	EVENT( EV_Player_GetWeaponEntity,		idPlayer::Event_GetWeaponEntity )
-	EVENT( EV_Player_OpenPDA,				idPlayer::Event_OpenPDA )
-	EVENT( EV_Player_InPDA,					idPlayer::Event_InPDA )
-	EVENT( EV_Player_ExitTeleporter,		idPlayer::Event_ExitTeleporter )
-	EVENT( EV_Player_StopAudioLog,			idPlayer::Event_StopAudioLog )
-	EVENT( EV_Player_HideTip,				idPlayer::Event_HideTip )
-	EVENT( EV_Player_LevelTrigger,			idPlayer::Event_LevelTrigger )
-	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
-	EVENT( EV_Player_GetIdealWeapon,		idPlayer::Event_GetIdealWeapon )
+	EVENT( EV_Player_GetButtons,				idPlayer::Event_GetButtons )
+	EVENT( EV_Player_GetMove,					idPlayer::Event_GetMove )
+	EVENT( EV_Player_GetViewAngles,				idPlayer::Event_GetViewAngles )
+	EVENT( EV_Player_StopFxFov,					idPlayer::Event_StopFxFov )
+	EVENT( EV_Player_EnableWeapon,				idPlayer::Event_EnableWeapon )
+	EVENT( EV_Player_DisableWeapon,				idPlayer::Event_DisableWeapon )
+	EVENT( EV_Player_GetCurrentWeapon,			idPlayer::Event_GetCurrentWeapon )
+	EVENT( EV_Player_GetPreviousWeapon,			idPlayer::Event_GetPreviousWeapon )
+	EVENT( EV_Player_SelectWeapon,				idPlayer::Event_SelectWeapon )
+	EVENT( EV_Player_GetWeaponEntity,			idPlayer::Event_GetWeaponEntity )
+	EVENT( EV_Player_OpenPDA,					idPlayer::Event_OpenPDA )
+	EVENT( EV_Player_InPDA,						idPlayer::Event_InPDA )
+	EVENT( EV_Player_ExitTeleporter,			idPlayer::Event_ExitTeleporter )
+	EVENT( EV_Player_StopAudioLog,				idPlayer::Event_StopAudioLog )
+	EVENT( EV_Player_HideTip,					idPlayer::Event_HideTip )
+	EVENT( EV_Player_LevelTrigger,				idPlayer::Event_LevelTrigger )
+	EVENT( EV_Gibbed,							idPlayer::Event_Gibbed )
+	EVENT( EV_Player_GetIdealWeapon,			idPlayer::Event_GetIdealWeapon )
+	EVENT( EV_Player_DisableSpawnProtection,	idPlayer::Event_DisableSpawnProtection ) //added by Stradex
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -1181,6 +1186,7 @@ idPlayer::idPlayer() {
 
 	//added for COOP by stradex
 	snapshotPriority		= 1;
+	usingSpawnProtection	= false;
 }
 
 /*
@@ -1458,6 +1464,13 @@ void idPlayer::Init( void ) {
 	}
 
 	cvarSystem->SetCVarBool( "ui_chat", false );
+
+	if (gameLocal.isMultiplayer && gameLocal.isClient && g_spawnProtection.GetBool()) { //clientside added by stradex
+
+		if (hud) { 
+			hud->HandleNamedEvent( "startSpawnProtection" );
+		}
+	}
 }
 
 /*
@@ -2295,6 +2308,8 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 
 	assert( !gameLocal.isClient );
 
+	 //server-side code
+
 	respawning = true;
 
 	Init();
@@ -2372,6 +2387,15 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 	maxRespawnTime = gameLocal.time;
 	if ( !spectating ) {
 		forceRespawn = false;
+
+		if (g_spawnProtection.GetBool()) { //added for spawn protection by Stradex
+			usingSpawnProtection = true;
+			CancelEvents( &EV_Player_DisableSpawnProtection );
+			PostEventMS( &EV_Player_DisableSpawnProtection, SPAWN_PROTECTION_TIME*1000); //always server
+			if (hud) { 
+				hud->HandleNamedEvent( "startSpawnProtection" );
+			}
+		}
 	}
 
 	privateCameraView = NULL;
@@ -2420,6 +2444,9 @@ void idPlayer::RestorePersistantInfo( void ) {
 
 	inventory.RestoreInventory( this, spawnArgs );
 	health = spawnArgs.GetInt( "health", "100" );
+	if (health <= 0) {
+		health = originalSpawnArgs.GetInt( "health", "100" );
+	}
 	if ( !gameLocal.isClient ) {
 		idealWeapon = spawnArgs.GetInt( "current_weapon", "1" );
 	}
@@ -6678,11 +6705,17 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 
 	assert( !gameLocal.isClient );
 
+	 //sever code only
+
 	if (gameLocal.mpGame.IsGametypeCoopBased()){
 		spawnArgs.Clear(); 
 		spawnArgs.Copy(originalSpawnArgs);
-		inventory.Clear(); //this maybe is not a good idea
-		gameLocal.persistentPlayerInfo[entityNumber].Clear(); //reset persistant info
+		if (!g_keepItemsAfterDying.GetBool()) { 
+			inventory.Clear(); //this maybe is not a good idea
+			gameLocal.persistentPlayerInfo[entityNumber].Clear(); //reset persistant info
+		} else {
+			gameLocal.GetPersistentPlayerInfo(entityNumber); //saving persistant info
+		}
 	}
 
 	// stop taking knockback once dead
@@ -6904,13 +6937,13 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 		armorSave = 0;
 	}
 
-	// check for team damage
-	if ( (gameLocal.mpGame.IsGametypeTeamBased() || gameLocal.mpGame.IsGametypeCoopBased()) /* CTF y COOP */
+	// check for team damage and spawn protection
+	if ( usingSpawnProtection || ( (gameLocal.mpGame.IsGametypeTeamBased() || gameLocal.mpGame.IsGametypeCoopBased()) /* CTF y COOP */
 		&& !gameLocal.serverInfo.GetBool( "si_teamDamage" )
 		&& !damageDef->GetBool( "noTeam" )
 		&& player
 		&& player != this		// you get self damage no matter what
-		&& player->team == team ) {
+		&& player->team == team )) {
 			damage = 0;
 	}
 
@@ -9126,3 +9159,15 @@ void idPlayer::Teleport( const idVec3 &origin, const idAngles &angles) {
 
 	UpdateVisuals();
 } 
+
+/*
+==================
+idPlayer::Event_DisableSpawnProtection
+==================
+*/
+void idPlayer::Event_DisableSpawnProtection( void ) {
+	usingSpawnProtection = false;
+	if (hud) {
+		hud->HandleNamedEvent( "endSpawnProtection" );
+	}
+}

@@ -187,7 +187,7 @@ bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaN
 		area = &file->GetArea( curAreaNum );
 
 		for ( reach = area->reach; reach; reach = reach->next ) {
-			if ( reach->travelType != TFL_WALK ) {
+			if ( reach->travelType != TFL_WALK ) { //edited by Stradex
 				continue;
 			}
 

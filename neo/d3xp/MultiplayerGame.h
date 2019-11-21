@@ -38,7 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 /*
 ===============================================================================
 
-	Basic DOOM multiplayer
+	Basic DOOM (now H.A.S.T.E. but kinda the same lol) multiplayer
 
 ===============================================================================
 */

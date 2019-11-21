@@ -103,6 +103,9 @@ idCVar net_serverSnapshotLimit(		"net_serverSnapshotLimit",	"120",			CVAR_GAME |
 idCVar g_unblockPlayers(			"g_unblockPlayers",			"0",			CVAR_GAME | CVAR_BOOL | CVAR_NETWORKSYNC | CVAR_NOCHEAT, "If player are solid between them or not" );
 idCVar g_freezeUntilClientJoins(	"g_freezeUntilClientJoins", "0",			CVAR_GAME | CVAR_BOOL, "(Dedicated server only) used to wait until a clients join to the game start running or not" );
 idCVar si_lives(					"si_lives",					"2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "How many lives can the players have in Survival mode", 1, 100);
+idCVar g_spawnProtection(			"g_spawnProtection",		"1",			CVAR_GAME | CVAR_BOOL | CVAR_NETWORKSYNC , "Players have 3 seconds of spawn protection after respawn");
+idCVar g_keepItemsAfterDying(			"g_keepItemsAfterDying",	"1",			CVAR_GAME | CVAR_BOOL , "Allow players to keep items after dying");
+
 //stradex end
 //COOP ENDS
 

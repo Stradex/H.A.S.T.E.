@@ -437,6 +437,15 @@ void idMultiplayerGame::UpdateScoreboard( idUserInterface *scoreBoard, idPlayer 
 	idEntity *ent;
 	idPlayer *p;
 	int value;
+	idStr roundEndText;
+
+	if (IsGametypeCoopBased() && (gameState == GAMEREVIEW)) { //round ends
+		roundEndText = coopRoundWin ? common->GetLanguageDict()->GetString( "#str_05002" ) : common->GetLanguageDict()->GetString( "#str_05003" );
+	} else {
+		roundEndText = common->GetLanguageDict()->GetString( "#str_05004" );
+	}
+
+	scoreBoard->SetStateString( "roundresult_text", roundEndText);
 
 	scoreBoard->SetStateString( "scoretext", gameLocal.gameType == GAME_LASTMAN ? common->GetLanguageDict()->GetString( "#str_04242" ) : common->GetLanguageDict()->GetString( "#str_04243" ) );
 	scoreBoard->SetStateInt(	"waves_limit", si_wavesCount.GetInteger() );
@@ -1172,6 +1181,16 @@ void idMultiplayerGame::NewState( gameState_t news, idPlayer *player ) {
 			UpdateWinsLosses( player );
 
 			SetFlagMsg( true ); //Added for D3XP CTF by Stradex
+
+			//Added by Stradex for coop
+			if (IsGametypeCoopBased()) { // sending clients info about round result
+				byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
+				outMsg.Init( msgBuf, sizeof( msgBuf ) );
+				outMsg.WriteByte( GAME_RELIABLE_MESSAGE_ENDROUND );
+				outMsg.WriteBits( coopRoundWin, 1 );
+				networkSystem->ServerSendReliableMessage( -1, outMsg );
+			}
+
 			break;
 		}
 		case SUDDENDEATH: {
@@ -1564,11 +1583,14 @@ void idMultiplayerGame::Run() {
 		case NEXTGAME: {
 			if ( nextState == INACTIVE ) {
 				// game rotation, new map, gametype etc. coopRoundWin
-				if (gameLocal.gameType == GAME_SURVIVAL || gameLocal.NextMap() ) { //in survival automatically do a serverMapRestart after everyone dies
-					if ((gameLocal.gameType == GAME_SURVIVAL) && coopRoundWin) {
-						gameLocal.NextMap();
+				if (IsGametypeCoopBased() || gameLocal.NextMap() ) { //in coop (survival mostly) automatically do a serverMapRestart after everyone dies
+					if (IsGametypeCoopBased() && coopRoundWin) {
+						common->Printf("[COOP DEBUG] Loading next map: %s...\n", si_map.GetString());
+						gameLocal.MapRestart();
+						//gameLocal.NextMap();
+					} else {
+						cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "serverMapRestart\n" );
 					}
-					cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "serverMapRestart\n" );
 					return;
 				}
 
@@ -3389,6 +3411,7 @@ void idMultiplayerGame::MapRestart( void ) {
 		}
 	}
 	lastGameType = gameLocal.gameType;
+
 }
 
 /*

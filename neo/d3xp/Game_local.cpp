@@ -1104,6 +1104,12 @@ void idGameLocal::MapRestart( ) {
 	if ( isClient ) {
 		LocalMapRestart();
 	} else {
+
+		for (i=0; i < MAX_CLIENTS; i++) {
+			gameLocal.persistentPlayerInfo[i].Clear(); //clearing persistent info for all players after restarting a map
+		}
+	
+
 		newInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
 		for ( i = 0; i < newInfo.GetNumKeyVals(); i++ ) {
 			keyval = newInfo.GetKeyVal( i );
@@ -1309,6 +1315,7 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	for (int i=0; i < MAX_CLIENTS; i++) {
 		mpGame.playerUseCheckpoints[i] = false;
 		mpGame.playerCheckpoints[i] = vec3_zero;
+		gameLocal.persistentPlayerInfo[i].Clear(); //clearing persistent info for all players after loading a new map
 	}
 
 	num_coopentities = 0; //I think this is bad

@@ -288,6 +288,8 @@ extern idCVar	net_serverSnapshotLimit; //how many entities are we able to send p
 extern idCVar	g_freezeUntilClientJoins; //If entities can start thinking and scripts executing before or after a first clients join (used only in dedicated servers)
 extern idCVar	si_lives; //survival lives
 extern idCVar	g_enableSmartAI; //ai without optimization
+extern idCVar	g_spawnProtection; //So people do not hate this game
+extern idCVar	g_keepItemsAfterDying; //So people do not hate this game
 extern idCVar	si_wavesCount;	//used for invasion maps, so maps can have an specific amount of waves for invasion maps
 //stradex end
 //COOP ENDS
