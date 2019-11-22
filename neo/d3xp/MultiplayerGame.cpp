@@ -4703,8 +4703,24 @@ void idMultiplayerGame::GuiNamedEventCall( const char *namedGuiEvent, int parm1,
 			return;
 		}
 	}
-
+	/*
+	if (!viewPlayer->hud || player->spectating) { //spectating players were crashing because this, change all this for !player->hud for the next commit
+		return;
+	}
+	//It should be player->hud, not viewPlayerHud (change it in the next commit)
 	viewPlayer->hud->SetStateInt( "event_parm1", parm1 );
 	viewPlayer->hud->SetStateInt( "event_parm2", parm2 );
 	viewPlayer->hud->HandleNamedEvent(namedGuiEvent);
+	*/
+
+
+	//CORRECT CODE
+
+	if (!player->hud) {
+		return;
+	}
+
+	player->hud->SetStateInt( "event_parm1", parm1 );
+	player->hud->SetStateInt( "event_parm2", parm2 );
+	player->hud->HandleNamedEvent(namedGuiEvent);
 }
