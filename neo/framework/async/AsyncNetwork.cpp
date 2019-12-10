@@ -72,6 +72,7 @@ idCVar				idAsyncNetwork::idleServer( "si_idleServer", "0", CVAR_SYSTEM | CVAR_B
 idCVar				idAsyncNetwork::clientDownload( "net_clientDownload", "1", CVAR_SYSTEM | CVAR_INTEGER | CVAR_ARCHIVE, "client pk4 downloads policy: 0 - never, 1 - ask, 2 - always (will still prompt for binary code)" );
 idCVar				idAsyncNetwork::serverNetHz( "net_serverNetHz", "60", CVAR_NETWORKSYNC | CVAR_INTEGER | CVAR_ARCHIVE, "Maximum framerate netcode commands are sent to the server" );
 
+bool				idAsyncNetwork::firstFrame;
 int					idAsyncNetwork::realTime;
 int					idAsyncNetwork::netTimeResidual;
 master_t			idAsyncNetwork::masters[ MAX_MASTER_SERVERS ];
@@ -93,6 +94,7 @@ void idAsyncNetwork::Init( void ) {
 
 	realTime = 0;
 	netTimeResidual = 0; //added by Stradex
+	firstFrame = true;
 
 	memset( masters, 0, sizeof( masters ) );
 	masters[0].var = &master0;
@@ -189,6 +191,17 @@ void idAsyncNetwork::RunFrame( void ) {
 
 	client.RunFrame();
 	server.RunFrame();
+	
+	#ifndef ID_DEDICATED //don't even take in account this code at dedicated build
+
+	if (firstFrame) { //added by Stradex
+		if (cvarSystem->GetCVarInteger( "net_serverDedicated" ) != 1) { //don't execute this for dedicated servers
+			idAsyncNetwork::GetNETServers();
+		}
+		firstFrame = false;
+	}
+
+	#endif
 }
 
 /*

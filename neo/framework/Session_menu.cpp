@@ -1034,6 +1034,59 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			SetPbMenuGuiVars();
 			continue;
 		}
+
+		//Play offline new command by Stradex
+		if ( !idStr::Icmp( cmd, "startOffline" ) ) {
+			if (idStr::Icmp(cvarSystem->GetCVarString("fs_game"), "coop")) { //not coop gameMode
+				cvarSystem->SetCVarString( "fs_game", "coop" );
+				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "reloadEngine\n" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "net_LANServer 1\n" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "si_maxPlayers 1\n" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "net_serverDedicated 0\n" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "si_lives 1\n" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "si_map str_dm01_coop.map\n" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "si_gameType Survival\n" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "SpawnServer\n" );
+				return;
+			}
+
+			cvarSystem->SetCVarBool( "net_LANServer", true );
+			cvarSystem->SetCVarInteger( "si_maxPlayers", 1 );
+			cvarSystem->SetCVarInteger( "net_serverDedicated", 0 );
+			cvarSystem->SetCVarString("si_gameType", "Survival");
+			cvarSystem->SetCVarString("si_lives", "1");
+			cvarSystem->SetCVarString("si_map", "str_dm01_coop.map");
+			ExitMenu();
+			// may trigger a reloadEngine - APPEND
+			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "SpawnServer\n" );
+			return;
+		}
+
+		if ( !idStr::Icmp( cmd, "quickMatch" ) ) {
+			
+			int idealServerID=-1;
+			int playersMax=-1;
+
+			for (int i = 0; i < idAsyncNetwork::client.serverList.Num(); i++ ) {
+
+				if (idAsyncNetwork::client.serverList[i].clients >= idAsyncNetwork::client.serverList[i].serverInfo.GetInt("si_maxPlayers")) { //server is full
+					continue;
+				}
+
+				if (idAsyncNetwork::client.serverList[i].clients > playersMax) {
+					idealServerID = i;
+					playersMax = idAsyncNetwork::client.serverList[i].clients;
+				}
+			}
+
+			if (idealServerID == -1) { //no servers to join
+				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "SpawnServer\n" );
+			} else { //server to join
+				cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "connect %s", Sys_NetAdrToString( idAsyncNetwork::client.serverList[idealServerID].adr ) ) );
+			}
+			
+			return;
+		}
 	}
 }
 

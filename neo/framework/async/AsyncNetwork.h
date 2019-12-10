@@ -179,6 +179,7 @@ public:
 private:
 	static int				realTime;
 	static master_t			masters[ MAX_MASTER_SERVERS];	// master1 etc.
+	static bool				firstFrame; //added by Stradex
 
 	static void				SpawnServer_f( const idCmdArgs &args );
 	static void				NextMap_f( const idCmdArgs &args );
